@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block title %}Activity Log | Stitching Pro{% endblock %}
+{% block page_title %}Audit & Activity Log{% endblock %}
+
+{% block content %}
+
+<div class="page-header-block">
+    <div>
+        <h2 class="page-header-title">Audit & Activity Log</h2>
+        <p class="page-header-sub">System-wide audit trail recording user actions, model modifications, and timestamps.</p>
+    </div>
+</div>
+
+<div class="table-card">
+    <div class="table-card-header">
+        <form method="GET" class="row g-2 align-items-center w-100">
+            <div class="col-12 col-md-9 col-lg-10">
+                <div class="header-search w-100" style="max-width:100%;">
+                    <i class="bi bi-search"></i>
+                    <input type="text" name="search" value="{{ request.GET.search }}" class="form-control" placeholder="Search user, action, or module...">
+                </div>
+            </div>
+            <div class="col-12 col-md-3 col-lg-2">
+                <button type="submit" class="btn btn-secondary w-100">
+                    <i class="bi bi-funnel-fill me-1"></i> Search Logs
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table app-table">
+            <thead>
+                <tr>
+                    <th width="60">#</th>
+                    <th>User</th>
+                    <th>Action</th>
+                    <th>Module</th>
+                    <th>Target ID</th>
+                    <th>Date</th>
+                    <th>Time</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in logs %}
+                <tr>
+                    <td class="text-muted fw-semibold">{{ forloop.counter }}</td>
+                    <td><strong class="text-dark"><i class="bi bi-person me-1"></i>{{ log.user.username }}</strong></td>
+                    <td class="fw-semibold text-dark">{{ log.action }}</td>
+                    <td><span class="badge bg-primary-subtle text-primary">{{ log.model_name }}</span></td>
+                    <td><span class="badge bg-dark font-monospace">#{{ log.object_id }}</span></td>
+                    <td><i class="bi bi-calendar-event me-1 text-muted"></i>{{ log.timestamp|date:"d-m-Y" }}</td>
+                    <td><i class="bi bi-clock me-1 text-muted"></i>{{ log.timestamp|time:"h:i A" }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" class="text-center py-4 text-muted">No activity logs recorded.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}

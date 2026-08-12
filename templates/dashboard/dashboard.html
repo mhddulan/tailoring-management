@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard | Stitching Pro{% endblock %}
+{% block page_title %}Dashboard Overview{% endblock %}
+
+{% block content %}
+
+<div class="page-header-block">
+    <div>
+        <h2 class="page-header-title">Dashboard</h2>
+        <p class="page-header-sub">Overview of total customers, orders, and delivery status.</p>
+    </div>
+    <div>
+        <a href="{% url 'backup_database' %}" class="btn btn-outline-danger">
+            <i class="bi bi-database-down"></i> Backup Database
+        </a>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="stat-card">
+            <div>
+                <div class="stat-label">Total Customers</div>
+                <h3 class="stat-value">{{ total_customers }}</h3>
+            </div>
+            <div class="stat-icon-wrapper stat-icon-purple">
+                <i class="bi bi-people-fill"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="stat-card">
+            <div>
+                <div class="stat-label">Total Orders</div>
+                <h3 class="stat-value">{{ total_orders }}</h3>
+            </div>
+            <div class="stat-icon-wrapper stat-icon-primary">
+                <i class="bi bi-bag-check-fill"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="stat-card">
+            <div>
+                <div class="stat-label">Pending Orders</div>
+                <h3 class="stat-value">{{ pending_orders }}</h3>
+            </div>
+            <div class="stat-icon-wrapper stat-icon-warning">
+                <i class="bi bi-clock-history"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="stat-card">
+            <div>
+                <div class="stat-label">Delivered Orders</div>
+                <h3 class="stat-value">{{ delivered_orders }}</h3>
+            </div>
+            <div class="stat-icon-wrapper stat-icon-success">
+                <i class="bi bi-check-circle-fill"></i>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}

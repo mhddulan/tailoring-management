@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+
+{% block title %}Delete Customer | Stitching Pro{% endblock %}
+{% block page_title %}Delete Customer{% endblock %}
+
+{% block content %}
+
+<div class="page-header-block">
+    <div>
+        <h2 class="page-header-title">Delete Customer Profile</h2>
+        <p class="page-header-sub">Confirm deletion of customer record.</p>
+    </div>
+    <div>
+        <a href="{% url 'customer_list' %}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Customers
+        </a>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-12 col-md-8 col-lg-6">
+        <div class="form-card text-center py-4">
+            <div class="stat-icon-wrapper stat-icon-danger mx-auto mb-3" style="width:64px; height:64px; font-size:2rem;">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+            </div>
+            
+            <h4 class="fw-bold text-dark mb-2">Are you sure?</h4>
+            <p class="text-muted mb-4">
+                You are about to delete customer profile <strong>{{ customer.name }}</strong>. This action cannot be undone.
+            </p>
+
+            <form method="POST" class="d-flex justify-content-center gap-2">
+                {% csrf_token %}
+                <a href="{% url 'customer_list' %}" class="btn btn-secondary px-4">
+                    Cancel
+                </a>
+                <button type="submit" class="btn btn-danger px-4">
+                    <i class="bi bi-trash-fill me-1"></i> Yes, Delete
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

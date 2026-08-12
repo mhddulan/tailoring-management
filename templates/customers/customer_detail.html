@@ -1,0 +1,151 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ customer.name }} | Customer Profile{% endblock %}
+{% block page_title %}Customer Profile{% endblock %}
+
+{% block content %}
+
+<div class="page-header-block">
+    <div>
+        <h2 class="page-header-title">{{ customer.name }}</h2>
+        <p class="page-header-sub">Customer ID: #{{ customer.id }} &bull; Branch: {{ customer.branch }}</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{% url 'customer_order_create' customer.id %}" class="btn btn-primary">
+            <i class="bi bi-plus-lg"></i> Create Order
+        </a>
+        <a href="{% url 'customer_ledger' customer.id %}" class="btn btn-secondary">
+            <i class="bi bi-journal-text"></i> Customer Ledger
+        </a>
+        <a href="{% url 'customer_edit' customer.id %}" class="btn btn-outline-secondary">
+            <i class="bi bi-pencil"></i> Edit Customer
+        </a>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <!-- Customer Info Card -->
+    <div class="col-12 col-md-5">
+        <div class="card-custom p-4 h-100">
+            <h5 class="fw-bold mb-3 text-dark border-bottom pb-2">
+                <i class="bi bi-person-lines-fill text-primary me-2"></i>Contact & Branch Details
+            </h5>
+            <div class="mb-3">
+                <label class="stat-label">Mobile Number</label>
+                <div class="fw-bold text-dark fs-5"><i class="bi bi-telephone text-primary me-2"></i>{{ customer.mobile }}</div>
+            </div>
+            <div class="mb-3">
+                <label class="stat-label">Address</label>
+                <div class="text-dark"><i class="bi bi-geo-alt text-danger me-2"></i>{{ customer.address|default:"No address specified" }}</div>
+            </div>
+            <div>
+                <label class="stat-label">Assigned Branch</label>
+                <div><span class="badge bg-light text-dark border px-3 py-2 fs-6"><i class="bi bi-building me-1"></i>{{ customer.branch }}</span></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Measurements Summary Card -->
+    <div class="col-12 col-md-7">
+        <div class="card-custom p-4 h-100">
+            <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
+                <h5 class="fw-bold mb-0 text-dark">
+                    <i class="bi bi-rulers text-warning me-2"></i>Saved Measurements
+                </h5>
+                <a href="{% url 'measurement_edit' customer.id %}" class="btn btn-sm btn-warning">
+                    <i class="bi bi-pencil me-1"></i> Edit Measurements
+                </a>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table app-table">
+                    <thead>
+                        <tr>
+                            <th>Chest</th>
+                            <th>Waist</th>
+                            <th>Shoulder</th>
+                            <th>Sleeve</th>
+                            <th>Length</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for m in measurements %}
+                        <tr>
+                            <td class="fw-bold text-dark">{{ m.chest_cm }}</td>
+                            <td class="fw-bold text-dark">{{ m.waist_cm }}</td>
+                            <td class="fw-bold text-dark">{{ m.shoulder_cm }}</td>
+                            <td class="fw-bold text-dark">{{ m.sleeve_cm }}</td>
+                            <td class="fw-bold text-dark">{{ m.length_cm }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center py-3 text-muted">No measurements recorded yet.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Customer Orders History -->
+<div class="table-card mb-4">
+    <div class="table-card-header">
+        <h5 class="fw-bold mb-0 text-dark">
+            <i class="bi bi-bag-check-fill text-primary me-2"></i>Customer Order History
+        </h5>
+        <a href="{% url 'customer_order_create' customer.id %}" class="btn btn-sm btn-primary">
+            + New Order for {{ customer.name }}
+        </a>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table app-table">
+            <thead>
+                <tr>
+                    <th>Order Item / Dress</th>
+                    <th>Order Date</th>
+                    <th>Delivery Date</th>
+                    <th>Status</th>
+                    <th>Total Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in orders %}
+                <tr>
+                    <td class="fw-bold">
+                        <a href="/orders/{{ order.id }}/" class="text-decoration-none text-primary">
+                            <i class="bi bi-tag-fill me-1"></i>{{ order.dress_type }}
+                        </a>
+                    </td>
+                    <td>{{ order.order_date }}</td>
+                    <td>{{ order.delivery_date }}</td>
+                    <td>
+                        {% if order.status == "Pending" %}
+                            <span class="badge-status badge-status-pending"><i class="bi bi-clock"></i> Pending</span>
+                        {% elif order.status == "Cutting" %}
+                            <span class="badge-status badge-status-cutting"><i class="bi bi-scissors"></i> Cutting</span>
+                        {% elif order.status == "Stitching" %}
+                            <span class="badge-status badge-status-stitching"><i class="bi bi-gear"></i> Stitching</span>
+                        {% elif order.status == "Ready" %}
+                            <span class="badge-status badge-status-ready"><i class="bi bi-check-circle"></i> Ready</span>
+                        {% elif order.status == "Delivered" %}
+                            <span class="badge-status badge-status-delivered"><i class="bi bi-box-square"></i> Delivered</span>
+                        {% else %}
+                            <span class="badge-status badge-status-delivered">{{ order.status }}</span>
+                        {% endif %}
+                    </td>
+                    <td class="fw-bold text-success">₹ {{ order.amount }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" class="text-center py-4 text-muted">No Orders Found for this customer</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}

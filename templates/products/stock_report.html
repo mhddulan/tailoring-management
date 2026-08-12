@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block title %}Stock Report | Stitching Pro{% endblock %}
+{% block page_title %}Stock Report{% endblock %}
+
+{% block content %}
+
+<div class="page-header-block">
+    <div>
+        <h2 class="page-header-title">Ready-Made Stock Report</h2>
+        <p class="page-header-sub">Inventory valuation, total unit counts, and low-stock alerts.</p>
+    </div>
+</div>
+
+<!-- KPI Summary Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-12 col-sm-6 col-xl-6">
+        <div class="stat-card">
+            <div>
+                <div class="stat-label">Total Ready-Made Units</div>
+                <h3 class="stat-value text-primary">{{ total_stock }}</h3>
+            </div>
+            <div class="stat-icon-wrapper stat-icon-primary">
+                <i class="bi bi-box-seam-fill"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-sm-6 col-xl-6">
+        <div class="stat-card">
+            <div>
+                <div class="stat-label">Total Stock Valuation</div>
+                <h3 class="stat-value text-success">₹ {{ total_value }}</h3>
+            </div>
+            <div class="stat-icon-wrapper stat-icon-success">
+                <i class="bi bi-currency-rupee"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="table-card">
+    <div class="table-card-header">
+        <form method="GET" class="row g-2 align-items-center w-100">
+            <div class="col-12 col-md-9 col-lg-10">
+                <div class="header-search w-100" style="max-width:100%;">
+                    <i class="bi bi-search"></i>
+                    <input type="text" name="search" value="{{ request.GET.search }}" class="form-control" placeholder="Search product name or barcode...">
+                </div>
+            </div>
+            <div class="col-12 col-md-3 col-lg-2">
+                <button type="submit" class="btn btn-secondary w-100">
+                    <i class="bi bi-funnel-fill me-1"></i> Search Report
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table app-table">
+            <thead>
+                <tr>
+                    {% if request.user.role == "Admin" %}
+                    <th>Branch</th>
+                    {% endif %}
+                    <th>Barcode</th>
+                    <th>Product Name</th>
+                    <th>Category</th>
+                    <th>Stock Units</th>
+                    <th>Unit Price</th>
+                    <th>Total Value</th>
+                    <th>Stock Level</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for stock in stocks %}
+                <tr>
+                    {% if request.user.role == "Admin" %}
+                    <td><span class="badge bg-light text-dark border"><i class="bi bi-building me-1"></i>{{ stock.branch.name }}</span></td>
+                    {% endif %}
+                    <td><span class="badge bg-dark font-monospace">{{ stock.product.barcode }}</span></td>
+                    <td class="fw-bold text-dark">{{ stock.product.name }}</td>
+                    <td><span class="badge bg-primary-subtle text-primary">{{ stock.product.category.name }}</span></td>
+                    <td class="fw-bold text-dark">{{ stock.stock }}</td>
+                    <td>₹ {{ stock.selling_price }}</td>
+                    <td class="fw-bold text-success">₹ {% widthratio stock.stock 1 stock.selling_price %}</td>
+                    <td>
+                        {% if stock.stock <= 5 %}
+                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle fw-bold"><i class="bi bi-exclamation-triangle-fill me-1"></i>Low Stock</span>
+                        {% elif stock.stock <= 20 %}
+                            <span class="badge bg-warning-subtle text-warning border border-warning-subtle fw-bold"><i class="bi bi-info-circle-fill me-1"></i>Medium</span>
+                        {% else %}
+                            <span class="badge bg-success-subtle text-success border border-success-subtle fw-bold"><i class="bi bi-check-circle-fill me-1"></i>Available</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="8" class="text-center py-4 text-muted">No stock available in report.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}

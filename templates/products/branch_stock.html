@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block title %}Branch Stock | Stitching Pro{% endblock %}
+{% block page_title %}Branch Stock Inventory{% endblock %}
+
+{% block content %}
+
+<div class="page-header-block">
+    <div>
+        <h2 class="page-header-title">Branch Stock Inventory</h2>
+        <p class="page-header-sub">Current stock counts and selling prices for ready-made apparel per branch.</p>
+    </div>
+</div>
+
+<div class="table-card">
+    <div class="table-card-header">
+        <form method="GET" class="row g-2 align-items-center w-100">
+            <div class="col-12 col-md-9 col-lg-10">
+                <div class="header-search w-100" style="max-width:100%;">
+                    <i class="bi bi-search"></i>
+                    <input type="text" name="search" value="{{ request.GET.search }}" class="form-control" placeholder="Search product name or barcode...">
+                </div>
+            </div>
+            <div class="col-12 col-md-3 col-lg-2">
+                <button type="submit" class="btn btn-secondary w-100">
+                    <i class="bi bi-funnel-fill me-1"></i> Search Stock
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table app-table">
+            <thead>
+                <tr>
+                    {% if request.user.role == "Admin" %}
+                    <th>Branch</th>
+                    {% endif %}
+                    <th>Product Name</th>
+                    <th>Barcode</th>
+                    <th>Current Stock</th>
+                    <th>Selling Price</th>
+                    <th width="150" class="text-end">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for stock in stocks %}
+                <tr>
+                    {% if request.user.role == "Admin" %}
+                    <td><span class="badge bg-light text-dark border"><i class="bi bi-building me-1"></i>{{ stock.branch.name }}</span></td>
+                    {% endif %}
+                    <td class="fw-bold text-dark">{{ stock.product.name }}</td>
+                    <td><span class="badge bg-dark font-monospace">{{ stock.product.barcode }}</span></td>
+                    <td>
+                        <span class="badge bg-success-subtle text-success border border-success-subtle fw-bold fs-6">
+                            {{ stock.stock }} units
+                        </span>
+                    </td>
+                    <td class="fw-bold text-dark">₹ {{ stock.selling_price }}</td>
+                    <td class="text-end">
+                        <a href="{% url 'update_price' stock.id %}" class="btn btn-sm btn-secondary" title="Update Price">
+                            <i class="bi bi-pencil me-1"></i> Update Price
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center py-4 text-muted">No stock records available for this branch.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}

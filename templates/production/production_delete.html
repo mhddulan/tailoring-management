@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block title %}Delete Production Record | Stitching Pro{% endblock %}
+{% block page_title %}Daily Production{% endblock %}
+
+{% block content %}
+
+<div class="page-header-block">
+    <div>
+        <h2 class="page-header-title">Delete Production Record</h2>
+        <p class="page-header-sub">Confirm deletion of this tailoring output record.</p>
+    </div>
+    <div>
+        <a href="{% url 'production_list' %}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Production
+        </a>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-12 col-md-8 col-lg-6">
+        <div class="form-card py-4">
+            <div class="text-center mb-4">
+                <div class="stat-icon-wrapper stat-icon-danger mx-auto mb-3" style="width:64px; height:64px; font-size:2rem;">
+                    <i class="bi bi-clipboard2-x-fill"></i>
+                </div>
+                <h4 class="fw-bold text-dark mb-2">Are you sure?</h4>
+                <p class="text-muted">You are about to delete this production record. This action cannot be undone.</p>
+            </div>
+
+            <div class="table-responsive mb-4">
+                <table class="table table-bordered table-sm">
+                    <tr>
+                        <th class="bg-light w-50">Employee</th>
+                        <td class="fw-bold">{{ production.employee.name }}</td>
+                    </tr>
+                    <tr>
+                        <th class="bg-light">Production Date</th>
+                        <td>{{ production.date }}</td>
+                    </tr>
+                    <tr>
+                        <th class="bg-light">Item / Product</th>
+                        <td><span class="badge bg-primary-subtle text-primary">{{ production.item }}</span></td>
+                    </tr>
+                    <tr>
+                        <th class="bg-light">Quantity</th>
+                        <td><span class="badge bg-success-subtle text-success fw-bold">{{ production.quantity }} pcs</span></td>
+                    </tr>
+                </table>
+            </div>
+
+            <form method="POST" class="d-flex justify-content-center gap-2">
+                {% csrf_token %}
+                <a href="{% url 'production_list' %}" class="btn btn-secondary px-4">
+                    Cancel
+                </a>
+                <button type="submit" class="btn btn-danger px-4">
+                    <i class="bi bi-trash-fill me-1"></i> Yes, Delete Record
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

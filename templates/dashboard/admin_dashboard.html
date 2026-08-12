@@ -1,0 +1,124 @@
+{% extends 'base.html' %}
+
+{% block title %}Admin Dashboard | Stitching Pro{% endblock %}
+{% block page_title %}Admin Overview{% endblock %}
+
+{% block content %}
+
+<div class="page-header-block">
+    <div>
+        <h2 class="page-header-title">Admin Dashboard</h2>
+        <p class="page-header-sub">System-wide operational and financial statistics.</p>
+    </div>
+    <div>
+        <a href="{% url 'logout' %}" class="btn btn-outline-danger">
+            <i class="bi bi-box-arrow-right"></i> Logout
+        </a>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="stat-card">
+            <div>
+                <div class="stat-label">Total Branches</div>
+                <h3 class="stat-value">{{ total_branches }}</h3>
+            </div>
+            <div class="stat-icon-wrapper stat-icon-info">
+                <i class="bi bi-buildings-fill"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="stat-card">
+            <div>
+                <div class="stat-label">Customers</div>
+                <h3 class="stat-value">{{ total_customers }}</h3>
+            </div>
+            <div class="stat-icon-wrapper stat-icon-purple">
+                <i class="bi bi-people-fill"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="stat-card">
+            <div>
+                <div class="stat-label">Orders</div>
+                <h3 class="stat-value">{{ total_orders }}</h3>
+            </div>
+            <div class="stat-icon-wrapper stat-icon-primary">
+                <i class="bi bi-bag-check-fill"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="stat-card">
+            <div>
+                <div class="stat-label">Pending Orders</div>
+                <h3 class="stat-value">{{ pending_orders }}</h3>
+            </div>
+            <div class="stat-icon-wrapper stat-icon-warning">
+                <i class="bi bi-clock-history"></i>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<div class="row g-3 mb-4">
+    
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="stat-card">
+            <div>
+                <div class="stat-label">Delivered Orders</div>
+                <h3 class="stat-value">{{ delivered_orders }}</h3>
+            </div>
+            <div class="stat-icon-wrapper stat-icon-success">
+                <i class="bi bi-check-circle-fill"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="stat-card">
+            <div>
+                <div class="stat-label">Total Income</div>
+                <h3 class="stat-value">₹ {{ total_income }}</h3>
+            </div>
+            <div class="stat-icon-wrapper stat-icon-success">
+                <i class="bi bi-currency-rupee"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="stat-card">
+            <div>
+                <div class="stat-label">Cash Collection</div>
+                <h3 class="stat-value">₹ {{ cash_total }}</h3>
+            </div>
+            <div class="stat-icon-wrapper stat-icon-primary">
+                <i class="bi bi-cash-stack"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="stat-card">
+            <div>
+                <div class="stat-label">Online Collection</div>
+                <h3 class="stat-value">₹ {{ online_total }}</h3>
+            </div>
+            <div class="stat-icon-wrapper stat-icon-info">
+                <i class="bi bi-credit-card-fill"></i>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}

@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block title %}Daily Production | Stitching Pro{% endblock %}
+{% block page_title %}Daily Production Log{% endblock %}
+
+{% block content %}
+
+<div class="page-header-block">
+    <div>
+        <h2 class="page-header-title">Daily Production Log</h2>
+        <p class="page-header-sub">Track tailoring output per employee, item, and production date.</p>
+    </div>
+    <div>
+        <a href="{% url 'production_create' %}" class="btn btn-primary">
+            <i class="bi bi-plus-lg me-1"></i> Add Production Record
+        </a>
+    </div>
+</div>
+
+<!-- Total Pieces KPI Card -->
+<div class="row g-3 mb-4">
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="stat-card">
+            <div>
+                <div class="stat-label">Total Pieces (Filtered)</div>
+                <h3 class="stat-value text-primary">{{ total_qty }}</h3>
+            </div>
+            <div class="stat-icon-wrapper stat-icon-primary">
+                <i class="bi bi-scissors"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filter Card -->
+<div class="card-custom p-3 mb-4">
+    <form method="GET">
+        <div class="row g-3 align-items-end">
+            <div class="col-12 col-md-5">
+                <div class="header-search w-100" style="max-width:100%;">
+                    <i class="bi bi-search"></i>
+                    <input type="text" name="search" value="{{ request.GET.search }}" class="form-control" placeholder="Search employee or item...">
+                </div>
+            </div>
+            <div class="col-12 col-md-4">
+                <input type="date" name="date" value="{{ request.GET.date|default:today|date:'Y-m-d' }}" class="form-control">
+            </div>
+            <div class="col-12 col-md-3">
+                <button type="submit" class="btn btn-secondary w-100">
+                    <i class="bi bi-funnel-fill me-1"></i> Filter Records
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Production Table Card -->
+<div class="table-card">
+    <div class="table-card-header">
+        <h5 class="fw-bold mb-0 text-dark">
+            <i class="bi bi-clipboard2-data-fill text-primary me-2"></i>Production Records
+        </h5>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table app-table">
+            <thead>
+                <tr>
+                    <th width="60">#</th>
+                    {% if request.user.role == "Admin" %}
+                    <th>Branch</th>
+                    {% endif %}
+                    <th>Date</th>
+                    <th>Employee</th>
+                    <th>Item / Product</th>
+                    <th>Qty Produced</th>
+                    <th>Remarks</th>
+                    <th width="150" class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for production in productions %}
+                <tr>
+                    <td class="text-muted fw-semibold">{{ forloop.counter }}</td>
+                    {% if request.user.role == "Admin" %}
+                    <td><span class="badge bg-light text-dark border"><i class="bi bi-building me-1"></i>{{ production.branch.name }}</span></td>
+                    {% endif %}
+                    <td><i class="bi bi-calendar-event me-1 text-muted"></i>{{ production.date }}</td>
+                    <td class="fw-bold text-dark"><i class="bi bi-person me-1"></i>{{ production.employee.name }}</td>
+                    <td><span class="badge bg-primary-subtle text-primary">{{ production.item }}</span></td>
+                    <td>
+                        <span class="badge bg-success-subtle text-success border border-success-subtle fw-bold fs-6">
+                            {{ production.quantity }} pcs
+                        </span>
+                    </td>
+                    <td>{{ production.remarks|default:"-" }}</td>
+                    <td class="text-end">
+                        <a href="{% url 'production_edit' production.id %}" class="btn btn-sm btn-secondary btn-icon-only me-1" title="Edit Record">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                        <a href="{% url 'production_delete' production.id %}" class="btn btn-sm btn-outline-danger btn-icon-only" title="Delete Record">
+                            <i class="bi bi-trash"></i>
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="8" class="text-center py-4 text-muted">No production records found for this date.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}

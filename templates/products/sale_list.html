@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block title %}Ready-Made Sales | Stitching Pro{% endblock %}
+{% block page_title %}Ready-Made Sales{% endblock %}
+
+{% block content %}
+
+<div class="page-header-block">
+    <div>
+        <h2 class="page-header-title">Ready-Made Product Sales</h2>
+        <p class="page-header-sub">View POS sales transactions for ready-made apparel across branches.</p>
+    </div>
+    <div>
+        <a href="{% url 'sale_create' %}" class="btn btn-primary">
+            <i class="bi bi-cart-plus-fill me-1"></i> New Sale Transaction
+        </a>
+    </div>
+</div>
+
+<div class="table-card">
+    <div class="table-card-header">
+        <h5 class="fw-bold mb-0 text-dark">
+            <i class="bi bi-receipt-cutoff text-primary me-2"></i>Sales History
+        </h5>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table app-table">
+            <thead>
+                <tr>
+                    <th width="80">Sale ID</th>
+                    <th>Date</th>
+                    <th>Branch</th>
+                    <th>Customer</th>
+                    <th>Payment Mode</th>
+                    <th>Total Amount</th>
+                    <th>Items Purchased</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for sale in sales %}
+                <tr>
+                    <td class="fw-bold text-primary">#{{ sale.id }}</td>
+                    <td><i class="bi bi-calendar-event me-1 text-muted"></i>{{ sale.sale_date }}</td>
+                    <td><span class="badge bg-light text-dark border"><i class="bi bi-building me-1"></i>{{ sale.branch.name }}</span></td>
+                    <td>
+                        {% if sale.customer %}
+                            <strong class="text-dark"><i class="bi bi-person me-1"></i>{{ sale.customer.name }}</strong>
+                        {% else %}
+                            <span class="text-muted"><i class="bi bi-person-fill-gear me-1"></i>Walk-in Customer</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span class="badge bg-light text-dark border">
+                            <i class="bi bi-wallet2 me-1"></i>{{ sale.payment_mode }}
+                        </span>
+                    </td>
+                    <td class="fw-bold text-success fs-6">₹ {{ sale.total }}</td>
+                    <td>
+                        {% for item in sale.items.all %}
+                            <div class="fs-7 text-dark fw-semibold">
+                                &bull; {{ item.branch_product.product.name }} <span class="badge bg-primary-subtle text-primary">× {{ item.quantity }}</span>
+                            </div>
+                        {% empty %}
+                            <span class="text-muted fs-7">No items</span>
+                        {% endfor %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" class="text-center py-4 text-muted">No ready-made sales found. Click <strong>New Sale Transaction</strong> to record a sale.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}

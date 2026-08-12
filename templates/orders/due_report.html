@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block title %}Due Report | Stitching Pro{% endblock %}
+{% block page_title %}Due Report{% endblock %}
+
+{% block content %}
+
+<div class="page-header-block">
+    <div>
+        <h2 class="page-header-title">Outstanding Due Report</h2>
+        <p class="page-header-sub">Summary of customer order balances and pending payments.</p>
+    </div>
+</div>
+
+<div class="table-card mb-4">
+    <div class="table-card-header">
+        <h5 class="fw-bold mb-0 text-dark">
+            <i class="bi bi-clock-history text-danger me-2"></i>Unpaid Order Balances
+        </h5>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table app-table">
+            <thead>
+                <tr>
+                    <th width="70">#</th>
+                    <th>Customer Name</th>
+                    <th>Total Amount</th>
+                    <th>Advance Paid</th>
+                    <th>Balance Due</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in report %}
+                <tr>
+                    <td class="fw-semibold text-muted">{{ forloop.counter }}</td>
+                    <td class="fw-bold text-dark"><i class="bi bi-person me-1"></i>{{ item.order.customer.name }}</td>
+                    <td>₹ {{ item.amount }}</td>
+                    <td class="text-success">₹ {{ item.advance }}</td>
+                    <td>
+                        {% if item.due > 0 %}
+                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle fw-bold fs-6">
+                                ₹ {{ item.due }}
+                            </span>
+                        {% else %}
+                            <span class="badge bg-success-subtle text-success border border-success-subtle fw-bold">
+                                Paid
+                            </span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" class="text-center py-4 text-muted">No Due Orders Found</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            {% if total_due %}
+            <tfoot>
+                <tr class="table-light border-top">
+                    <th colspan="4" class="text-end fw-bold text-dark fs-5">Total Outstanding Due:</th>
+                    <th class="fw-bold text-danger fs-5">₹ {{ total_due }}</th>
+                </tr>
+            </tfoot>
+            {% endif %}
+        </table>
+    </div>
+</div>
+
+{% endblock %}

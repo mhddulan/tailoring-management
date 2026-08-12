@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+
+{% block title %}Employee Management | Stitching Pro{% endblock %}
+{% block page_title %}Employees{% endblock %}
+
+{% block content %}
+
+<div class="page-header-block">
+    <div>
+        <h2 class="page-header-title">Employee Directory</h2>
+        <p class="page-header-sub">Manage tailoring staff, designations, salaries, and performance logs.</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{% url 'production_list' %}" class="btn btn-success">
+            <i class="bi bi-bar-chart-fill me-1"></i> Production Performance
+        </a>
+        <a href="{% url 'employee_create' %}" class="btn btn-primary">
+            <i class="bi bi-person-plus-fill me-1"></i> Add Employee
+        </a>
+    </div>
+</div>
+
+<div class="table-card">
+    <div class="table-card-header">
+        <form method="GET" class="row g-2 align-items-center w-100">
+            <div class="col-12 col-md-9 col-lg-10">
+                <div class="header-search w-100" style="max-width: 100%;">
+                    <i class="bi bi-search"></i>
+                    <input type="text" name="search" value="{{ search }}" class="form-control" placeholder="Search by employee name, mobile, designation, or branch...">
+                </div>
+            </div>
+            <div class="col-12 col-md-3 col-lg-2">
+                <button type="submit" class="btn btn-secondary w-100">
+                    <i class="bi bi-funnel-fill me-1"></i> Search
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table app-table">
+            <thead>
+                <tr>
+                    <th width="70">#</th>
+                    {% if request.user.role == "Admin" %}
+                        <th>Branch</th>
+                    {% endif %}
+                    <th>Employee Name</th>
+                    <th>Mobile</th>
+                    <th>Designation</th>
+                    <th>Salary (Monthly)</th>
+                    <th>Status</th>
+                    <th width="160" class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for employee in employees %}
+                <tr>
+                    <td class="fw-semibold text-muted">{{ forloop.counter }}</td>
+                    {% if request.user.role == "Admin" %}
+                    <td><span class="badge bg-light text-dark border"><i class="bi bi-building me-1"></i>{{ employee.branch.name }}</span></td>
+                    {% endif %}
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <div class="stat-icon-wrapper stat-icon-primary me-2" style="width:36px; height:36px; font-size:1rem;">
+                                {{ employee.name|first|upper }}
+                            </div>
+                            <strong class="text-dark">{{ employee.name }}</strong>
+                        </div>
+                    </td>
+                    <td><i class="bi bi-telephone text-muted me-1"></i>{{ employee.mobile|default:"-" }}</td>
+                    <td><span class="badge bg-primary-subtle text-primary">{{ employee.designation }}</span></td>
+                    <td class="fw-bold text-dark">₹ {{ employee.salary|floatformat:2 }}</td>
+                    <td>
+                        {% if employee.active %}
+                            <span class="badge bg-success-subtle text-success border border-success-subtle fw-bold"><i class="bi bi-check-circle me-1"></i>Active</span>
+                        {% else %}
+                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle fw-bold"><i class="bi bi-x-circle me-1"></i>Inactive</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-end">
+                        <a href="{% url 'production_list' %}?employee={{ employee.id }}" class="btn btn-sm btn-outline-success btn-icon-only me-1" title="View Performance">
+                            <i class="bi bi-bar-chart"></i>
+                        </a>
+                        <a href="{% url 'employee_edit' employee.id %}" class="btn btn-sm btn-secondary btn-icon-only me-1" title="Edit Employee">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                        <a href="{% url 'employee_delete' employee.id %}" class="btn btn-sm btn-outline-danger btn-icon-only" title="Delete Employee">
+                            <i class="bi bi-trash"></i>
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="8" class="text-center py-4 text-muted">No Employees Found</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}

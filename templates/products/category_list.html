@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block title %}Product Categories | Stitching Pro{% endblock %}
+{% block page_title %}Product Categories{% endblock %}
+
+{% block content %}
+
+<div class="page-header-block">
+    <div>
+        <h2 class="page-header-title">Product Categories</h2>
+        <p class="page-header-sub">Manage product category classifications for ready-made items.</p>
+    </div>
+    {% if request.user.role == "Admin" %}
+    <div>
+        <a href="{% url 'category_create' %}" class="btn btn-primary">
+            <i class="bi bi-plus-lg me-1"></i> Add Category
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<div class="table-card">
+    <div class="table-card-header">
+        <h5 class="fw-bold mb-0 text-dark">
+            <i class="bi bi-tags-fill text-primary me-2"></i>Categories Catalog
+        </h5>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table app-table">
+            <thead>
+                <tr>
+                    <th width="100">ID</th>
+                    <th>Category Name</th>
+                    <th>Associated Products</th>
+                    {% if request.user.role == "Admin" %}
+                    <th width="150" class="text-end">Actions</th>
+                    {% endif %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for category in categories %}
+                <tr>
+                    <td class="fw-semibold text-muted">#{{ category.id }}</td>
+                    <td class="fw-bold text-dark"><i class="bi bi-tag me-2 text-primary"></i>{{ category.name }}</td>
+                    <td>
+                        {% if category.product_set.count %}
+                            <span class="badge bg-info-subtle text-info border border-info-subtle fw-bold">
+                                {{ category.product_set.count }} Products
+                            </span>
+                        {% else %}
+                            <span class="badge bg-secondary-subtle text-secondary">No Products</span>
+                        {% endif %}
+                    </td>
+                    {% if request.user.role == "Admin" %}
+                    <td class="text-end">
+                        <a href="{% url 'category_edit' category.id %}" class="btn btn-sm btn-secondary btn-icon-only me-1" title="Edit Category">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                        <a href="{% url 'category_delete' category.id %}" class="btn btn-sm btn-outline-danger btn-icon-only" title="Delete Category">
+                            <i class="bi bi-trash"></i>
+                        </a>
+                    </td>
+                    {% endif %}
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4" class="text-center py-4 text-muted">No categories found. Create your first product category.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}

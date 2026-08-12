@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block title %}Stock Transfers | Stitching Pro{% endblock %}
+{% block page_title %}Stock Transfer{% endblock %}
+
+{% block content %}
+
+<div class="page-header-block">
+    <div>
+        <h2 class="page-header-title">Stock Transfers</h2>
+        <p class="page-header-sub">History of product transfers from warehouse to branch inventories.</p>
+    </div>
+    {% if request.user.role == "Admin" %}
+    <div>
+        <a href="{% url 'stock_transfer_create' %}" class="btn btn-primary">
+            <i class="bi bi-plus-lg me-1"></i> New Transfer
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<div class="table-card">
+    <div class="table-card-header">
+        <h5 class="fw-bold mb-0 text-dark">
+            <i class="bi bi-arrow-left-right text-primary me-2"></i>Transfer Log
+        </h5>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table app-table">
+            <thead>
+                <tr>
+                    <th width="80">Transfer ID</th>
+                    <th>Date</th>
+                    <th>Product Name</th>
+                    <th>Barcode</th>
+                    <th>Destination Branch</th>
+                    <th>Quantity Transferred</th>
+                    <th>Remarks</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for transfer in transfers %}
+                <tr>
+                    <td class="fw-bold text-primary">#{{ transfer.id }}</td>
+                    <td><i class="bi bi-calendar-event me-1 text-muted"></i>{{ transfer.transfer_date }}</td>
+                    <td class="fw-bold text-dark">{{ transfer.product.name }}</td>
+                    <td><span class="badge bg-dark font-monospace">{{ transfer.product.barcode }}</span></td>
+                    <td><span class="badge bg-light text-dark border"><i class="bi bi-building me-1"></i>{{ transfer.branch.name }}</span></td>
+                    <td>
+                        <span class="badge bg-success-subtle text-success border border-success-subtle fw-bold fs-6">
+                            {{ transfer.quantity }} units
+                        </span>
+                    </td>
+                    <td>{{ transfer.remarks|default:"-" }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" class="text-center py-4 text-muted">No stock transfers found. Click <strong>New Transfer</strong> to transfer products to a branch.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}

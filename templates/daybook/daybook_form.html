@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block title %}{% if form.instance.pk %}Edit Day Book Entry{% else %}Add Day Book Entry{% endif %} | Stitching Pro{% endblock %}
+{% block page_title %}{% if form.instance.pk %}Edit Day Book Entry{% else %}Add Day Book Entry{% endif %}{% endblock %}
+
+{% block content %}
+
+<div class="page-header-block">
+    <div>
+        <h2 class="page-header-title">
+            {% if form.instance.pk %}Edit Day Book Entry{% else %}Add Day Book Entry{% endif %}
+        </h2>
+        <p class="page-header-sub">Record transaction category, payment mode, income/expense amount, and description.</p>
+    </div>
+    <div>
+        <a href="{% url 'daybook_list' %}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Day Book
+        </a>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-12 col-md-10 col-lg-8">
+        <div class="form-card">
+            <form method="post">
+                {% csrf_token %}
+
+                <div class="row g-3">
+                    {% if request.user.role == "Admin" %}
+                    <div class="col-md-6">
+                        <label class="form-label">{{ form.branch.label }}</label>
+                        {{ form.branch }}
+                    </div>
+                    {% endif %}
+
+                    <div class="col-md-6">
+                        <label class="form-label">{{ form.date.label }}</label>
+                        {{ form.date }}
+                    </div>
+
+                    {% if request.user.role == "Admin" %}
+                    <div class="col-md-6">
+                        <label class="form-label">{{ form.transaction_type.label }}</label>
+                        {{ form.transaction_type }}
+                    </div>
+                    {% endif %}
+
+                    <div class="col-md-6">
+                        <label class="form-label">{{ form.category.label }}</label>
+                        {{ form.category }}
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">{{ form.payment_mode.label }}</label>
+                        {{ form.payment_mode }}
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">{{ form.amount.label }} (₹)</label>
+                        {{ form.amount }}
+                    </div>
+
+                    <div class="col-12">
+                        <label class="form-label">{{ form.description.label }}</label>
+                        {{ form.description }}
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-end gap-2 mt-4">
+                    <a href="{% url 'daybook_list' %}" class="btn btn-secondary">Cancel</a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check-circle-fill me-1"></i> Save Entry
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

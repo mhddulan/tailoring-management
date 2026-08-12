@@ -1,0 +1,79 @@
+services:
+
+  db:
+    image: postgres:17
+    container_name: tailoring_db
+
+    environment:
+      POSTGRES_DB: tailoring
+      POSTGRES_USER: tailoring_user
+      POSTGRES_PASSWORD: change_this_password
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+    ports:
+      - "5432:5432"
+
+    restart: unless-stopped
+
+
+  web:
+    build: .
+    container_name: tailoring_web
+
+    command: gunicorn --bind 0.0.0.0:8000 tailoring_management.wsgi:application
+
+    ports:
+      - "8000:8000"
+
+    environment:
+      DB_NAME: tailoring
+      DB_USER: tailoring_user
+      DB_PASSWORD: change_this_password
+      DB_HOST: db
+      DB_PORT: "5432"
+
+    depends_on:
+      - db
+
+    restart: unless-stopped
+
+
+  backup:
+    image: postgres:17
+    container_name: tailoring_backup
+
+    environment:
+      PGHOST: db
+      PGPORT: "5432"
+      PGDATABASE: tailoring
+      PGUSER: tailoring_user
+      PGPASSWORD: change_this_password
+
+    volumes:
+      - postgres_backups:/backups
+
+    depends_on:
+      - db
+
+    entrypoint: ["/bin/sh", "-c"]
+
+    command:
+      - |
+        while true; do
+          echo "Starting PostgreSQL backup..."
+
+          pg_dump -Fc > /backups/tailoring_$$(date +%Y-%m-%d_%H-%M-%S).dump
+
+          echo "Backup completed successfully."
+
+          sleep 86400
+        done
+
+    restart: unless-stopped
+
+
+volumes:
+  postgres_data:
+  postgres_backups:

@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+
+{% block title %}Customers | Stitching Pro{% endblock %}
+{% block page_title %}Customer Management{% endblock %}
+
+{% block content %}
+
+<div class="page-header-block">
+    <div>
+        <h2 class="page-header-title">Customer Directory</h2>
+        <p class="page-header-sub">View, search, register, and manage tailoring client profiles and measurements.</p>
+    </div>
+    <div>
+        <a href="{% url 'customer_create' %}" class="btn btn-primary">
+            <i class="bi bi-person-plus-fill me-1"></i> Add Customer
+        </a>
+    </div>
+</div>
+
+<div class="table-card">
+    
+    <div class="table-card-header">
+        <form method="GET" class="row g-2 align-items-center w-100">
+            <div class="col-12 col-md-9 col-lg-10">
+                <div class="header-search w-100" style="max-width: 100%;">
+                    <i class="bi bi-search"></i>
+                    <input type="text" name="search" value="{{ request.GET.search }}" class="form-control" placeholder="Search customer name or mobile number...">
+                </div>
+            </div>
+            <div class="col-12 col-md-3 col-lg-2">
+                <button type="submit" class="btn btn-secondary w-100">
+                    <i class="bi bi-funnel-fill me-1"></i> Search
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table app-table">
+            <thead>
+                <tr>
+                    <th width="70">#</th>
+                    <th>Customer Name</th>
+                    <th>Mobile</th>
+                    <th>Branch</th>
+                    <th width="200" class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for customer in customers %}
+                <tr>
+                    <td class="fw-semibold text-muted">{{ forloop.counter }}</td>
+                    <td>
+                        <a href="{% url 'customer_detail' customer.id %}" class="fw-bold text-primary text-decoration-none">
+                            <i class="bi bi-person-circle me-2"></i>{{ customer.name }}
+                        </a>
+                    </td>
+                    <td><i class="bi bi-telephone text-muted me-1"></i>{{ customer.mobile }}</td>
+                    <td><span class="badge bg-light text-dark border"><i class="bi bi-building me-1"></i>{{ customer.branch }}</span></td>
+                    <td class="text-end">
+                        <a href="{% url 'customer_detail' customer.id %}" class="btn btn-sm btn-outline-primary btn-icon-only me-1" title="View Detail">
+                            <i class="bi bi-eye"></i>
+                        </a>
+                        <a href="{% url 'customer_edit' customer.id %}" class="btn btn-sm btn-secondary btn-icon-only me-1" title="Edit Customer">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                        <a href="{% url 'customer_delete' customer.id %}" class="btn btn-sm btn-outline-danger btn-icon-only" title="Delete Customer" onclick="return confirm('Are you sure you want to delete {{ customer.name|escapejs }}?')">
+                            <i class="bi bi-trash"></i>
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" class="text-center py-4 text-muted">No customers found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+</div>
+
+{% endblock %}

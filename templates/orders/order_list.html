@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+
+{% block title %}Orders | Stitching Pro{% endblock %}
+{% block page_title %}Orders Management{% endblock %}
+
+{% block content %}
+
+<div class="page-header-block">
+    <div>
+        <h2 class="page-header-title">Order Directory</h2>
+        <p class="page-header-sub">Track tailoring orders, delivery schedules, and fulfillment statuses.</p>
+    </div>
+    <div>
+        <a href="/orders/add/" class="btn btn-primary">
+            <i class="bi bi-plus-lg"></i> New Order
+        </a>
+    </div>
+</div>
+
+<div class="table-card">
+    <div class="table-card-header">
+        <h5 class="fw-bold mb-0 text-dark">
+            <i class="bi bi-bag-check-fill text-primary me-2"></i>All Tailoring Orders
+        </h5>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table app-table">
+            <thead>
+                <tr>
+                    <th width="70">#</th>
+                    <th>Customer Name</th>
+                    <th>Dress Type</th>
+                    <th>Delivery Date</th>
+                    <th>Status</th>
+                    <th width="150" class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in orders %}
+                <tr>
+                    <td class="fw-semibold text-muted">{{ forloop.counter }}</td>
+                    <td>
+                        <a href="/orders/{{ order.id }}/" class="fw-bold text-primary text-decoration-none">
+                            <i class="bi bi-person me-1"></i>{{ order.customer }}
+                        </a>
+                    </td>
+                    <td class="fw-semibold text-dark">{{ order.dress_type }}</td>
+                    <td><i class="bi bi-calendar-event text-muted me-1"></i>{{ order.delivery_date }}</td>
+                    <td>
+                        {% if order.status == "Pending" %}
+                            <span class="badge-status badge-status-pending"><i class="bi bi-clock"></i> Pending</span>
+                        {% elif order.status == "Cutting" %}
+                            <span class="badge-status badge-status-cutting"><i class="bi bi-scissors"></i> Cutting</span>
+                        {% elif order.status == "Stitching" %}
+                            <span class="badge-status badge-status-stitching"><i class="bi bi-gear"></i> Stitching</span>
+                        {% elif order.status == "Ready" %}
+                            <span class="badge-status badge-status-ready"><i class="bi bi-check-circle"></i> Ready</span>
+                        {% elif order.status == "Delivered" %}
+                            <span class="badge-status badge-status-delivered"><i class="bi bi-box-square"></i> Delivered</span>
+                        {% else %}
+                            <span class="badge-status badge-status-delivered">{{ order.status }}</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-end">
+                        <a href="/orders/{{ order.id }}/" class="btn btn-sm btn-outline-primary btn-icon-only me-1" title="View Order">
+                            <i class="bi bi-eye"></i>
+                        </a>
+                        <a href="/orders/edit/{{ order.id }}/" class="btn btn-sm btn-secondary btn-icon-only me-1" title="Edit Order">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center py-4 text-muted">No orders found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}

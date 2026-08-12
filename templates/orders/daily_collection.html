@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+
+{% block title %}Daily Collection Report | Stitching Pro{% endblock %}
+{% block page_title %}Daily Collection{% endblock %}
+
+{% block content %}
+
+<div class="page-header-block">
+    <div>
+        <h2 class="page-header-title">Daily Collection Report</h2>
+        <p class="page-header-sub">Payment collection summary for date: <strong>{{ today }}</strong></p>
+    </div>
+</div>
+
+<div class="row justify-content-center mb-4">
+    <div class="col-12 col-md-8 col-lg-6">
+        <div class="table-card p-3">
+            <div class="table-card-header">
+                <h5 class="fw-bold mb-0 text-dark">
+                    <i class="bi bi-wallet2 text-success me-2"></i>Collection Breakdown
+                </h5>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table app-table">
+                    <thead>
+                        <tr>
+                            <th>Payment Mode</th>
+                            <th class="text-end">Amount Collected</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="fw-semibold text-dark"><i class="bi bi-cash-stack text-success me-2"></i>Cash</td>
+                            <td class="fw-bold text-end text-dark">₹ {{ cash_total }}</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-semibold text-dark"><i class="bi bi-bank text-primary me-2"></i>Bank</td>
+                            <td class="fw-bold text-end text-dark">₹ {{ bank_total }}</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-semibold text-dark"><i class="bi bi-phone text-info me-2"></i>Online</td>
+                            <td class="fw-bold text-end text-dark">₹ {{ online_total }}</td>
+                        </tr>
+                    </tbody>
+                    <tfoot>
+                        <tr class="table-light border-top">
+                            <th class="fw-bold text-dark fs-5">Total Collected:</th>
+                            <th class="fw-bold text-end text-success fs-5">₹ {{ total }}</th>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

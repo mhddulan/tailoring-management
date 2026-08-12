@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} | Stitching Pro{% endblock %}
+{% block page_title %}Daily Production{% endblock %}
+
+{% block content %}
+
+<div class="page-header-block">
+    <div>
+        <h2 class="page-header-title">{{ title }}</h2>
+        <p class="page-header-sub">Log daily tailoring output per employee, item type, and production count.</p>
+    </div>
+    <div>
+        <a href="{% url 'production_list' %}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Production
+        </a>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-12 col-md-10 col-lg-8">
+        <div class="form-card">
+            <form method="POST">
+                {% csrf_token %}
+
+                <div class="row g-3">
+                    {% if request.user.role == "Admin" %}
+                    <div class="col-md-6">
+                        <label class="form-label">Branch</label>
+                        {{ form.branch }}
+                    </div>
+                    {% endif %}
+
+                    <div class="col-md-6">
+                        <label class="form-label">Employee</label>
+                        {{ form.employee }}
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Production Date</label>
+                        {{ form.date }}
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Item / Product</label>
+                        {{ form.item }}
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Quantity Produced</label>
+                        {{ form.quantity }}
+                    </div>
+
+                    <div class="col-12">
+                        <label class="form-label">Remarks</label>
+                        {{ form.remarks }}
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-end gap-2 mt-4">
+                    <a href="{% url 'production_list' %}" class="btn btn-secondary">Cancel</a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check-circle-fill me-1"></i> Save Production Record
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

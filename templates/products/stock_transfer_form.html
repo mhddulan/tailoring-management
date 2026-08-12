@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block title %}Stock Transfer | Stitching Pro{% endblock %}
+{% block page_title %}Stock Transfer{% endblock %}
+
+{% block content %}
+
+<div class="page-header-block">
+    <div>
+        <h2 class="page-header-title">Transfer Stock to Branch</h2>
+        <p class="page-header-sub">Dispatch ready-made products to specific branch locations.</p>
+    </div>
+    <div>
+        <a href="{% url 'stock_transfer_list' %}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Transfers
+        </a>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-12 col-md-10 col-lg-8">
+        <div class="form-card">
+            <form method="POST">
+                {% csrf_token %}
+
+                {% if form.non_field_errors %}
+                <div class="alert alert-danger alert-custom mb-3">
+                    {{ form.non_field_errors }}
+                </div>
+                {% endif %}
+
+                <div class="row g-3">
+                    <div class="col-12">
+                        <label class="form-label">Product</label>
+                        {{ form.product }}
+                        {% if form.product.errors %}<div class="text-danger small mt-1">{{ form.product.errors }}</div>{% endif %}
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Destination Branch</label>
+                        {{ form.branch }}
+                        {% if form.branch.errors %}<div class="text-danger small mt-1">{{ form.branch.errors }}</div>{% endif %}
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Transfer Quantity</label>
+                        {{ form.quantity }}
+                        {% if form.quantity.errors %}<div class="text-danger small mt-1">{{ form.quantity.errors }}</div>{% endif %}
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Transfer Date</label>
+                        {{ form.transfer_date }}
+                        {% if form.transfer_date.errors %}<div class="text-danger small mt-1">{{ form.transfer_date.errors }}</div>{% endif %}
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Remarks</label>
+                        {{ form.remarks }}
+                        {% if form.remarks.errors %}<div class="text-danger small mt-1">{{ form.remarks.errors }}</div>{% endif %}
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-end gap-2 mt-4">
+                    <a href="{% url 'stock_transfer_list' %}" class="btn btn-secondary">Cancel</a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-arrow-left-right me-1"></i> Transfer Stock
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

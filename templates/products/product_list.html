@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% block title %}Products | Stitching Pro{% endblock %}
+{% block page_title %}Product Management{% endblock %}
+
+{% block content %}
+
+<div class="page-header-block">
+    <div>
+        <h2 class="page-header-title">Ready-Made Products</h2>
+        <p class="page-header-sub">Master catalog for ready-made apparel, barcodes, purchase prices, and sizes.</p>
+    </div>
+    {% if request.user.role == "Admin" %}
+    <div>
+        <a href="{% url 'product_create' %}" class="btn btn-primary">
+            <i class="bi bi-plus-lg me-1"></i> Add Product
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<div class="table-card">
+    <div class="table-card-header">
+        <form method="GET" class="row g-2 align-items-center w-100">
+            <div class="col-12 col-md-9 col-lg-10">
+                <div class="header-search w-100" style="max-width:100%;">
+                    <i class="bi bi-search"></i>
+                    <input type="text" name="search" value="{{ request.GET.search }}" class="form-control" placeholder="Search product name or barcode...">
+                </div>
+            </div>
+            <div class="col-12 col-md-3 col-lg-2">
+                <button type="submit" class="btn btn-secondary w-100">
+                    <i class="bi bi-funnel-fill me-1"></i> Search
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table app-table">
+            <thead>
+                <tr>
+                    <th width="70">ID</th>
+                    <th>Barcode</th>
+                    <th>Product Name</th>
+                    <th>Category</th>
+                    <th>Size</th>
+                    <th>Color</th>
+                    <th>Purchase Price</th>
+                    <th>Status</th>
+                    {% if request.user.role == "Admin" %}
+                    <th width="150" class="text-end">Actions</th>
+                    {% endif %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for product in products %}
+                <tr>
+                    <td class="fw-semibold text-muted">#{{ product.id }}</td>
+                    <td>
+                        <span class="badge bg-dark font-monospace"><i class="bi bi-qr-code-scan me-1"></i>{{ product.barcode }}</span>
+                    </td>
+                    <td class="fw-bold text-dark">{{ product.name }}</td>
+                    <td><span class="badge bg-primary-subtle text-primary">{{ product.category.name }}</span></td>
+                    <td>{{ product.size }}</td>
+                    <td>{{ product.color }}</td>
+                    <td class="fw-bold text-dark">₹ {{ product.purchase_price }}</td>
+                    <td>
+                        {% if product.active %}
+                            <span class="badge bg-success-subtle text-success border border-success-subtle fw-bold"><i class="bi bi-check-circle me-1"></i>Active</span>
+                        {% else %}
+                            <span class="badge bg-secondary-subtle text-secondary"><i class="bi bi-x-circle me-1"></i>Inactive</span>
+                        {% endif %}
+                    </td>
+                    {% if request.user.role == "Admin" %}
+                    <td class="text-end">
+                        <a href="{% url 'product_edit' product.id %}" class="btn btn-sm btn-secondary btn-icon-only me-1" title="Edit Product">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                        <a href="{% url 'product_delete' product.id %}" class="btn btn-sm btn-outline-danger btn-icon-only" title="Delete Product">
+                            <i class="bi bi-trash"></i>
+                        </a>
+                    </td>
+                    {% endif %}
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="9" class="text-center py-4 text-muted">No products found. Add your first ready-made product.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}

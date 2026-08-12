@@ -1,0 +1,93 @@
+{% extends 'base.html' %}
+
+{% block title %}Order #{{ order.id }} Details | Stitching Pro{% endblock %}
+{% block page_title %}Order Details{% endblock %}
+
+{% block content %}
+
+<div class="page-header-block">
+    <div>
+        <h2 class="page-header-title">Order #{{ order.id }} - {{ order.dress_type }}</h2>
+        <p class="page-header-sub">Customer: {{ order.customer }} &bull; Delivery: {{ order.delivery_date }}</p>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+        <a href="/orders/invoice/{{ order.id }}/" class="btn btn-primary">
+            <i class="bi bi-printer-fill me-1"></i> Print Invoice
+        </a>
+        <a href="/orders/status/{{ order.id }}/" class="btn btn-warning">
+            <i class="bi bi-arrow-repeat me-1"></i> Update Status
+        </a>
+        <a href="/orders/edit/{{ order.id }}/" class="btn btn-secondary">
+            <i class="bi bi-pencil me-1"></i> Edit Order
+        </a>
+        <a href="/orders/delete/{{ order.id }}/" class="btn btn-outline-danger">
+            <i class="bi bi-trash me-1"></i> Delete
+        </a>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-12 col-md-6">
+        <div class="card-custom p-4 h-100">
+            <h5 class="fw-bold mb-3 text-dark border-bottom pb-2">
+                <i class="bi bi-person-badge-fill text-primary me-2"></i>Order & Customer Overview
+            </h5>
+            <table class="table table-borderless mb-0">
+                <tr>
+                    <td class="text-muted ps-0" width="140">Customer:</td>
+                    <td class="fw-bold text-dark">{{ order.customer }}</td>
+                </tr>
+                <tr>
+                    <td class="text-muted ps-0">Dress Type:</td>
+                    <td class="fw-bold text-dark">{{ order.dress_type }}</td>
+                </tr>
+                <tr>
+                    <td class="text-muted ps-0">Delivery Date:</td>
+                    <td class="fw-semibold text-dark"><i class="bi bi-calendar-event me-1"></i>{{ order.delivery_date }}</td>
+                </tr>
+                <tr>
+                    <td class="text-muted ps-0">Current Status:</td>
+                    <td>
+                        {% if order.status == "Pending" %}
+                            <span class="badge-status badge-status-pending"><i class="bi bi-clock"></i> Pending</span>
+                        {% elif order.status == "Cutting" %}
+                            <span class="badge-status badge-status-cutting"><i class="bi bi-scissors"></i> Cutting</span>
+                        {% elif order.status == "Stitching" %}
+                            <span class="badge-status badge-status-stitching"><i class="bi bi-gear"></i> Stitching</span>
+                        {% elif order.status == "Ready" %}
+                            <span class="badge-status badge-status-ready"><i class="bi bi-check-circle"></i> Ready</span>
+                        {% elif order.status == "Delivered" %}
+                            <span class="badge-status badge-status-delivered"><i class="bi bi-box-square"></i> Delivered</span>
+                        {% else %}
+                            <span class="badge-status badge-status-delivered">{{ order.status }}</span>
+                        {% endif %}
+                    </td>
+                </tr>
+            </table>
+        </div>
+    </div>
+
+    <div class="col-12 col-md-6">
+        <div class="card-custom p-4 h-100">
+            <h5 class="fw-bold mb-3 text-dark border-bottom pb-2">
+                <i class="bi bi-currency-rupee text-success me-2"></i>Financial & Payment Summary
+            </h5>
+            <table class="table table-borderless mb-0">
+                <tr>
+                    <td class="text-muted ps-0" width="140">Total Amount:</td>
+                    <td class="fw-bold text-dark fs-5">₹ {{ order.amount }}</td>
+                </tr>
+                <tr>
+                    <td class="text-muted ps-0">Advance Paid:</td>
+                    <td class="fw-bold text-success">₹ {{ order.advance_paid }}</td>
+                </tr>
+                <tr>
+                    <td class="text-muted ps-0">Remaining Balance:</td>
+                    <td class="fw-bold text-danger fs-5">₹ {{ order.balance }}</td>
+                </tr>
+            </table>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

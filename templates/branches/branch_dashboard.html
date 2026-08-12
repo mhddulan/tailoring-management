@@ -1,0 +1,767 @@
+{% extends 'base.html' %}
+
+{% block title %}Branch Dashboard{% endblock %}
+
+{% block content %}
+<style>
+
+/* =====================================================
+   BRANCH DASHBOARD – local styles
+   ===================================================== */
+
+/* Performance summary pill */
+.performance-summary {
+    background: #0d6efd;
+    color: white;
+    border-radius: 15px;
+    padding: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.performance-summary h2 {
+    font-size: 32px;
+    font-weight: 800;
+}
+
+.performance-summary i {
+    font-size: 45px;
+    opacity: .3;
+}
+
+.performance-summary.green {
+    background: #198754;
+}
+
+
+/* HEADER */
+.dashboard-header {
+    background: white;
+    padding: 25px;
+    border-radius: 18px;
+    box-shadow: 0 5px 20px rgba(0,0,0,.06);
+}
+
+
+/* SECTION TITLE */
+.section-title {
+    font-weight: 700;
+    color: #343a40;
+    margin-bottom: 20px;
+}
+
+
+/* DASHBOARD CARD */
+.dashboard-card {
+    border-radius: 18px;
+    padding: 22px;
+    min-height: 145px;
+    color: white;
+    box-shadow: 0 8px 20px rgba(0,0,0,.08);
+    transition: transform .2s ease, box-shadow .2s ease;
+}
+
+.dashboard-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 25px rgba(0,0,0,.12);
+}
+
+.card-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.dashboard-card p {
+    margin: 0 0 8px;
+    opacity: .9;
+    font-size: 15px;
+}
+
+.dashboard-card h2 {
+    font-size: 28px;
+    font-weight: 700;
+    margin: 0;
+}
+
+.card-icon {
+    font-size: 40px;
+    opacity: .85;
+}
+
+
+/* CARD COLOURS */
+.card-blue   { background: linear-gradient(135deg, #0d6efd, #3d8bfd); }
+.card-green  { background: linear-gradient(135deg, #198754, #32a36f); }
+.card-orange { background: linear-gradient(135deg, #fd7e14, #ff9f43); }
+.card-red    { background: linear-gradient(135deg, #dc3545, #e85d6a); }
+.card-purple { background: linear-gradient(135deg, #6f42c1, #8c68d8); }
+
+
+/* PROFIT CARD */
+.profit-card {
+    height: 100%;
+    min-height: 200px;
+    border-radius: 18px;
+    padding: 30px;
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: linear-gradient(135deg, #087f5b, #20c997);
+    box-shadow: 0 8px 20px rgba(0,0,0,.08);
+}
+
+.profit-card p  { font-size: 17px; opacity: .9; }
+.profit-card h1 { font-weight: 800; margin: 0; }
+.profit-card > i { font-size: 70px; opacity: .25; }
+
+
+/* CHART CONTAINERS */
+.chart-container {
+    position: relative;
+    width: 100%;
+}
+
+
+/* Prevent Bootstrap cards from hiding canvas overflow incorrectly */
+.card { overflow: visible; }
+
+
+/* Keep canvases from blowing past their parent */
+canvas { max-width: 100%; }
+
+
+/* MOBILE */
+@media (max-width: 768px) {
+    .dashboard-header  { padding: 20px; }
+    .dashboard-card    { min-height: 125px; }
+    .dashboard-card h2 { font-size: 24px; }
+    .card-icon         { font-size: 32px; }
+}
+
+</style>
+
+<div class="container-fluid">
+
+    <!-- ================================================= -->
+    <!-- HEADER                                            -->
+    <!-- ================================================= -->
+
+    <div class="dashboard-header mb-4">
+        <div>
+            <h2 class="fw-bold mb-1">
+                <i class="bi bi-shop"></i>
+                {{ request.user.branch }} Dashboard
+            </h2>
+            <p class="text-muted mb-0">
+                Welcome back, {{ request.user.username }}
+            </p>
+        </div>
+    </div>
+
+
+    <!-- ================================================= -->
+    <!-- DATE FILTER                                        -->
+    <!-- ================================================= -->
+
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-body">
+            <form method="GET">
+                <div class="row g-3 align-items-end">
+
+                    <!-- From Date -->
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold">From Date</label>
+                        <input
+                            type="date"
+                            name="from_date"
+                            value="{{ from_date }}"
+                            class="form-control">
+                    </div>
+
+                    <!-- To Date -->
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold">To Date</label>
+                        <input
+                            type="date"
+                            name="to_date"
+                            value="{{ to_date }}"
+                            class="form-control">
+                    </div>
+
+                    <!-- Buttons -->
+                    <div class="col-md-4">
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary flex-fill">
+                                <i class="bi bi-funnel"></i>
+                                Apply Filter
+                            </button>
+                            <a href="{% url 'branch_dashboard' %}" class="btn btn-light border">
+                                <i class="bi bi-arrow-clockwise"></i>
+                            </a>
+                        </div>
+                    </div>
+
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+    <!-- ================================================= -->
+    <!-- OVERVIEW                                          -->
+    <!-- ================================================= -->
+
+    <h5 class="section-title">
+        <i class="bi bi-speedometer2"></i>
+        Overview
+    </h5>
+
+    <div class="row g-4 mb-4">
+
+        <!-- Customers -->
+        <div class="col-xl-3 col-md-6">
+            <div class="dashboard-card card-blue">
+                <div class="card-content">
+                    <div>
+                        <p>Customers</p>
+                        <h2>{{ customers }}</h2>
+                    </div>
+                    <div class="card-icon">
+                        <i class="bi bi-people-fill"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Orders -->
+        <div class="col-xl-3 col-md-6">
+            <div class="dashboard-card card-green">
+                <div class="card-content">
+                    <div>
+                        <p>Orders</p>
+                        <h2>{{ orders }}</h2>
+                    </div>
+                    <div class="card-icon">
+                        <i class="bi bi-bag-check-fill"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pending -->
+        <div class="col-xl-3 col-md-6">
+            <div class="dashboard-card card-orange">
+                <div class="card-content">
+                    <div>
+                        <p>Pending Orders</p>
+                        <h2>{{ pending }}</h2>
+                    </div>
+                    <div class="card-icon">
+                        <i class="bi bi-hourglass-split"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Delivered -->
+        <div class="col-xl-3 col-md-6">
+            <div class="dashboard-card card-red">
+                <div class="card-content">
+                    <div>
+                        <p>Delivered</p>
+                        <h2>{{ delivered }}</h2>
+                    </div>
+                    <div class="card-icon">
+                        <i class="bi bi-check-circle-fill"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+
+    <!-- ================================================= -->
+    <!-- FINANCIAL SUMMARY                                 -->
+    <!-- ================================================= -->
+
+    <h5 class="section-title mt-5">
+        <i class="bi bi-cash-stack"></i>
+        Financial Summary
+    </h5>
+
+    <div class="row g-4 mb-4">
+
+        <!-- Collection -->
+        <div class="col-xl-3 col-md-6">
+            <div class="dashboard-card card-green">
+                <div class="card-content">
+                    <div>
+                        <p>Total Collection</p>
+                        <h2>₹ {{ collection|floatformat:2 }}</h2>
+                    </div>
+                    <div class="card-icon">
+                        <i class="bi bi-currency-rupee"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sales -->
+        <div class="col-xl-3 col-md-6">
+            <div class="dashboard-card card-blue">
+                <div class="card-content">
+                    <div>
+                        <p>Ready-Made Sales</p>
+                        <h2>₹ {{ total_sales|floatformat:2 }}</h2>
+                    </div>
+                    <div class="card-icon">
+                        <i class="bi bi-cart-check-fill"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Purchase -->
+        <div class="col-xl-3 col-md-6">
+            <div class="dashboard-card card-purple">
+                <div class="card-content">
+                    <div>
+                        <p>Total Purchase</p>
+                        <h2>₹ {{ total_purchase|floatformat:2 }}</h2>
+                    </div>
+                    <div class="card-icon">
+                        <i class="bi bi-box-seam-fill"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Expense -->
+        <div class="col-xl-3 col-md-6">
+            <div class="dashboard-card card-red">
+                <div class="card-content">
+                    <div>
+                        <p>Total Expense</p>
+                        <h2>₹ {{ total_expense|floatformat:2 }}</h2>
+                    </div>
+                    <div class="card-icon">
+                        <i class="bi bi-wallet2"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+    <!-- /Financial Summary row -->
+
+
+    <!-- ================================================= -->
+    <!-- EMPLOYEE PERFORMANCE                              -->
+    <!-- ================================================= -->
+
+    <h5 class="section-title mt-5">
+        <i class="bi bi-scissors"></i>
+        Employee Performance
+    </h5>
+
+    <div class="row g-4 mb-4">
+
+        <!-- LEFT: SUMMARY -->
+        <div class="col-xl-4">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body">
+
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div>
+                            <h5 class="fw-bold mb-1">
+                                <i class="bi bi-scissors"></i>
+                                Stitching Performance
+                            </h5>
+                            <small class="text-muted">Employee production</small>
+                        </div>
+                    </div>
+
+                    <!-- Production Date Filter -->
+                    <form method="GET" class="mb-4">
+                        <label class="form-label fw-semibold">Production Date</label>
+                        <div class="input-group">
+                            <input
+                                type="date"
+                                name="performance_date"
+                                value="{{ performance_date }}"
+                                class="form-control">
+                            <button class="btn btn-primary">
+                                <i class="bi bi-search"></i>
+                            </button>
+                        </div>
+                    </form>
+
+                    <!-- Total Pieces -->
+                    <div class="performance-summary mb-3">
+                        <div>
+                            <small>Total Stitched</small>
+                            <h2 class="mb-0">{{ total_stitched_today }}</h2>
+                            <small>pieces</small>
+                        </div>
+                        <i class="bi bi-scissors"></i>
+                    </div>
+
+                    <!-- Active Employees -->
+                    <div class="performance-summary green">
+                        <div>
+                            <small>Active Employees</small>
+                            <h2 class="mb-0">{{ active_employee_count }}</h2>
+                        </div>
+                        <i class="bi bi-people-fill"></i>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT: CHART -->
+        <div class="col-xl-8">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body">
+                    <h5 class="fw-bold mb-3">
+                        <i class="bi bi-bar-chart-fill"></i>
+                        Employee-wise Production
+                    </h5>
+                    <div class="chart-container" style="height: 320px;">
+                        <canvas id="employeePerformanceChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+    <!-- /Employee Performance row -->
+
+
+    <!-- ================================================= -->
+    <!-- EMPLOYEE PERFORMANCE TABLE                        -->
+    <!-- ================================================= -->
+
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+
+        <div class="card-header bg-primary text-white py-3">
+            <h5 class="mb-0">
+                <i class="bi bi-people-fill"></i>
+                Employee Performance
+            </h5>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+
+                <thead class="table-light">
+                    <tr>
+                        <th>#</th>
+                        {% if request.user.role == "Admin" %}
+                            <th>Branch</th>
+                        {% endif %}
+                        <th>Employee</th>
+                        <th>Designation</th>
+                        <th>Pieces Stitched</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for employee in performance_employees %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+
+                        {% if request.user.role == "Admin" %}
+                        <td>{{ employee.branch.name }}</td>
+                        {% endif %}
+
+                        <td class="fw-semibold">{{ employee.name }}</td>
+                        <td>{{ employee.designation }}</td>
+                        <td>
+                            {% if employee.total_pieces > 0 %}
+                                <span class="badge bg-success fs-6">
+                                    {{ employee.total_pieces }} pieces
+                                </span>
+                            {% else %}
+                                <span class="badge bg-secondary">0 pieces</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center py-4">
+                            No active employees found.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+
+            </table>
+        </div>
+
+    </div>
+    <!-- /Employee Table -->
+
+
+    <!-- ================================================= -->
+    <!-- PROFIT / FINANCIAL OVERVIEW                       -->
+    <!-- ================================================= -->
+
+    <div class="row g-4 mb-4">
+
+        <div class="col-lg-4">
+            <div class="profit-card">
+                <div>
+                    <p class="mb-1">Net Profit</p>
+                    <h1>₹ {{ net_profit|floatformat:2 }}</h1>
+                </div>
+                <i class="bi bi-graph-up-arrow"></i>
+            </div>
+        </div>
+
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body">
+                    <h5 class="fw-bold mb-3">
+                        <i class="bi bi-bar-chart"></i>
+                        Financial Overview
+                    </h5>
+                    <div class="chart-container" style="height: 200px;">
+                        <canvas id="financialChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+    <!-- /Profit row -->
+
+
+    <!-- ================================================= -->
+    <!-- FINANCIAL CHARTS                                  -->
+    <!-- ================================================= -->
+
+    <div class="row g-4 mb-5">
+
+        <!-- PIE CHART -->
+        <div class="col-lg-5">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-body">
+                    <h5 class="fw-bold mb-3">
+                        <i class="bi bi-pie-chart-fill"></i>
+                        Financial Distribution
+                    </h5>
+                    <div class="chart-container" style="height: 280px;">
+                        <canvas id="pieChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SALES / EXPENSE -->
+        <div class="col-lg-7">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-body">
+                    <h5 class="fw-bold mb-3">
+                        <i class="bi bi-graph-up"></i>
+                        Sales &amp; Expenses
+                    </h5>
+                    <div class="chart-container" style="height: 280px;">
+                        <canvas id="salesExpenseChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+    <!-- /Financial Charts row -->
+
+</div>
+<!-- /container-fluid -->
+
+
+<!-- ================================================= -->
+<!-- CHART.JS – loaded once                            -->
+<!-- ================================================= -->
+
+<!-- JSON data for charts (safe to parse in JS) -->
+<script id="branch-data" type="application/json">
+{
+    "sales": {{ total_sales|default:0 }},
+    "purchase": {{ total_purchase|default:0 }},
+    "expense": {{ total_expense|default:0 }},
+    "collection": {{ collection|default:0 }},
+    "empLabels": [
+        {% for employee in performance_employees %}
+            "{{ employee.name|escapejs }}"{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    ],
+    "empValues": [
+        {% for employee in performance_employees %}
+            {{ employee.total_pieces|default:0 }}{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    ]
+}
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    /* ------------------------------------------------- */
+    /* VALUES FROM DJANGO (JSON block for safe parsing)   */
+    /* ------------------------------------------------- */
+
+    const branchDataElem = document.getElementById('branch-data');
+    let branchData = null;
+    if (branchDataElem) {
+        try {
+            branchData = JSON.parse(branchDataElem.textContent);
+        } catch (e) {
+            console.error('Failed to parse branch data JSON:', e);
+            branchData = null;
+        }
+    }
+
+    const sales      = branchData && !isNaN(Number(branchData.sales)) ? Number(branchData.sales) : 0;
+    const purchase   = branchData && !isNaN(Number(branchData.purchase)) ? Number(branchData.purchase) : 0;
+    const expense    = branchData && !isNaN(Number(branchData.expense)) ? Number(branchData.expense) : 0;
+    const collection = branchData && !isNaN(Number(branchData.collection)) ? Number(branchData.collection) : 0;
+
+    const empLabels = (branchData && Array.isArray(branchData.empLabels)) ? branchData.empLabels : [];
+    const empValues = (branchData && Array.isArray(branchData.empValues)) ? branchData.empValues.map(v => Number(v) || 0) : [];
+
+
+    /* ------------------------------------------------- */
+    /* EMPLOYEE PERFORMANCE CHART                        */
+    /* ------------------------------------------------- */
+
+    const empCanvas = document.getElementById("employeePerformanceChart");
+
+    if (empCanvas) {
+        new Chart(empCanvas, {
+            type: "bar",
+            data: {
+                labels: empLabels,
+                datasets: [{
+                    label: "Pieces Stitched",
+                    data: empValues,
+                    backgroundColor: "rgba(13, 110, 253, 0.75)",
+                    borderColor: "#0d6efd",
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: { precision: 0 }
+                    }
+                }
+            }
+        });
+    }
+
+
+    /* ------------------------------------------------- */
+    /* PIE CHART                                         */
+    /* ------------------------------------------------- */
+
+    const pieCanvas = document.getElementById("pieChart");
+
+    if (pieCanvas) {
+        new Chart(pieCanvas, {
+            type: "doughnut",
+            data: {
+                labels: ["Sales", "Purchase", "Expense"],
+                datasets: [{
+                    data: [sales, purchase, expense],
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: "bottom" }
+                }
+            }
+        });
+    }
+
+
+    /* ------------------------------------------------- */
+    /* FINANCIAL OVERVIEW BAR CHART                      */
+    /* ------------------------------------------------- */
+
+    const financialCanvas = document.getElementById("financialChart");
+
+    if (financialCanvas) {
+        new Chart(financialCanvas, {
+            type: "bar",
+            data: {
+                labels: ["Collection", "Sales", "Purchase", "Expense"],
+                datasets: [{
+                    label: "Amount (₹)",
+                    data: [collection, sales, purchase, expense],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: { beginAtZero: true }
+                }
+            }
+        });
+    }
+
+
+    /* ------------------------------------------------- */
+    /* SALES VS EXPENSE CHART                            */
+    /* ------------------------------------------------- */
+
+    const salesExpenseCanvas = document.getElementById("salesExpenseChart");
+
+    if (salesExpenseCanvas) {
+        new Chart(salesExpenseCanvas, {
+            type: "bar",
+            data: {
+                labels: ["Sales", "Expenses"],
+                datasets: [{
+                    label: "Amount (₹)",
+                    data: [sales, expense],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: { beginAtZero: true }
+                }
+            }
+        });
+    }
+
+});
+</script>
+
+{% endblock %}

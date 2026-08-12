@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+
+{% block title %}Add Payment | Stitching Pro{% endblock %}
+{% block page_title %}Add Payment{% endblock %}
+
+{% block content %}
+
+<div class="page-header-block">
+    <div>
+        <h2 class="page-header-title">Record Payment</h2>
+        <p class="page-header-sub">Record a customer payment transaction towards an order.</p>
+    </div>
+    <div>
+        <a href="/orders/payments/" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Payments
+        </a>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-12 col-md-8 col-lg-6">
+        <div class="form-card">
+            <form method="POST">
+                {% csrf_token %}
+
+                <div class="mb-4">
+                    {{ form.as_p }}
+                </div>
+
+                <div class="d-flex justify-content-end gap-2">
+                    <a href="/orders/payments/" class="btn btn-secondary">Cancel</a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check-circle-fill me-1"></i> Save Payment
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

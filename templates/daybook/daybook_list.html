@@ -1,0 +1,230 @@
+{% extends 'base.html' %}
+
+{% block title %}Day Book | Stitching Pro{% endblock %}
+{% block page_title %}Day Book Accounting{% endblock %}
+
+{% block content %}
+
+<div class="page-header-block">
+    <div>
+        <h2 class="page-header-title">Day Book Accounting</h2>
+        <p class="page-header-sub">Daily income, expense tracking, opening/closing cash balances, and financial exports.</p>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+        <a href="{% url 'daybook_excel' %}?{{ request.GET.urlencode }}" class="btn btn-outline-success">
+            <i class="bi bi-file-earmark-excel me-1"></i> Excel
+        </a>
+        <a href="{% url 'daybook_pdf' %}?{{ request.GET.urlencode }}" class="btn btn-outline-danger">
+            <i class="bi bi-file-earmark-pdf me-1"></i> PDF
+        </a>
+        <button onclick="window.print()" class="btn btn-secondary">
+            <i class="bi bi-printer me-1"></i> Print
+        </button>
+        <a href="{% url 'daybook_create' %}" class="btn btn-primary">
+            <i class="bi bi-plus-lg me-1"></i> Add Entry
+        </a>
+    </div>
+</div>
+
+<!-- Daily & Monthly KPI Stat Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-12 col-sm-6 col-xl-4">
+        <div class="stat-card">
+            <div>
+                <div class="stat-label">Today's Income</div>
+                <h3 class="stat-value text-success">₹ {{ income }}</h3>
+            </div>
+            <div class="stat-icon-wrapper stat-icon-success">
+                <i class="bi bi-arrow-down-left-circle-fill"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-sm-6 col-xl-4">
+        <div class="stat-card">
+            <div>
+                <div class="stat-label">Today's Expense</div>
+                <h3 class="stat-value text-danger">₹ {{ expense }}</h3>
+            </div>
+            <div class="stat-icon-wrapper stat-icon-danger">
+                <i class="bi bi-arrow-up-right-circle-fill"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-sm-6 col-xl-4">
+        <div class="stat-card">
+            <div>
+                <div class="stat-label">Today's Net Profit</div>
+                <h3 class="stat-value text-primary">₹ {{ profit }}</h3>
+            </div>
+            <div class="stat-icon-wrapper stat-icon-primary">
+                <i class="bi bi-graph-up-arrow"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-sm-6 col-xl-4">
+        <div class="stat-card">
+            <div>
+                <div class="stat-label">Monthly Income</div>
+                <h4 class="fw-bold text-dark mb-0">₹ {{ monthly_income }}</h4>
+            </div>
+            <div class="stat-icon-wrapper stat-icon-purple">
+                <i class="bi bi-calendar-check"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-sm-6 col-xl-4">
+        <div class="stat-card">
+            <div>
+                <div class="stat-label">Monthly Expense</div>
+                <h4 class="fw-bold text-dark mb-0">₹ {{ monthly_expense }}</h4>
+            </div>
+            <div class="stat-icon-wrapper stat-icon-warning">
+                <i class="bi bi-receipt"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-sm-6 col-xl-4">
+        <div class="stat-card">
+            <div>
+                <div class="stat-label">Monthly Net Profit</div>
+                <h4 class="fw-bold text-dark mb-0">₹ {{ monthly_profit }}</h4>
+            </div>
+            <div class="stat-icon-wrapper stat-icon-info">
+                <i class="bi bi-piggy-bank-fill"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Opening & Closing Balance Bar -->
+<div class="row g-3 mb-4">
+    <div class="col-12 col-md-6">
+        <div class="card-custom p-3 bg-light border border-warning-subtle d-flex align-items-center justify-content-between">
+            <div>
+                <span class="text-muted fw-semibold d-block fs-7">OPENING CASH BALANCE</span>
+                <h3 class="fw-bold text-dark mb-0">₹ {{ opening_balance }}</h3>
+            </div>
+            <div class="stat-icon-wrapper stat-icon-warning" style="width:48px; height:48px; font-size:1.5rem;">
+                <i class="bi bi-door-open-fill"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-md-6">
+        <div class="card-custom p-3 bg-light border border-success-subtle d-flex align-items-center justify-content-between">
+            <div>
+                <span class="text-muted fw-semibold d-block fs-7">CLOSING CASH BALANCE</span>
+                <h3 class="fw-bold text-success mb-0">₹ {{ closing_balance }}</h3>
+            </div>
+            <div class="stat-icon-wrapper stat-icon-success" style="width:48px; height:48px; font-size:1.5rem;">
+                <i class="bi bi-door-closed-fill"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Date & Branch Filter Card -->
+<div class="card-custom p-3 mb-4">
+    <form method="GET">
+        <div class="row g-3 align-items-end">
+            <div class="col-12 col-md-4 col-lg-3">
+                <label class="form-label fw-semibold">From Date</label>
+                <input type="date" name="from_date" class="form-control" value="{{ request.GET.from_date|default:today|date:'Y-m-d' }}">
+            </div>
+
+            <div class="col-12 col-md-4 col-lg-3">
+                <label class="form-label fw-semibold">To Date</label>
+                <input type="date" name="to_date" class="form-control" value="{{ request.GET.to_date|default:today|date:'Y-m-d' }}">
+            </div>
+
+            {% if request.user.role == "Admin" %}
+            <div class="col-12 col-md-4 col-lg-3">
+                <label class="form-label fw-semibold">Branch</label>
+                <select name="branch" class="form-select">
+                    <option value="">All Branches</option>
+                    {% for branch in branches %}
+                    <option value="{{ branch.id }}" {% if request.GET.branch == branch.id|stringformat:"s" %}selected{% endif %}>
+                        {{ branch.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endif %}
+
+            <div class="col-12 col-md-4 col-lg-3">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-funnel-fill me-1"></i> Filter Entries
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Day Book Entries Table Card -->
+<div class="table-card">
+    <div class="table-card-header">
+        <h5 class="fw-bold mb-0 text-dark">
+            <i class="bi bi-journal-bookmark-fill text-primary me-2"></i>Day Book Transaction Log
+        </h5>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table app-table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Branch</th>
+                    <th>Type</th>
+                    <th>Category</th>
+                    <th>Payment Mode</th>
+                    <th>Description</th>
+                    <th class="text-end">Amount</th>
+                    <th width="150" class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for entry in entries %}
+                <tr>
+                    <td><i class="bi bi-calendar-event me-1 text-muted"></i>{{ entry.date|date:"d-m-Y" }}</td>
+                    <td><span class="badge bg-light text-dark border">{{ entry.branch }}</span></td>
+                    <td>
+                        {% if entry.transaction_type == "Income" %}
+                            <span class="badge bg-success-subtle text-success border border-success-subtle fw-bold"><i class="bi bi-arrow-down-left"></i> Income</span>
+                        {% else %}
+                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle fw-bold"><i class="bi bi-arrow-up-right"></i> Expense</span>
+                        {% endif %}
+                    </td>
+                    <td class="fw-semibold text-dark">{{ entry.category }}</td>
+                    <td>
+                        <span class="badge bg-light text-dark border">
+                            <i class="bi bi-wallet2 me-1"></i>{{ entry.payment_mode }}
+                        </span>
+                    </td>
+                    <td>{{ entry.description|default:"-" }}</td>
+                    <td class="text-end fw-bold fs-6 {% if entry.transaction_type == 'Income' %}text-success{% else %}text-danger{% endif %}">
+                        ₹ {{ entry.amount }}
+                    </td>
+                    <td class="text-end">
+                        <a href="{% url 'daybook_edit' entry.id %}" class="btn btn-sm btn-secondary btn-icon-only me-1" title="Edit Entry">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                        <a href="{% url 'daybook_delete' entry.id %}" class="btn btn-sm btn-outline-danger btn-icon-only" title="Delete Entry">
+                            <i class="bi bi-trash"></i>
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="8" class="text-center py-4 text-muted">No Day Book entries found. Click <strong>Add Entry</strong> to record a transaction.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}

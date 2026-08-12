@@ -1,0 +1,254 @@
+{% extends "base.html" %}
+
+{% block title %}Stitching Production | Stitching Pro{% endblock %}
+{% block page_title %}Stitching Production{% endblock %}
+
+{% block content %}
+
+<div class="page-header-block">
+    <div>
+        <h2 class="page-header-title">Stitching Production & Performance</h2>
+        <p class="page-header-sub">Daily employee piece counts, stitching output, and performance logs.</p>
+    </div>
+    <div>
+        <a href="{% url 'production_create' %}" class="btn btn-primary">
+            <i class="bi bi-plus-lg me-1"></i> Add Production Record
+        </a>
+    </div>
+</div>
+
+<!-- Date Range Filter Form -->
+<div class="card-custom p-3 mb-4">
+
+    <form method="GET">
+
+        <div class="row g-3 align-items-end">
+
+            <!-- From Date -->
+            <div class="col-12 col-md-6 col-lg-4">
+
+                <label class="form-label fw-semibold">
+                    <i class="bi bi-calendar-event me-1"></i>
+                    From Date
+                </label>
+
+                <div class="input-group">
+
+                    <span class="input-group-text">
+                        <i class="bi bi-calendar-event"></i>
+                    </span>
+
+                    <input
+                        type="date"
+                        name="from_date"
+                        value="{{ from_date }}"
+                        class="form-control"
+                    >
+
+                </div>
+
+            </div>
+
+
+            <!-- To Date -->
+            <div class="col-12 col-md-6 col-lg-4">
+
+                <label class="form-label fw-semibold">
+                    <i class="bi bi-calendar-event me-1"></i>
+                    To Date
+                </label>
+
+                <div class="input-group">
+
+                    <span class="input-group-text">
+                        <i class="bi bi-calendar-event"></i>
+                    </span>
+
+                    <input
+                        type="date"
+                        name="to_date"
+                        value="{{ to_date }}"
+                        class="form-control"
+                    >
+
+                </div>
+
+            </div>
+
+
+            <!-- Buttons -->
+            <div class="col-12 col-lg-4">
+
+                <div class="d-flex gap-2">
+
+                    <button
+                        type="submit"
+                        class="btn btn-primary flex-fill"
+                    >
+                        <i class="bi bi-funnel-fill me-1"></i>
+                        View Performance
+                    </button>
+
+                    <a
+                        href="{% url 'production_list' %}"
+                        class="btn btn-secondary"
+                    >
+                        <i class="bi bi-calendar-day me-1"></i>
+                        Today
+                    </a>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </form>
+
+</div>
+<!-- KPI Stat Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-12 col-sm-6 col-xl-4">
+        <div class="stat-card">
+            <div>
+                <div class="stat-label">Total Pieces Stitched</div>
+                <h3 class="stat-value">{{ total_pieces }}</h3>
+            </div>
+            <div class="stat-icon-wrapper stat-icon-success">
+                <i class="bi bi-scissors"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-sm-6 col-xl-4">
+        <div class="stat-card">
+            <div>
+                <div class="stat-label">Active Tailors / Employees</div>
+                <h3 class="stat-value">{{ employee_totals|length }}</h3>
+            </div>
+            <div class="stat-icon-wrapper stat-icon-purple">
+                <i class="bi bi-people-fill"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-sm-6 col-xl-4">
+        <div class="stat-card">
+            <div>
+                <div class="stat-label">Selected Date</div>
+                <h4 class="fw-bold text-dark mb-0">{{ selected_date }}</h4>
+            </div>
+            <div class="stat-icon-wrapper stat-icon-info">
+                <i class="bi bi-calendar-check"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Employee-wise Performance Table -->
+<div class="table-card mb-4">
+    <div class="table-card-header">
+        <h5 class="fw-bold mb-0 text-dark">
+            <i class="bi bi-bar-chart-fill text-primary me-2"></i>Employee-wise Production Summary
+        </h5>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table app-table">
+            <thead>
+                <tr>
+                    <th width="70">#</th>
+                    {% if request.user.role == "Admin" %}
+                        <th>Branch</th>
+                    {% endif %}
+                    <th>Employee</th>
+                    <th>Designation</th>
+                    <th>Total Pieces Stitched</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for employee in employee_totals %}
+                <tr>
+                    <td class="fw-semibold text-muted">{{ forloop.counter }}</td>
+                    {% if request.user.role == "Admin" %}
+                    <td><span class="badge bg-light text-dark border"><i class="bi bi-building me-1"></i>{{ employee.branch.name }}</span></td>
+                    {% endif %}
+                    <td class="fw-bold text-dark"><i class="bi bi-person me-1"></i>{{ employee.name }}</td>
+                    <td><span class="badge bg-primary-subtle text-primary">{{ employee.designation }}</span></td>
+                    <td>
+                        {% if employee.total_pieces %}
+                            <span class="badge bg-success-subtle text-success border border-success-subtle fw-bold fs-6">
+                                {{ employee.total_pieces }} pieces
+                            </span>
+                        {% else %}
+                            <span class="badge bg-secondary-subtle text-secondary">0 pieces</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" class="text-center py-4 text-muted">No employee records found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Detailed Production Entries Table -->
+<div class="table-card">
+    <div class="table-card-header">
+        <h5 class="fw-bold mb-0 text-dark">
+            <i class="bi bi-list-check text-info me-2"></i>Individual Production Entries
+        </h5>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table app-table">
+            <thead>
+                <tr>
+                    <th width="70">#</th>
+                    {% if request.user.role == "Admin" %}
+                        <th>Branch</th>
+                    {% endif %}
+                    <th>Employee</th>
+                    <th>Item</th>
+                    <th>Pieces</th>
+                    <th>Remarks</th>
+                    <th width="150" class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for production in productions %}
+                <tr>
+                    <td class="fw-semibold text-muted">{{ forloop.counter }}</td>
+                    {% if request.user.role == "Admin" %}
+                    <td><span class="badge bg-light text-dark border"><i class="bi bi-building me-1"></i>{{ production.branch.name }}</span></td>
+                    {% endif %}
+                    <td class="fw-bold text-dark">{{ production.employee.name }}</td>
+                    <td>{{ production.product.name }}</td>
+                    <td><span class="badge bg-success-subtle text-success border border-success-subtle fw-bold fs-6">{{ production.quantity }}</span></td>
+                    <td>{{ production.remarks|default:"-" }}</td>
+                    <td class="text-end">
+                        <a href="{% url 'production_edit' production.id %}" class="btn btn-sm btn-secondary btn-icon-only me-1" title="Edit Entry">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                        <form method="POST" action="{% url 'production_delete' production.id %}" class="d-inline">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm btn-outline-danger btn-icon-only" title="Delete Entry" onclick="return confirm('Delete this production record?');">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" class="text-center py-4 text-muted">No production records found for this date.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}

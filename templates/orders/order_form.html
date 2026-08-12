@@ -1,0 +1,186 @@
+{% extends "base.html" %}
+
+{% block title %}Create Order | Stitching Pro{% endblock %}
+{% block page_title %}Create Order{% endblock %}
+
+{% block content %}
+
+<div class="page-header-block">
+    <div>
+        <h2 class="page-header-title">Create New Order</h2>
+        <p class="page-header-sub">Record order items, delivery schedule, advance payment, and total calculations.</p>
+    </div>
+    <div>
+        <a href="{% url 'order_list' %}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Orders
+        </a>
+    </div>
+</div>
+
+<form method="POST">
+    {% csrf_token %}
+
+    <!-- Order Header Details -->
+    <div class="form-card mb-4">
+        <h5 class="fw-bold mb-3 text-dark border-bottom pb-2">
+            <i class="bi bi-info-circle-fill text-primary me-2"></i>Order Information
+        </h5>
+        
+        <div class="row g-3">
+            <div class="col-md-4">
+                <label class="form-label">Customer</label>
+                {{ form.customer }}
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Order Date</label>
+                {{ form.order_date }}
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Delivery Date</label>
+                {{ form.delivery_date }}
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Advance Paid (₹)</label>
+                {{ form.advance_paid }}
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Initial Status</label>
+                {{ form.status }}
+            </div>
+        </div>
+    </div>
+
+    <!-- Order Items Formset Table -->
+    <div class="table-card mb-4 p-3">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="fw-bold mb-0 text-dark">
+                <i class="bi bi-scissors text-info me-2"></i>Order Items & Pricing
+            </h5>
+            <button type="button" id="add-item" class="btn btn-sm btn-success">
+                <i class="bi bi-plus-lg me-1"></i> Add Item
+            </button>
+        </div>
+
+        {{ formset.management_form }}
+
+        <div class="table-responsive">
+            <table class="table app-table" id="item-table">
+                <thead>
+                    <tr>
+                        <th width="35%">Item Name</th>
+                        <th width="15%">Qty</th>
+                        <th width="20%">Rate (₹)</th>
+                        <th width="20%">Amount (₹)</th>
+                        <th width="10%" class="text-center">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in formset %}
+                    <tr class="item-form">
+                        <td>{{ item.item_name }}</td>
+                        <td>{{ item.quantity }}</td>
+                        <td>{{ item.rate }}</td>
+                        <td>{{ item.amount }}</td>
+                        <td class="text-center">
+                            {% if item.instance.pk %}
+                                {{ item.DELETE }}
+                            {% else %}
+                                <button type="button" class="btn btn-sm btn-outline-danger border-0" onclick="this.closest('tr').remove()"><i class="bi bi-trash"></i></button>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Summary & Balance Block -->
+        <div class="row mt-4 justify-content-end">
+            <div class="col-12 col-md-5 col-lg-4">
+                <div class="card-custom p-3 bg-light border">
+                    <h6 class="fw-bold text-dark border-bottom pb-2 mb-3">Order Summary</h6>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">Grand Total:</span>
+                        <strong id="grand-total" class="text-dark fs-5">₹0.00</strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">Advance Paid:</span>
+                        <strong id="advance-display" class="text-success fs-6">₹0.00</strong>
+                    </div>
+                    <hr class="my-2">
+                    <div class="d-flex justify-content-between">
+                        <span class="fw-bold text-dark">Balance Due:</span>
+                        <strong id="balance-display" class="text-danger fs-5">₹0.00</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="d-flex justify-content-end gap-2 mb-5">
+        <a href="{% url 'order_list' %}" class="btn btn-secondary">
+            <i class="bi bi-x-circle me-1"></i> Cancel
+        </a>
+        <button type="submit" class="btn btn-primary">
+            <i class="bi bi-check-circle-fill me-1"></i> Save Order
+        </button>
+    </div>
+
+</form>
+
+<script>
+const addButton = document.getElementById("add-item");
+const table = document.querySelector("#item-table tbody");
+const totalForms = document.getElementById("id_items-TOTAL_FORMS");
+
+if (addButton) {
+    addButton.onclick = function() {
+        let formNum = parseInt(totalForms.value);
+        let first = document.querySelector(".item-form");
+        if (first) {
+            let newRow = first.cloneNode(true);
+            newRow.innerHTML = newRow.innerHTML.replace(/items-0/g, "items-" + formNum);
+            newRow.querySelectorAll("input").forEach(function(input) {
+                input.value = "";
+            });
+            table.appendChild(newRow);
+            totalForms.value = formNum + 1;
+        }
+    };
+}
+
+function calculateTotal() {
+    let total = 0;
+    document.querySelectorAll(".item-form").forEach(function(row) {
+        let qty = row.querySelector("input[name$='quantity']");
+        let rate = row.querySelector("input[name$='rate']");
+        let amount = row.querySelector("input[name$='amount']");
+
+        if (qty && rate && amount) {
+            let q = parseFloat(qty.value) || 0;
+            let r = parseFloat(rate.value) || 0;
+            let a = q * r;
+            amount.value = a.toFixed(2);
+            total += a;
+        }
+    });
+
+    const grandTotalEl = document.getElementById("grand-total");
+    if (grandTotalEl) grandTotalEl.innerHTML = "₹" + total.toFixed(2);
+
+    const advInput = document.getElementById("id_advance_paid");
+    let advance = advInput ? (parseFloat(advInput.value) || 0) : 0;
+
+    const advDisplay = document.getElementById("advance-display");
+    if (advDisplay) advDisplay.innerHTML = "₹" + advance.toFixed(2);
+
+    const balDisplay = document.getElementById("balance-display");
+    if (balDisplay) balDisplay.innerHTML = "₹" + (total - advance).toFixed(2);
+}
+
+document.addEventListener("input", calculateTotal);
+window.onload = calculateTotal;
+</script>
+
+{% endblock %}

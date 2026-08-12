@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} | Stitching Pro{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block content %}
+
+<div class="page-header-block">
+    <div>
+        <h2 class="page-header-title">{{ title }}</h2>
+        <p class="page-header-sub">Enter employee contact, designation, branch, and salary information.</p>
+    </div>
+    <div>
+        <a href="{% url 'employee_list' %}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Employees
+        </a>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-12 col-md-10 col-lg-8">
+        <div class="form-card">
+            <form method="POST">
+                {% csrf_token %}
+
+                <div class="row g-3">
+                    {% if request.user.role == "Admin" %}
+                    <div class="col-md-6">
+                        <label class="form-label">Assigned Branch</label>
+                        {{ form.branch }}
+                    </div>
+                    {% endif %}
+
+                    <div class="col-md-6">
+                        <label class="form-label">Employee Full Name</label>
+                        {{ form.name }}
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Mobile Number</label>
+                        {{ form.mobile }}
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Designation</label>
+                        {{ form.designation }}
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Monthly Salary (₹)</label>
+                        {{ form.salary }}
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Joining Date</label>
+                        {{ form.joining_date }}
+                    </div>
+
+                    <div class="col-12 mt-3">
+                        <div class="form-check form-switch fs-6">
+                            {{ form.active }}
+                            <label class="form-check-label fw-bold text-dark ms-2">Active Employee</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-end gap-2 mt-4">
+                    <a href="{% url 'employee_list' %}" class="btn btn-secondary">Cancel</a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check-circle-fill me-1"></i> Save Employee
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,209 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} | Stitching Pro{% endblock %}
+{% block page_title %}Ready-Made Sales POS{% endblock %}
+
+{% block content %}
+
+<div class="page-header-block">
+    <div>
+        <h2 class="page-header-title">Ready-Made Product Sale</h2>
+        <p class="page-header-sub">Point of sale billing for ready-made apparel items.</p>
+    </div>
+    <div>
+        <a href="{% url 'sale_list' %}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Sales
+        </a>
+    </div>
+</div>
+
+<form method="POST" id="saleForm">
+    {% csrf_token %}
+
+    <!-- Sale Information Card -->
+    <div class="form-card mb-4">
+        <h5 class="fw-bold mb-3 text-dark border-bottom pb-2">
+            <i class="bi bi-receipt text-primary me-2"></i>Sale Information
+        </h5>
+
+        <div class="row g-3">
+            {% if request.user.role == "Admin" %}
+            <div class="col-md-3">
+                <label class="form-label">Branch</label>
+                {{ form.branch }}
+                {% if form.branch.errors %}<div class="text-danger small mt-1">{{ form.branch.errors }}</div>{% endif %}
+            </div>
+            {% else %}
+            <div class="col-md-3">
+                <label class="form-label">Branch</label>
+                <input type="text" class="form-control" value="{{ request.user.branch.name }}" readonly>
+            </div>
+            {% endif %}
+
+            <div class="col-md-3">
+                <label class="form-label">Customer</label>
+                {{ form.customer }}
+                {% if form.customer.errors %}<div class="text-danger small mt-1">{{ form.customer.errors }}</div>{% endif %}
+            </div>
+
+            <div class="col-md-3">
+                <label class="form-label">Sale Date</label>
+                {{ form.sale_date }}
+                {% if form.sale_date.errors %}<div class="text-danger small mt-1">{{ form.sale_date.errors }}</div>{% endif %}
+            </div>
+
+            <div class="col-md-3">
+                <label class="form-label">Payment Mode</label>
+                {{ form.payment_mode }}
+                {% if form.payment_mode.errors %}<div class="text-danger small mt-1">{{ form.payment_mode.errors }}</div>{% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Products Formset Card -->
+    <div class="form-card mb-4">
+        <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-3">
+            <h5 class="fw-bold mb-0 text-dark">
+                <i class="bi bi-box-seam text-primary me-2"></i>Products & Pricing
+            </h5>
+            <span class="badge bg-primary-subtle text-primary fw-semibold">Itemized Cart</span>
+        </div>
+
+        {{ formset.management_form }}
+
+        <div id="productRows">
+            {% for item in formset %}
+            <div class="sale-row bg-light border rounded-3 p-3 mb-3">
+                <div class="row g-3 align-items-end">
+                    <div class="col-md-5">
+                        <label class="form-label">Product</label>
+                        {{ item.branch_product }}
+                        {% if item.branch_product.errors %}<div class="text-danger small mt-1">{{ item.branch_product.errors }}</div>{% endif %}
+                    </div>
+
+                    <div class="col-md-2">
+                        <label class="form-label">Quantity</label>
+                        {{ item.quantity }}
+                        {% if item.quantity.errors %}<div class="text-danger small mt-1">{{ item.quantity.errors }}</div>{% endif %}
+                    </div>
+
+                    <div class="col-md-2">
+                        <label class="form-label">Rate (₹) <small class="text-muted">(Editable)</small></label>
+                        {{ item.rate }}
+                        {% if item.rate.errors %}<div class="text-danger small mt-1">{{ item.rate.errors }}</div>{% endif %}
+                    </div>
+
+                    <div class="col-md-2">
+                        <label class="form-label">Subtotal (₹)</label>
+                        <input type="number" class="form-control amount fw-bold bg-white" value="0.00" readonly>
+                    </div>
+
+                    <div class="col-md-1 text-end">
+                        <button type="button" class="btn btn-outline-danger btn-icon-only remove-row" title="Remove Item">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="mt-3">
+            <button type="button" id="addProduct" class="btn btn-outline-primary">
+                <i class="bi bi-plus-lg me-1"></i> Add Product
+            </button>
+        </div>
+    </div>
+
+    <!-- Grand Total Summary Card -->
+    <div class="form-card mb-4 bg-light border border-success-subtle">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <span class="text-muted fw-semibold d-block fs-7">BILL GRAND TOTAL</span>
+                <h3 class="fw-bold text-success mb-0">₹ <span id="grandTotal">0.00</span></h3>
+            </div>
+            <div class="stat-icon-wrapper stat-icon-success" style="width:52px; height:52px; font-size:1.6rem;">
+                <i class="bi bi-cart-check-fill"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="d-flex justify-content-end gap-2 mb-5">
+        <a href="{% url 'sale_list' %}" class="btn btn-secondary px-4">Cancel</a>
+        <button type="submit" class="btn btn-success px-5">
+            <i class="bi bi-check-circle-fill me-1"></i> Complete & Save Sale
+        </button>
+    </div>
+</form>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    function calculate() {
+        let total = 0;
+        document.querySelectorAll(".sale-row").forEach(function(row) {
+            let qty = row.querySelector(".quantity");
+            let rate = row.querySelector(".rate");
+            let amount = row.querySelector(".amount");
+
+            if (!qty || !rate || !amount) return;
+
+            let quantity = parseFloat(qty.value) || 0;
+            let price = parseFloat(rate.value) || 0;
+            let itemAmount = quantity * price;
+
+            amount.value = itemAmount.toFixed(2);
+            total += itemAmount;
+        });
+
+        document.getElementById("grandTotal").innerText = total.toFixed(2);
+    }
+
+    document.addEventListener("input", function(event) {
+        if (event.target.classList.contains("quantity") || event.target.classList.contains("rate")) {
+            calculate();
+        }
+    });
+
+    document.addEventListener("change", function(event) {
+        if (event.target.classList.contains("product")) {
+            let product = event.target;
+            let row = product.closest(".sale-row");
+            if (!row) return;
+
+            let selected = product.options[product.selectedIndex];
+            if (selected) {
+                let price = selected.dataset.price;
+                if (price) {
+                    let rate = row.querySelector(".rate");
+                    if (!rate.value || parseFloat(rate.value) === 0) {
+                        rate.value = price;
+                    }
+                }
+            }
+            calculate();
+        }
+    });
+
+    document.addEventListener("click", function(event) {
+        let button = event.target.closest(".remove-row");
+        if (!button) return;
+
+        let row = button.closest(".sale-row");
+        if (!row) return;
+
+        let deleteInput = row.querySelector('input[name$="-DELETE"]');
+        if (deleteInput) {
+            deleteInput.value = "on";
+            row.style.display = "none";
+        } else {
+            row.remove();
+        }
+
+        calculate();
+    });
+
+    calculate();
+});
+</script>
+
+{% endblock %}

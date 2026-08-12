@@ -1,0 +1,162 @@
+{% extends 'base.html' %}
+
+{% block title %}Customer Registration | Stitching Pro{% endblock %}
+{% block page_title %}Customer Registration{% endblock %}
+
+{% block content %}
+
+<div class="page-header-block">
+    <div>
+        <h2 class="page-header-title">Customer Registration & Measurements</h2>
+        <p class="page-header-sub">Enter customer details along with tailoring measurement profiles.</p>
+    </div>
+    <div>
+        <a href="{% url 'customer_list' %}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Customers
+        </a>
+    </div>
+</div>
+
+<form method="POST">
+    {% csrf_token %}
+
+    {% if customer_form.errors %}
+    <div class="alert alert-danger alert-custom mb-3">
+        <i class="bi bi-exclamation-triangle-fill text-danger fs-5"></i>
+        <div><strong>Customer Errors:</strong> {{ customer_form.errors }}</div>
+    </div>
+    {% endif %}
+
+    {% if measurement_form.errors %}
+    <div class="alert alert-danger alert-custom mb-3">
+        <i class="bi bi-exclamation-triangle-fill text-danger fs-5"></i>
+        <div><strong>Measurement Errors:</strong> {{ measurement_form.errors }}</div>
+    </div>
+    {% endif %}
+
+    <!-- CUSTOMER INFORMATION CARD -->
+    <div class="form-card mb-4">
+        <h5 class="fw-bold mb-3 text-dark border-bottom pb-2">
+            <i class="bi bi-person-badge-fill text-primary me-2"></i>Customer Information
+        </h5>
+        
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label class="form-label">Customer Name</label>
+                {{ customer_form.name }}
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Mobile Number</label>
+                {{ customer_form.mobile }}
+            </div>
+            <div class="col-md-12">
+                <label class="form-label">Address</label>
+                {{ customer_form.address }}
+            </div>
+            {% if request.user.role == "Admin" %}
+            <div class="col-md-6">
+                <label class="form-label">Branch</label>
+                {{ customer_form.branch }}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- SHIRT / TOP MEASUREMENTS CARD -->
+    <div class="form-card mb-4">
+        <h5 class="fw-bold mb-3 text-dark border-bottom pb-2">
+            <i class="bi bi-scissors text-info me-2"></i>Shirt / Top Measurements
+        </h5>
+        
+        <div class="row g-3">
+            <div class="col-12 col-sm-6 col-md-4">
+                <label class="form-label">Length</label>
+                {{ measurement_form.top_length }}
+            </div>
+            <div class="col-12 col-sm-6 col-md-4">
+                <label class="form-label">Shoulder</label>
+                {{ measurement_form.shoulder }}
+            </div>
+            <div class="col-12 col-sm-6 col-md-4">
+                <label class="form-label">Sleeve</label>
+                {{ measurement_form.sleeve }}
+            </div>
+            <div class="col-12 col-sm-6 col-md-4">
+                <label class="form-label">Sleeve Down</label>
+                {{ measurement_form.sleeve_down }}
+            </div>
+            <div class="col-12 col-sm-6 col-md-4">
+                <label class="form-label">Body</label>
+                {{ measurement_form.body }}
+            </div>
+            <div class="col-12 col-sm-6 col-md-4">
+                <label class="form-label">Collar</label>
+                {{ measurement_form.collar }}
+            </div>
+        </div>
+    </div>
+
+    <!-- PANT MEASUREMENTS CARD -->
+    <div class="form-card mb-4">
+        <h5 class="fw-bold mb-3 text-dark border-bottom pb-2">
+            <i class="bi bi-rulers text-warning me-2"></i>Pant Measurements
+        </h5>
+        
+        <div class="row g-3">
+            <div class="col-12 col-sm-6 col-md-4">
+                <label class="form-label">Length</label>
+                {{ measurement_form.pant_length }}
+            </div>
+            <div class="col-12 col-sm-6 col-md-4">
+                <label class="form-label">Band</label>
+                {{ measurement_form.band }}
+            </div>
+            <div class="col-12 col-sm-6 col-md-4">
+                <label class="form-label">Hip</label>
+                {{ measurement_form.hip }}
+            </div>
+            <div class="col-12 col-sm-6 col-md-4">
+                <label class="form-label">Bell</label>
+                {{ measurement_form.bell }}
+            </div>
+            <div class="col-12 col-sm-6 col-md-4">
+                <label class="form-label">Loose</label>
+                {{ measurement_form.loose }}
+            </div>
+            <div class="col-12 col-sm-6 col-md-4">
+                <label class="form-label">Mutt</label>
+                {{ measurement_form.mutt }}
+            </div>
+            <div class="col-12 col-sm-6 col-md-4">
+                <label class="form-label">Play</label>
+                {{ measurement_form.play }}
+            </div>
+        </div>
+    </div>
+
+    <!-- NOTES CARD -->
+    <div class="form-card mb-4">
+        <h5 class="fw-bold mb-3 text-dark border-bottom pb-2">
+            <i class="bi bi-journal-text text-secondary me-2"></i>Tailoring Notes
+        </h5>
+        <div class="row">
+            <div class="col-12">
+                <label class="form-label">Additional Instructions / Style Notes</label>
+                {{ measurement_form.notes }}
+            </div>
+        </div>
+    </div>
+
+    <!-- ACTION BUTTONS -->
+    <div class="d-flex justify-content-end gap-2 mb-5">
+        <a href="{% url 'customer_list' %}" class="btn btn-secondary">
+            <i class="bi bi-x-circle me-1"></i> Cancel
+        </a>
+        <button type="submit" class="btn btn-primary">
+            <i class="bi bi-check-circle-fill me-1"></i> Save Customer
+        </button>
+    </div>
+
+</form>
+
+{% endblock %}

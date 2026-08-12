@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+
+{% block title %}Production Report | Stitching Pro{% endblock %}
+{% block page_title %}Production Report{% endblock %}
+
+{% block content %}
+
+<div class="page-header-block">
+    <div>
+        <h2 class="page-header-title">Production Report</h2>
+        <p class="page-header-sub">Tailoring output summary filtered by date range, employee, and branch.</p>
+    </div>
+</div>
+
+<!-- Total Production KPI -->
+<div class="row g-3 mb-4">
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="stat-card">
+            <div>
+                <div class="stat-label">Total Production Pieces</div>
+                <h3 class="stat-value text-success">{{ total_qty }}</h3>
+            </div>
+            <div class="stat-icon-wrapper stat-icon-success">
+                <i class="bi bi-scissors"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filter Card -->
+<div class="card-custom p-3 mb-4">
+    <form method="GET">
+        <div class="row g-3 align-items-end">
+            <div class="col-12 col-md-3">
+                <label class="form-label fw-semibold">From Date</label>
+                <input type="date" name="from_date" class="form-control" value="{{ request.GET.from_date }}">
+            </div>
+
+            <div class="col-12 col-md-3">
+                <label class="form-label fw-semibold">To Date</label>
+                <input type="date" name="to_date" class="form-control" value="{{ request.GET.to_date }}">
+            </div>
+
+            <div class="col-12 col-md-3">
+                <label class="form-label fw-semibold">Employee</label>
+                <select name="employee" class="form-select">
+                    <option value="">All Employees</option>
+                    {% for emp in employees %}
+                    <option value="{{ emp.id }}" {% if request.GET.employee == emp.id|stringformat:"s" %}selected{% endif %}>{{ emp.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            {% if request.user.role == "Admin" %}
+            <div class="col-12 col-md-2">
+                <label class="form-label fw-semibold">Branch</label>
+                <select name="branch" class="form-select">
+                    <option value="">All Branches</option>
+                    {% for b in branches %}
+                    <option value="{{ b.id }}" {% if request.GET.branch == b.id|stringformat:"s" %}selected{% endif %}>{{ b.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endif %}
+
+            <div class="col-12 col-md-1">
+                <button type="submit" class="btn btn-primary w-100" title="Filter">
+                    <i class="bi bi-funnel-fill"></i>
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Report Table Card -->
+<div class="table-card">
+    <div class="table-card-header">
+        <h5 class="fw-bold mb-0 text-dark">
+            <i class="bi bi-clipboard2-data-fill text-primary me-2"></i>Production Detail Report
+        </h5>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table app-table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    {% if request.user.role == "Admin" %}
+                    <th>Branch</th>
+                    {% endif %}
+                    <th>Employee</th>
+                    <th>Item / Product</th>
+                    <th>Qty Produced</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in productions %}
+                <tr>
+                    <td><i class="bi bi-calendar-event me-1 text-muted"></i>{{ p.date }}</td>
+                    {% if request.user.role == "Admin" %}
+                    <td><span class="badge bg-light text-dark border"><i class="bi bi-building me-1"></i>{{ p.branch.name }}</span></td>
+                    {% endif %}
+                    <td class="fw-bold text-dark"><i class="bi bi-person me-1"></i>{{ p.employee.name }}</td>
+                    <td><span class="badge bg-primary-subtle text-primary">{{ p.item }}</span></td>
+                    <td>
+                        <span class="badge bg-success-subtle text-success border border-success-subtle fw-bold fs-6">
+                            {{ p.quantity }} pcs
+                        </span>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" class="text-center py-4 text-muted">No production records found for the selected filters.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}

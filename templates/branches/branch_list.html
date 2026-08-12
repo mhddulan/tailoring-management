@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block title %}Branch Management | Stitching Pro{% endblock %}
+{% block page_title %}Branches{% endblock %}
+
+{% block content %}
+
+<div class="page-header-block">
+    <div>
+        <h2 class="page-header-title">Branch Management</h2>
+        <p class="page-header-sub">Manage tailoring shop branches, locations, and managers.</p>
+    </div>
+    <div>
+        <a href="{% url 'branch_create' %}" class="btn btn-primary">
+            <i class="bi bi-plus-lg"></i> Add New Branch
+        </a>
+    </div>
+</div>
+
+<div class="table-card">
+    <div class="table-card-header">
+        <form method="GET" class="row g-2 align-items-center w-100 me-2">
+            <div class="col-12 col-md-9 col-lg-10">
+                <div class="header-search w-100" style="max-width: 100%;">
+                    <i class="bi bi-search"></i>
+                    <input type="text" name="search" value="{{ request.GET.search }}" class="form-control" placeholder="Search branch name, phone, or manager...">
+                </div>
+            </div>
+            <div class="col-12 col-md-3 col-lg-2">
+                <button type="submit" class="btn btn-secondary w-100">
+                    <i class="bi bi-funnel-fill"></i> Search
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table app-table">
+            <thead>
+                <tr>
+                    <th width="70">#</th>
+                    <th>Branch Name</th>
+                    <th>Phone</th>
+                    <th>Manager</th>
+                    <th>Username</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in branch_data %}
+                <tr>
+                    <td class="fw-semibold text-muted">{{ forloop.counter }}</td>
+                    <td class="fw-bold text-dark">
+                        <i class="bi bi-building me-2 text-primary"></i>{{ item.name }}
+                    </td>
+                    <td><i class="bi bi-telephone text-muted me-1"></i>{{ item.phone }}</td>
+                    <td><span class="badge bg-light text-dark border"><i class="bi bi-person me-1"></i>{{ item.manager }}</span></td>
+                    <td><span class="badge bg-primary-subtle text-primary">{{ item.username }}</span></td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" class="text-center py-4 text-muted">No Branches Found</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}
