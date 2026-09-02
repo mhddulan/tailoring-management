@@ -33,7 +33,13 @@ ALLOWED_HOSTS = ["127.0.0.1",
     "tailoring-management-cvah.onrender.com",
     ]
 
+CSRF_TRUSTED_ORIGINS = [
+    "https://tailoring-management-cvah.onrender.com",
+]
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
 # Application definition
 
 INSTALLED_APPS = [
