@@ -26,5 +26,9 @@ path(
         "products/",
         include("products.urls")
     ),
+    path(
+    "alterations/",
+    include("alterations.urls")
+),
 
 ]

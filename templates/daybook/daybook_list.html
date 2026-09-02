@@ -5,226 +5,1732 @@
 
 {% block content %}
 
-<div class="page-header-block">
-    <div>
-        <h2 class="page-header-title">Day Book Accounting</h2>
-        <p class="page-header-sub">Daily income, expense tracking, opening/closing cash balances, and financial exports.</p>
-    </div>
-    <div class="d-flex gap-2 flex-wrap">
-        <a href="{% url 'daybook_excel' %}?{{ request.GET.urlencode }}" class="btn btn-outline-success">
-            <i class="bi bi-file-earmark-excel me-1"></i> Excel
-        </a>
-        <a href="{% url 'daybook_pdf' %}?{{ request.GET.urlencode }}" class="btn btn-outline-danger">
-            <i class="bi bi-file-earmark-pdf me-1"></i> PDF
-        </a>
-        <button onclick="window.print()" class="btn btn-secondary">
-            <i class="bi bi-printer me-1"></i> Print
-        </button>
-        <a href="{% url 'daybook_create' %}" class="btn btn-primary">
-            <i class="bi bi-plus-lg me-1"></i> Add Entry
-        </a>
-    </div>
-</div>
+<div class="daybook-page">
 
-<!-- Daily & Monthly KPI Stat Cards -->
-<div class="row g-3 mb-4">
-    <div class="col-12 col-sm-6 col-xl-4">
-        <div class="stat-card">
-            <div>
-                <div class="stat-label">Today's Income</div>
-                <h3 class="stat-value text-success">₹ {{ income }}</h3>
-            </div>
-            <div class="stat-icon-wrapper stat-icon-success">
-                <i class="bi bi-arrow-down-left-circle-fill"></i>
-            </div>
+    <!-- =====================================================
+         PAGE HEADER
+    ====================================================== -->
+
+    <div class="page-header-block">
+
+        <div>
+
+            <h2 class="page-header-title">
+                <i class="bi bi-journal-bookmark-fill me-2"></i>
+                Day Book Accounting
+            </h2>
+
+            <p class="page-header-sub">
+                Daily income, expenses, cash, bank balances and
+                financial transactions.
+            </p>
+
         </div>
-    </div>
 
-    <div class="col-12 col-sm-6 col-xl-4">
-        <div class="stat-card">
-            <div>
-                <div class="stat-label">Today's Expense</div>
-                <h3 class="stat-value text-danger">₹ {{ expense }}</h3>
-            </div>
-            <div class="stat-icon-wrapper stat-icon-danger">
-                <i class="bi bi-arrow-up-right-circle-fill"></i>
-            </div>
+
+        <div class="d-flex gap-2 flex-wrap">
+
+            <a
+                href="{% url 'daybook_excel' %}?{{ request.GET.urlencode }}"
+                class="btn btn-outline-success"
+            >
+                <i class="bi bi-file-earmark-excel me-1"></i>
+                Excel
+            </a>
+
+
+            <a
+                href="{% url 'daybook_pdf' %}?{{ request.GET.urlencode }}"
+                class="btn btn-outline-danger"
+            >
+                <i class="bi bi-file-earmark-pdf me-1"></i>
+                PDF
+            </a>
+
+
+            <button
+                type="button"
+                onclick="window.print()"
+                class="btn btn-secondary"
+            >
+                <i class="bi bi-printer me-1"></i>
+                Print
+            </button>
+
+
+            <a
+                href="{% url 'daybook_create' %}"
+                class="btn btn-primary"
+            >
+                <i class="bi bi-plus-lg me-1"></i>
+                Add Entry
+            </a>
+
         </div>
+
     </div>
 
-    <div class="col-12 col-sm-6 col-xl-4">
-        <div class="stat-card">
-            <div>
-                <div class="stat-label">Today's Net Profit</div>
-                <h3 class="stat-value text-primary">₹ {{ profit }}</h3>
+
+    <!-- =====================================================
+         SUMMARY CARDS
+    ====================================================== -->
+
+    <div class="row g-3 mb-4">
+
+
+        <!-- TODAY INCOME -->
+
+        <div class="col-12 col-sm-6 col-xl-4">
+
+            <div class="stat-card">
+
+                <div>
+
+                    <div class="stat-label">
+                        Today's Income
+                    </div>
+
+                    <h3 class="stat-value text-success">
+                        SAR {{ income|floatformat:2 }}
+                    </h3>
+
+                </div>
+
+
+                <div class="stat-icon-wrapper stat-icon-success">
+
+                    <i class="bi bi-arrow-down-left-circle-fill"></i>
+
+                </div>
+
             </div>
-            <div class="stat-icon-wrapper stat-icon-primary">
-                <i class="bi bi-graph-up-arrow"></i>
-            </div>
+
         </div>
-    </div>
 
-    <div class="col-12 col-sm-6 col-xl-4">
-        <div class="stat-card">
-            <div>
-                <div class="stat-label">Monthly Income</div>
-                <h4 class="fw-bold text-dark mb-0">₹ {{ monthly_income }}</h4>
+
+        <!-- TODAY EXPENSE -->
+
+        <div class="col-12 col-sm-6 col-xl-4">
+
+            <div class="stat-card">
+
+                <div>
+
+                    <div class="stat-label">
+                        Today's Expense
+                    </div>
+
+                    <h3 class="stat-value text-danger">
+                        SAR {{ expense|floatformat:2 }}
+                    </h3>
+
+                </div>
+
+
+                <div class="stat-icon-wrapper stat-icon-danger">
+
+                    <i class="bi bi-arrow-up-right-circle-fill"></i>
+
+                </div>
+
             </div>
-            <div class="stat-icon-wrapper stat-icon-purple">
-                <i class="bi bi-calendar-check"></i>
-            </div>
+
         </div>
-    </div>
 
-    <div class="col-12 col-sm-6 col-xl-4">
-        <div class="stat-card">
-            <div>
-                <div class="stat-label">Monthly Expense</div>
-                <h4 class="fw-bold text-dark mb-0">₹ {{ monthly_expense }}</h4>
+
+        <!-- TODAY PROFIT -->
+
+        <div class="col-12 col-sm-6 col-xl-4">
+
+            <div class="stat-card">
+
+                <div>
+
+                    <div class="stat-label">
+                        Today's Net Profit
+                    </div>
+
+                    <h3 class="stat-value text-primary">
+                        SAR {{ profit|floatformat:2 }}
+                    </h3>
+
+                </div>
+
+
+                <div class="stat-icon-wrapper stat-icon-primary">
+
+                    <i class="bi bi-graph-up-arrow"></i>
+
+                </div>
+
             </div>
-            <div class="stat-icon-wrapper stat-icon-warning">
-                <i class="bi bi-receipt"></i>
-            </div>
+
         </div>
-    </div>
 
-    <div class="col-12 col-sm-6 col-xl-4">
-        <div class="stat-card">
-            <div>
-                <div class="stat-label">Monthly Net Profit</div>
-                <h4 class="fw-bold text-dark mb-0">₹ {{ monthly_profit }}</h4>
+
+        <!-- MONTHLY INCOME -->
+
+        <div class="col-12 col-sm-6 col-xl-4">
+
+            <div class="stat-card">
+
+                <div>
+
+                    <div class="stat-label">
+                        Monthly Income
+                    </div>
+
+                    <h4 class="fw-bold text-dark mb-0">
+                        SAR {{ monthly_income|floatformat:2 }}
+                    </h4>
+
+                </div>
+
+
+                <div class="stat-icon-wrapper stat-icon-purple">
+
+                    <i class="bi bi-calendar-check"></i>
+
+                </div>
+
             </div>
-            <div class="stat-icon-wrapper stat-icon-info">
-                <i class="bi bi-piggy-bank-fill"></i>
-            </div>
+
         </div>
-    </div>
-</div>
 
-<!-- Opening & Closing Balance Bar -->
-<div class="row g-3 mb-4">
-    <div class="col-12 col-md-6">
-        <div class="card-custom p-3 bg-light border border-warning-subtle d-flex align-items-center justify-content-between">
-            <div>
-                <span class="text-muted fw-semibold d-block fs-7">OPENING CASH BALANCE</span>
-                <h3 class="fw-bold text-dark mb-0">₹ {{ opening_balance }}</h3>
+
+        <!-- MONTHLY EXPENSE -->
+
+        <div class="col-12 col-sm-6 col-xl-4">
+
+            <div class="stat-card">
+
+                <div>
+
+                    <div class="stat-label">
+                        Monthly Expense
+                    </div>
+
+                    <h4 class="fw-bold text-dark mb-0">
+                        SAR {{ monthly_expense|floatformat:2 }}
+                    </h4>
+
+                </div>
+
+
+                <div class="stat-icon-wrapper stat-icon-warning">
+
+                    <i class="bi bi-receipt"></i>
+
+                </div>
+
             </div>
-            <div class="stat-icon-wrapper stat-icon-warning" style="width:48px; height:48px; font-size:1.5rem;">
-                <i class="bi bi-door-open-fill"></i>
-            </div>
+
         </div>
-    </div>
-    <div class="col-12 col-md-6">
-        <div class="card-custom p-3 bg-light border border-success-subtle d-flex align-items-center justify-content-between">
-            <div>
-                <span class="text-muted fw-semibold d-block fs-7">CLOSING CASH BALANCE</span>
-                <h3 class="fw-bold text-success mb-0">₹ {{ closing_balance }}</h3>
+
+
+        <!-- MONTHLY PROFIT -->
+
+        <div class="col-12 col-sm-6 col-xl-4">
+
+            <div class="stat-card">
+
+                <div>
+
+                    <div class="stat-label">
+                        Monthly Net Profit
+                    </div>
+
+                    <h4 class="fw-bold text-dark mb-0">
+                        SAR {{ monthly_profit|floatformat:2 }}
+                    </h4>
+
+                </div>
+
+
+                <div class="stat-icon-wrapper stat-icon-info">
+
+                    <i class="bi bi-piggy-bank-fill"></i>
+
+                </div>
+
             </div>
-            <div class="stat-icon-wrapper stat-icon-success" style="width:48px; height:48px; font-size:1.5rem;">
-                <i class="bi bi-door-closed-fill"></i>
-            </div>
+
         </div>
+
     </div>
-</div>
 
-<!-- Date & Branch Filter Card -->
-<div class="card-custom p-3 mb-4">
-    <form method="GET">
-        <div class="row g-3 align-items-end">
-            <div class="col-12 col-md-4 col-lg-3">
-                <label class="form-label fw-semibold">From Date</label>
-                <input type="date" name="from_date" class="form-control" value="{{ request.GET.from_date|default:today|date:'Y-m-d' }}">
+
+    <!-- =====================================================
+         CASH / BANK / TOTAL BALANCE
+    ====================================================== -->
+
+    <div class="row g-3 mb-4">
+
+
+        <!-- CASH -->
+
+        <div class="col-12 col-md-4">
+
+            <div class="stat-card">
+
+                <div>
+
+                    <div class="stat-label">
+                        CASH IN HAND
+                    </div>
+
+                    <h3 class="stat-value text-success">
+                        SAR {{ closing_cash|floatformat:2 }}
+                    </h3>
+
+                    <small class="text-muted">
+                        Opening:
+                        SAR {{ opening_cash|floatformat:2 }}
+                    </small>
+
+                </div>
+
+
+                <div class="stat-icon-wrapper stat-icon-success">
+
+                    <i class="bi bi-cash-stack"></i>
+
+                </div>
+
             </div>
 
-            <div class="col-12 col-md-4 col-lg-3">
-                <label class="form-label fw-semibold">To Date</label>
-                <input type="date" name="to_date" class="form-control" value="{{ request.GET.to_date|default:today|date:'Y-m-d' }}">
+        </div>
+
+
+        <!-- BANK -->
+
+        <div class="col-12 col-md-4">
+
+            <div class="stat-card">
+
+                <div>
+
+                    <div class="stat-label">
+                        CASH IN BANK
+                    </div>
+
+                    <h3 class="stat-value text-primary">
+                        SAR {{ closing_bank|floatformat:2 }}
+                    </h3>
+
+                    <small class="text-muted">
+                        Opening:
+                        SAR {{ opening_bank|floatformat:2 }}
+                    </small>
+
+                </div>
+
+
+                <div class="stat-icon-wrapper stat-icon-primary">
+
+                    <i class="bi bi-bank"></i>
+
+                </div>
+
             </div>
 
-            {% if request.user.role == "Admin" %}
-            <div class="col-12 col-md-4 col-lg-3">
-                <label class="form-label fw-semibold">Branch</label>
-                <select name="branch" class="form-select">
-                    <option value="">All Branches</option>
-                    {% for branch in branches %}
-                    <option value="{{ branch.id }}" {% if request.GET.branch == branch.id|stringformat:"s" %}selected{% endif %}>
-                        {{ branch.name }}
-                    </option>
-                    {% endfor %}
-                </select>
-            </div>
-            {% endif %}
+        </div>
 
-            <div class="col-12 col-md-4 col-lg-3">
-                <button type="submit" class="btn btn-primary w-100">
-                    <i class="bi bi-funnel-fill me-1"></i> Filter Entries
+
+        <!-- TOTAL -->
+
+        <div class="col-12 col-md-4">
+
+            <div class="stat-card">
+
+                <div>
+
+                    <div class="stat-label">
+                        TOTAL BALANCE
+                    </div>
+
+                    <h3 class="stat-value text-dark">
+                        SAR {{ total_closing_balance|floatformat:2 }}
+                    </h3>
+
+                    <small class="text-muted">
+                        Cash + Bank
+                    </small>
+
+                </div>
+
+
+                <div class="stat-icon-wrapper stat-icon-warning">
+
+                    <i class="bi bi-wallet-fill"></i>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- =====================================================
+         CASH & BANK DETAILS
+    ====================================================== -->
+
+    <div class="row g-4 mb-4">
+
+
+        <!-- CASH DETAILS -->
+
+        <div class="col-12 col-lg-6">
+
+            <div class="card-custom p-4 h-100">
+
+                <div class="d-flex justify-content-between align-items-center mb-3">
+
+                    <div>
+
+                        <h5 class="fw-bold mb-1">
+
+                            <i class="bi bi-cash-stack text-success me-2"></i>
+
+                            Cash in Hand
+
+                        </h5>
+
+                        <small class="text-muted">
+                            Physical cash balance
+                        </small>
+
+                    </div>
+
+
+                    <div class="stat-icon-wrapper stat-icon-success balance-icon">
+
+                        <i class="bi bi-wallet2"></i>
+
+                    </div>
+
+                </div>
+
+
+                <div class="row g-3">
+
+
+                    <div class="col-4">
+
+                        <small class="text-muted d-block">
+                            Opening
+                        </small>
+
+                        <h5 class="fw-bold mb-0">
+                            SAR {{ opening_cash|floatformat:2 }}
+                        </h5>
+
+                    </div>
+
+
+                    <div class="col-4">
+
+                        <small class="text-muted d-block">
+                            Income
+                        </small>
+
+                        <h5 class="fw-bold text-success mb-0">
+                            SAR {{ cash_income|floatformat:2 }}
+                        </h5>
+
+                    </div>
+
+
+                    <div class="col-4">
+
+                        <small class="text-muted d-block">
+                            Expense
+                        </small>
+
+                        <h5 class="fw-bold text-danger mb-0">
+                            SAR {{ cash_expense|floatformat:2 }}
+                        </h5>
+
+                    </div>
+
+                </div>
+
+
+                <hr>
+
+
+                <div class="d-flex justify-content-between align-items-center">
+
+                    <span class="fw-bold">
+                        Closing Cash
+                    </span>
+
+                    <span class="fs-4 fw-bold text-success">
+
+                        SAR {{ closing_cash|floatformat:2 }}
+
+                    </span>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- BANK DETAILS -->
+
+        <div class="col-12 col-lg-6">
+
+            <div class="card-custom p-4 h-100">
+
+                <div class="d-flex justify-content-between align-items-center mb-3">
+
+                    <div>
+
+                        <h5 class="fw-bold mb-1">
+
+                            <i class="bi bi-bank text-primary me-2"></i>
+
+                            Cash in Bank
+
+                        </h5>
+
+                        <small class="text-muted">
+                            Bank account balance
+                        </small>
+
+                    </div>
+
+
+                    <div class="stat-icon-wrapper stat-icon-primary balance-icon">
+
+                        <i class="bi bi-bank"></i>
+
+                    </div>
+
+                </div>
+
+
+                <div class="row g-3">
+
+
+                    <div class="col-4">
+
+                        <small class="text-muted d-block">
+                            Opening
+                        </small>
+
+                        <h5 class="fw-bold mb-0">
+                            SAR {{ opening_bank|floatformat:2 }}
+                        </h5>
+
+                    </div>
+
+
+                    <div class="col-4">
+
+                        <small class="text-muted d-block">
+                            Income
+                        </small>
+
+                        <h5 class="fw-bold text-success mb-0">
+                            SAR {{ bank_income|floatformat:2 }}
+                        </h5>
+
+                    </div>
+
+
+                    <div class="col-4">
+
+                        <small class="text-muted d-block">
+                            Expense
+                        </small>
+
+                        <h5 class="fw-bold text-danger mb-0">
+                            SAR {{ bank_expense|floatformat:2 }}
+                        </h5>
+
+                    </div>
+
+                </div>
+
+
+                <hr>
+
+
+                <div class="d-flex justify-content-between align-items-center">
+
+                    <span class="fw-bold">
+                        Closing Bank
+                    </span>
+
+                    <span class="fs-4 fw-bold text-primary">
+
+                        SAR {{ closing_bank|floatformat:2 }}
+
+                    </span>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- =====================================================
+         TOTAL AVAILABLE BALANCE
+    ====================================================== -->
+
+    <div class="card-custom p-4 mb-4">
+
+        <div class="d-flex justify-content-between align-items-center">
+
+            <div>
+
+                <h5 class="fw-bold mb-1">
+
+                    <i class="bi bi-wallet-fill text-primary me-2"></i>
+
+                    Total Available Balance
+
+                </h5>
+
+                <small class="text-muted">
+                    Cash in Hand + Cash in Bank
+                </small>
+
+            </div>
+
+
+            <h3 class="fw-bold mb-0 text-primary">
+
+                SAR {{ total_closing_balance|floatformat:2 }}
+
+            </h3>
+
+        </div>
+
+    </div>
+
+
+    <!-- =====================================================
+         FILTER CARD
+    ====================================================== -->
+
+    <div class="card-custom p-3 mb-4">
+
+        <!-- QUICK DATE FILTERS -->
+
+        <div class="quick-date-area mb-3">
+
+            <span class="quick-date-label">
+                Quick Date:
+            </span>
+
+
+            <div class="quick-date-buttons">
+
+                <button
+                    type="button"
+                    class="quick-date-btn"
+                    data-range="today"
+                    onclick="setDateRange('today')"
+                >
+                    Today
                 </button>
+
+
+                <button
+                    type="button"
+                    class="quick-date-btn"
+                    data-range="yesterday"
+                    onclick="setDateRange('yesterday')"
+                >
+                    Yesterday
+                </button>
+
+
+                <button
+                    type="button"
+                    class="quick-date-btn"
+                    data-range="week"
+                    onclick="setDateRange('week')"
+                >
+                    This Week
+                </button>
+
+
+                <button
+                    type="button"
+                    class="quick-date-btn"
+                    data-range="month"
+                    onclick="setDateRange('month')"
+                >
+                    This Month
+                </button>
+
+
+                <button
+                    type="button"
+                    class="quick-date-btn"
+                    data-range="custom"
+                    onclick="setDateRange('custom')"
+                >
+                    Custom
+                </button>
+
             </div>
+
         </div>
-    </form>
-</div>
 
-<!-- Day Book Entries Table Card -->
-<div class="table-card">
-    <div class="table-card-header">
-        <h5 class="fw-bold mb-0 text-dark">
-            <i class="bi bi-journal-bookmark-fill text-primary me-2"></i>Day Book Transaction Log
-        </h5>
+
+        <form
+            method="GET"
+            id="daybookFilterForm"
+        >
+
+            <div class="row g-3 align-items-end">
+
+
+                <!-- FROM DATE -->
+
+                <div class="col-12 col-md-4 col-lg-3">
+
+                    <label class="form-label fw-semibold">
+                        From Date
+                    </label>
+
+                    <input
+                        type="date"
+                        name="from_date"
+                        id="fromDate"
+                        class="form-control"
+                        value="{{ request.GET.from_date|default:today|date:'Y-m-d' }}"
+                    >
+
+                </div>
+
+
+                <!-- TO DATE -->
+
+                <div class="col-12 col-md-4 col-lg-3">
+
+                    <label class="form-label fw-semibold">
+                        To Date
+                    </label>
+
+                    <input
+                        type="date"
+                        name="to_date"
+                        id="toDate"
+                        class="form-control"
+                        value="{{ request.GET.to_date|default:today|date:'Y-m-d' }}"
+                    >
+
+                </div>
+
+
+                <!-- BRANCH -->
+
+                {% if request.user.role == "Admin" %}
+
+                <div class="col-12 col-md-4 col-lg-3">
+
+                    <label class="form-label fw-semibold">
+                        Branch
+                    </label>
+
+                    <select
+                        name="branch"
+                        class="form-select"
+                    >
+
+                        <option value="">
+                            All Branches
+                        </option>
+
+
+                        {% for branch in branches %}
+
+                        <option
+                            value="{{ branch.id }}"
+                            {% if request.GET.branch == branch.id|stringformat:"s" %}
+                                selected
+                            {% endif %}
+                        >
+
+                            {{ branch.name }}
+
+                        </option>
+
+                        {% endfor %}
+
+                    </select>
+
+                </div>
+
+                {% endif %}
+
+
+                <!-- TRANSACTION TYPE -->
+
+                <div class="col-12 col-md-4 col-lg-3">
+
+                    <label class="form-label fw-semibold">
+                        Transaction Type
+                    </label>
+
+                    <select
+                        name="transaction_type"
+                        class="form-select"
+                    >
+
+                        <option value="">
+                            All Types
+                        </option>
+
+                        <option
+                            value="Income"
+                            {% if request.GET.transaction_type == "Income" %}
+                                selected
+                            {% endif %}
+                        >
+                            Income
+                        </option>
+
+                        <option
+                            value="Expense"
+                            {% if request.GET.transaction_type == "Expense" %}
+                                selected
+                            {% endif %}
+                        >
+                            Expense
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+                <!-- PAYMENT MODE -->
+
+                <div class="col-12 col-md-4 col-lg-3">
+
+                    <label class="form-label fw-semibold">
+                        Payment Mode
+                    </label>
+
+                    <select
+                        name="payment_mode"
+                        class="form-select"
+                    >
+
+                        <option value="">
+                            All Payment Modes
+                        </option>
+
+                        <option
+                            value="Cash"
+                            {% if request.GET.payment_mode == "Cash" %}
+                                selected
+                            {% endif %}
+                        >
+                            Cash
+                        </option>
+
+                        <option
+                            value="Bank"
+                            {% if request.GET.payment_mode == "Bank" %}
+                                selected
+                            {% endif %}
+                        >
+                            Bank
+                        </option>
+
+                        <option
+                            value="Online"
+                            {% if request.GET.payment_mode == "Online" %}
+                                selected
+                            {% endif %}
+                        >
+                            Online
+                        </option>
+
+                        <option
+                            value="Cheque"
+                            {% if request.GET.payment_mode == "Cheque" %}
+                                selected
+                            {% endif %}
+                        >
+                            Cheque
+                        </option>
+
+                        <option
+                            value="POS"
+                            {% if request.GET.payment_mode == "POS" %}
+                                selected
+                            {% endif %}
+                        >
+                            POS
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+                <!-- CATEGORY -->
+
+                <div class="col-12 col-md-4 col-lg-3">
+
+                    <label class="form-label fw-semibold">
+                        Category
+                    </label>
+
+                    <select
+                        name="category"
+                        class="form-select"
+                    >
+
+                        <option value="">
+                            All Categories
+                        </option>
+
+                        <option
+                            value="Sales"
+                            {% if request.GET.category == "Sales" %}
+                                selected
+                            {% endif %}
+                        >
+                            Sales
+                        </option>
+
+                        <option
+                            value="Advance"
+                            {% if request.GET.category == "Advance" %}
+                                selected
+                            {% endif %}
+                        >
+                            Advance
+                        </option>
+
+                        <option
+                            value="Balance Payment"
+                            {% if request.GET.category == "Balance Payment" %}
+                                selected
+                            {% endif %}
+                        >
+                            Balance Payment
+                        </option>
+
+                        <option
+                            value="Purchase"
+                            {% if request.GET.category == "Purchase" %}
+                                selected
+                            {% endif %}
+                        >
+                            Purchase
+                        </option>
+
+                        <option
+                            value="Salary"
+                            {% if request.GET.category == "Salary" %}
+                                selected
+                            {% endif %}
+                        >
+                            Salary
+                        </option>
+
+                        <option
+                            value="Rent"
+                            {% if request.GET.category == "Rent" %}
+                                selected
+                            {% endif %}
+                        >
+                            Rent
+                        </option>
+
+                        <option
+                            value="Electricity"
+                            {% if request.GET.category == "Electricity" %}
+                                selected
+                            {% endif %}
+                        >
+                            Electricity
+                        </option>
+
+                        <option
+                            value="Water"
+                            {% if request.GET.category == "Water" %}
+                                selected
+                            {% endif %}
+                        >
+                            Water
+                        </option>
+
+                        <option
+                            value="Internet"
+                            {% if request.GET.category == "Internet" %}
+                                selected
+                            {% endif %}
+                        >
+                            Internet
+                        </option>
+
+                        <option
+                            value="Fuel"
+                            {% if request.GET.category == "Fuel" %}
+                                selected
+                            {% endif %}
+                        >
+                            Fuel
+                        </option>
+
+                        <option
+                            value="Maintenance"
+                            {% if request.GET.category == "Maintenance" %}
+                                selected
+                            {% endif %}
+                        >
+                            Maintenance
+                        </option>
+
+                        <option
+                            value="Office Expense"
+                            {% if request.GET.category == "Office Expense" %}
+                                selected
+                            {% endif %}
+                        >
+                            Office Expense
+                        </option>
+
+                        <option
+                            value="Miscellaneous"
+                            {% if request.GET.category == "Miscellaneous" %}
+                                selected
+                            {% endif %}
+                        >
+                            Miscellaneous
+                        </option>
+
+                        <option
+                            value="Other Income"
+                            {% if request.GET.category == "Other Income" %}
+                                selected
+                            {% endif %}
+                        >
+                            Other Income
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+                <!-- FILTER -->
+
+                <div class="col-12 col-md-4 col-lg-3">
+
+                    <button
+                        type="submit"
+                        class="btn btn-primary w-100"
+                    >
+
+                        <i class="bi bi-funnel-fill me-1"></i>
+
+                        Filter Entries
+
+                    </button>
+
+                </div>
+
+
+                <!-- CLEAR -->
+
+                <div class="col-12 col-md-4 col-lg-3">
+
+                    <a
+                        href="{% url 'daybook_list' %}"
+                        class="btn btn-outline-secondary w-100"
+                    >
+
+                        <i class="bi bi-x-circle me-1"></i>
+
+                        Clear Filter
+
+                    </a>
+
+                </div>
+
+            </div>
+
+        </form>
+
     </div>
 
-    <div class="table-responsive">
-        <table class="table app-table">
-            <thead>
-                <tr>
-                    <th>Date</th>
-                    <th>Branch</th>
-                    <th>Type</th>
-                    <th>Category</th>
-                    <th>Payment Mode</th>
-                    <th>Description</th>
-                    <th class="text-end">Amount</th>
-                    <th width="150" class="text-end">Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for entry in entries %}
-                <tr>
-                    <td><i class="bi bi-calendar-event me-1 text-muted"></i>{{ entry.date|date:"d-m-Y" }}</td>
-                    <td><span class="badge bg-light text-dark border">{{ entry.branch }}</span></td>
-                    <td>
-                        {% if entry.transaction_type == "Income" %}
-                            <span class="badge bg-success-subtle text-success border border-success-subtle fw-bold"><i class="bi bi-arrow-down-left"></i> Income</span>
-                        {% else %}
-                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle fw-bold"><i class="bi bi-arrow-up-right"></i> Expense</span>
-                        {% endif %}
-                    </td>
-                    <td class="fw-semibold text-dark">{{ entry.category }}</td>
-                    <td>
-                        <span class="badge bg-light text-dark border">
-                            <i class="bi bi-wallet2 me-1"></i>{{ entry.payment_mode }}
-                        </span>
-                    </td>
-                    <td>{{ entry.description|default:"-" }}</td>
-                    <td class="text-end fw-bold fs-6 {% if entry.transaction_type == 'Income' %}text-success{% else %}text-danger{% endif %}">
-                        ₹ {{ entry.amount }}
-                    </td>
-                    <td class="text-end">
-                        <a href="{% url 'daybook_edit' entry.id %}" class="btn btn-sm btn-secondary btn-icon-only me-1" title="Edit Entry">
-                            <i class="bi bi-pencil"></i>
-                        </a>
-                        <a href="{% url 'daybook_delete' entry.id %}" class="btn btn-sm btn-outline-danger btn-icon-only" title="Delete Entry">
-                            <i class="bi bi-trash"></i>
-                        </a>
-                    </td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="8" class="text-center py-4 text-muted">No Day Book entries found. Click <strong>Add Entry</strong> to record a transaction.</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+
+    <!-- =====================================================
+         TRANSACTION TABLE
+    ====================================================== -->
+
+    <div class="table-card">
+
+
+        <div class="table-card-header">
+
+            <div>
+
+                <h5 class="fw-bold mb-1 text-dark">
+
+                    <i class="bi bi-journal-bookmark-fill text-primary me-2"></i>
+
+                    Day Book Transaction Log
+
+                </h5>
+
+                <small class="text-muted">
+                    Financial transaction history
+                </small>
+
+            </div>
+
+
+            <span class="badge bg-primary-subtle text-primary">
+
+                {{ entries|length }} Entries
+
+            </span>
+
+        </div>
+
+
+        <div class="table-responsive">
+
+            <table class="table app-table">
+
+
+                <thead>
+
+                    <tr>
+
+                        <th>
+                            Date
+                        </th>
+
+                        <th>
+                            Branch
+                        </th>
+
+                        <th>
+                            Type
+                        </th>
+
+                        <th>
+                            Category
+                        </th>
+
+                        <th>
+                            Payment Mode
+                        </th>
+
+                        <th>
+                            Description
+                        </th>
+
+                        <th class="text-end">
+                            Amount
+                        </th>
+
+                        <th
+                            width="150"
+                            class="text-end"
+                        >
+                            Actions
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+
+                <tbody>
+
+
+                    {% for entry in entries %}
+
+                    <tr>
+
+
+                        <!-- DATE -->
+
+                        <td>
+
+                            <span class="fw-semibold">
+
+                                <i class="bi bi-calendar-event me-1 text-muted"></i>
+
+                                {{ entry.date|date:"d-m-Y" }}
+
+                            </span>
+
+                        </td>
+
+
+                        <!-- BRANCH -->
+
+                        <td>
+
+                            <span class="badge bg-light text-dark border">
+
+                                <i class="bi bi-building me-1"></i>
+
+                                {{ entry.branch }}
+
+                            </span>
+
+                        </td>
+
+
+                        <!-- TYPE -->
+
+                        <td>
+
+                            {% if entry.transaction_type == "Income" %}
+
+                                <span
+                                    class="badge bg-success-subtle text-success border border-success-subtle fw-bold"
+                                >
+
+                                    <i class="bi bi-arrow-down-left me-1"></i>
+
+                                    Income
+
+                                </span>
+
+                            {% else %}
+
+                                <span
+                                    class="badge bg-danger-subtle text-danger border border-danger-subtle fw-bold"
+                                >
+
+                                    <i class="bi bi-arrow-up-right me-1"></i>
+
+                                    Expense
+
+                                </span>
+
+                            {% endif %}
+
+                        </td>
+
+
+                        <!-- CATEGORY -->
+
+                        <td>
+
+                            <span class="fw-semibold text-dark">
+
+                                {{ entry.category }}
+
+                            </span>
+
+                        </td>
+
+
+                        <!-- PAYMENT MODE -->
+
+                        <td>
+
+                            <span class="badge bg-light text-dark border">
+
+                                <i class="bi bi-wallet2 me-1"></i>
+
+                                {{ entry.payment_mode }}
+
+                            </span>
+
+                        </td>
+
+
+                        <!-- DESCRIPTION -->
+
+                        <td>
+
+                            <span class="text-muted">
+
+                                {{ entry.description|default:"-" }}
+
+                            </span>
+
+                        </td>
+
+
+                        <!-- AMOUNT -->
+
+                        <td
+                            class="text-end fw-bold fs-6
+                            {% if entry.transaction_type == 'Income' %}
+                                text-success
+                            {% else %}
+                                text-danger
+                            {% endif %}"
+                        >
+
+                            {% if entry.transaction_type == "Income" %}
+                                +
+                            {% else %}
+                                -
+                            {% endif %}
+
+                            SAR {{ entry.amount|floatformat:2 }}
+
+                        </td>
+
+
+                        <!-- ACTIONS -->
+
+                        <td class="text-end">
+
+                            <a
+                                href="{% url 'daybook_edit' entry.id %}"
+                                class="btn btn-sm btn-secondary btn-icon-only me-1"
+                                title="Edit Entry"
+                            >
+
+                                <i class="bi bi-pencil"></i>
+
+                            </a>
+
+
+                            <a
+                                href="{% url 'daybook_delete' entry.id %}"
+                                class="btn btn-sm btn-outline-danger btn-icon-only"
+                                title="Delete Entry"
+                                onclick="return confirm('Are you sure you want to delete this Day Book entry?');"
+                            >
+
+                                <i class="bi bi-trash"></i>
+
+                            </a>
+
+                        </td>
+
+                    </tr>
+
+
+                    {% empty %}
+
+                    <tr>
+
+                        <td
+                            colspan="8"
+                            class="text-center py-5"
+                        >
+
+                            <div class="text-muted">
+
+                                <i
+                                    class="bi bi-journal-x"
+                                    style="font-size:2.5rem;"
+                                ></i>
+
+                                <h6 class="fw-bold mt-3">
+                                    No Transactions Found
+                                </h6>
+
+                                <p class="mb-3">
+                                    No Day Book entries match the
+                                    selected filters.
+                                </p>
+
+                                <a
+                                    href="{% url 'daybook_create' %}"
+                                    class="btn btn-primary btn-sm"
+                                >
+
+                                    <i class="bi bi-plus-lg me-1"></i>
+
+                                    Add Entry
+
+                                </a>
+
+                            </div>
+
+                        </td>
+
+                    </tr>
+
+                    {% endfor %}
+
+
+                </tbody>
+
+            </table>
+
+        </div>
+
     </div>
+
 </div>
+
+
+<!-- =====================================================
+     PAGE CSS
+====================================================== -->
+
+<style>
+
+.daybook-page {
+    width: 100%;
+}
+
+.balance-icon {
+    width: 48px;
+    height: 48px;
+    font-size: 1.5rem;
+}
+
+
+/* =====================================================
+   QUICK DATE FILTER
+===================================================== */
+
+.quick-date-area {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.quick-date-label {
+    color: #64748b;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.quick-date-buttons {
+    display: flex;
+    gap: 7px;
+    flex-wrap: wrap;
+}
+
+.quick-date-btn {
+    border: 1px solid #d7dee7;
+    background: #fff;
+    color: #475569;
+    border-radius: 7px;
+    padding: 7px 13px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: .15s ease;
+}
+
+.quick-date-btn:hover {
+    border-color: #2563eb;
+    color: #2563eb;
+    background: #f8fafc;
+}
+
+.quick-date-btn.active {
+    background: #2563eb;
+    border-color: #2563eb;
+    color: #fff;
+}
+
+
+/* =====================================================
+   PRINT
+===================================================== */
+
+@media print {
+
+    .app-sidebar,
+    .app-header,
+    .page-header-block .d-flex,
+    .quick-date-area,
+    .card-custom form,
+    .table-card-header .badge,
+    .table-card td:last-child,
+    .table-card th:last-child {
+        display: none !important;
+    }
+
+    .app-main {
+        margin: 0 !important;
+        width: 100% !important;
+    }
+
+    main {
+        padding: 0 !important;
+    }
+
+    .card-custom,
+    .table-card,
+    .stat-card {
+        box-shadow: none !important;
+        border: 1px solid #ddd !important;
+    }
+
+}
+
+
+/* =====================================================
+   MOBILE
+===================================================== */
+
+@media (max-width: 768px) {
+
+    .quick-date-area {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .quick-date-buttons {
+        width: 100%;
+        overflow-x: auto;
+        flex-wrap: nowrap;
+        padding-bottom: 5px;
+    }
+
+    .quick-date-btn {
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+
+}
+
+</style>
+
+
+<!-- =====================================================
+     QUICK DATE JAVASCRIPT
+====================================================== -->
+
+<script>
+
+function formatDate(date) {
+
+    const year = date.getFullYear();
+
+    const month = String(
+        date.getMonth() + 1
+    ).padStart(2, "0");
+
+    const day = String(
+        date.getDate()
+    ).padStart(2, "0");
+
+    return `${year}-${month}-${day}`;
+}
+
+
+function setDateRange(range) {
+
+    const fromDate =
+        document.getElementById("fromDate");
+
+    const toDate =
+        document.getElementById("toDate");
+
+    const buttons =
+        document.querySelectorAll(
+            ".quick-date-btn"
+        );
+
+
+    buttons.forEach(
+        function(button) {
+
+            button.classList.remove("active");
+
+        }
+    );
+
+
+    const selectedButton =
+        document.querySelector(
+            `[data-range="${range}"]`
+        );
+
+    if (selectedButton) {
+
+        selectedButton.classList.add("active");
+
+    }
+
+
+    const today =
+        new Date();
+
+
+    let start =
+        new Date(today);
+
+    let end =
+        new Date(today);
+
+
+    /* =========================================
+       TODAY
+    ========================================== */
+
+    if (range === "today") {
+
+        start =
+            new Date(today);
+
+        end =
+            new Date(today);
+
+    }
+
+
+    /* =========================================
+       YESTERDAY
+    ========================================== */
+
+    else if (range === "yesterday") {
+
+        start =
+            new Date(today);
+
+        start.setDate(
+            start.getDate() - 1
+        );
+
+        end =
+            new Date(start);
+
+    }
+
+
+    /* =========================================
+       THIS WEEK
+    ========================================== */
+
+    else if (range === "week") {
+
+        const day =
+            today.getDay();
+
+        const difference =
+            day === 0 ? 6 : day - 1;
+
+        start =
+            new Date(today);
+
+        start.setDate(
+            today.getDate() - difference
+        );
+
+        end =
+            new Date(today);
+
+    }
+
+
+    /* =========================================
+       THIS MONTH
+    ========================================== */
+
+    else if (range === "month") {
+
+        start =
+            new Date(
+                today.getFullYear(),
+                today.getMonth(),
+                1
+            );
+
+        end =
+            new Date(today);
+
+    }
+
+
+    /* =========================================
+       CUSTOM
+    ========================================== */
+
+    else if (range === "custom") {
+
+        fromDate.focus();
+
+        return;
+
+    }
+
+
+    fromDate.value =
+        formatDate(start);
+
+    toDate.value =
+        formatDate(end);
+
+}
+
+
+/* =====================================================
+   DETECT CURRENT DATE FILTER
+====================================================== */
+
+document.addEventListener(
+    "DOMContentLoaded",
+    function() {
+
+        const fromDate =
+            document.getElementById("fromDate");
+
+        const toDate =
+            document.getElementById("toDate");
+
+
+        if (
+            !fromDate ||
+            !toDate
+        ) {
+
+            return;
+
+        }
+
+
+        const today =
+            new Date();
+
+        const todayString =
+            formatDate(today);
+
+
+        /* Today */
+
+        if (
+            fromDate.value === todayString &&
+            toDate.value === todayString
+        ) {
+
+            const button =
+                document.querySelector(
+                    '[data-range="today"]'
+                );
+
+            if (button) {
+
+                button.classList.add("active");
+
+            }
+
+        }
+
+    }
+);
+
+</script>
 
 {% endblock %}

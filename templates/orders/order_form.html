@@ -6,181 +6,1176 @@
 {% block content %}
 
 <div class="page-header-block">
+
     <div>
-        <h2 class="page-header-title">Create New Order</h2>
-        <p class="page-header-sub">Record order items, delivery schedule, advance payment, and total calculations.</p>
+
+        <h2 class="page-header-title">
+            Create New Order
+        </h2>
+
+        <p class="page-header-sub">
+            Record order items, delivery schedule and advance payment.
+        </p>
+
     </div>
+
     <div>
-        <a href="{% url 'order_list' %}" class="btn btn-secondary">
-            <i class="bi bi-arrow-left"></i> Back to Orders
+
+        <a
+            href="{% url 'order_list' %}"
+            class="btn btn-secondary"
+        >
+            <i class="bi bi-arrow-left me-1"></i>
+            Back to Orders
         </a>
+
     </div>
+
 </div>
 
+
 <form method="POST">
+
     {% csrf_token %}
 
-    <!-- Order Header Details -->
+
+    <!-- ===================================================== -->
+    <!-- ORDER INFORMATION -->
+    <!-- ===================================================== -->
+
     <div class="form-card mb-4">
+
         <h5 class="fw-bold mb-3 text-dark border-bottom pb-2">
-            <i class="bi bi-info-circle-fill text-primary me-2"></i>Order Information
+
+            <i class="bi bi-info-circle-fill text-primary me-2"></i>
+
+            Order Information
+
         </h5>
-        
+
+
         <div class="row g-3">
+
+
+            <!-- CUSTOMER -->
+
             <div class="col-md-4">
-                <label class="form-label">Customer</label>
+
+                <label class="form-label">
+                    Customer
+                </label>
+
                 {{ form.customer }}
+
+                {% if form.customer.errors %}
+
+                    <div class="text-danger small">
+
+                        {{ form.customer.errors }}
+
+                    </div>
+
+                {% endif %}
+
             </div>
+
+
+            <!-- ORDER DATE -->
+
             <div class="col-md-4">
-                <label class="form-label">Order Date</label>
+
+                <label class="form-label">
+                    Order Date
+                </label>
+
                 {{ form.order_date }}
+
             </div>
+
+
+            <!-- DELIVERY DATE -->
+
             <div class="col-md-4">
-                <label class="form-label">Delivery Date</label>
+
+                <label class="form-label">
+                    Delivery Date
+                </label>
+
                 {{ form.delivery_date }}
+
             </div>
+
+
+            <!-- ADVANCE PAYMENT MODE -->
+
             <div class="col-md-4">
-                <label class="form-label">Advance Paid (₹)</label>
-                {{ form.advance_paid }}
+
+                <label class="form-label">
+                    Advance Payment Mode
+                </label>
+
+                {{ form.advance_payment_mode }}
+
             </div>
+
+
+            <!-- STATUS -->
+
             <div class="col-md-4">
-                <label class="form-label">Initial Status</label>
+
+                <label class="form-label">
+                    Initial Status
+                </label>
+
                 {{ form.status }}
+
             </div>
+
         </div>
+
     </div>
 
-    <!-- Order Items Formset Table -->
+
+
+    <!-- ===================================================== -->
+    <!-- ORDER ITEMS -->
+    <!-- ===================================================== -->
+
     <div class="table-card mb-4 p-3">
+
+
         <div class="d-flex justify-content-between align-items-center mb-3">
+
+
             <h5 class="fw-bold mb-0 text-dark">
-                <i class="bi bi-scissors text-info me-2"></i>Order Items & Pricing
+
+                <i class="bi bi-scissors text-info me-2"></i>
+
+                Order Items & Pricing
+
             </h5>
-            <button type="button" id="add-item" class="btn btn-sm btn-success">
-                <i class="bi bi-plus-lg me-1"></i> Add Item
+
+
+            <button
+                type="button"
+                id="add-item"
+                class="btn btn-sm btn-success"
+            >
+
+                <i class="bi bi-plus-lg me-1"></i>
+
+                Add Item
+
             </button>
+
+
         </div>
+
+
 
         {{ formset.management_form }}
 
+
+
         <div class="table-responsive">
-            <table class="table app-table" id="item-table">
+
+
+            <table
+                class="table app-table"
+                id="item-table"
+            >
+
+
                 <thead>
+
                     <tr>
-                        <th width="35%">Item Name</th>
-                        <th width="15%">Qty</th>
-                        <th width="20%">Rate (₹)</th>
-                        <th width="20%">Amount (₹)</th>
-                        <th width="10%" class="text-center">Action</th>
+
+                        <th width="35%">
+                            Item
+                        </th>
+
+                        <th width="15%">
+                            Qty
+                        </th>
+
+                        <th width="20%">
+                            Rate (SAR)
+                        </th>
+
+                        <th width="20%">
+                            Amount (SAR)
+                        </th>
+
+                        <th width="10%">
+                            Action
+                        </th>
+
                     </tr>
+
                 </thead>
+
+
+
                 <tbody>
+
+
                     {% for item in formset %}
+
+
                     <tr class="item-form">
-                        <td>{{ item.item_name }}</td>
-                        <td>{{ item.quantity }}</td>
-                        <td>{{ item.rate }}</td>
-                        <td>{{ item.amount }}</td>
-                        <td class="text-center">
-                            {% if item.instance.pk %}
-                                {{ item.DELETE }}
-                            {% else %}
-                                <button type="button" class="btn btn-sm btn-outline-danger border-0" onclick="this.closest('tr').remove()"><i class="bi bi-trash"></i></button>
+
+
+                        <!-- PRODUCT -->
+
+                        <td>
+
+                            {{ item.product }}
+
+                            {% if item.product.errors %}
+
+                                <div class="text-danger small">
+
+                                    {{ item.product.errors }}
+
+                                </div>
+
                             {% endif %}
+
                         </td>
+
+
+                        <!-- QUANTITY -->
+
+                        <td>
+
+                            {{ item.quantity }}
+
+                        </td>
+
+
+                        <!-- RATE -->
+
+                        <td>
+
+                            {{ item.rate }}
+
+                        </td>
+
+
+                        <!-- AMOUNT -->
+
+                        <td>
+
+                            {{ item.amount }}
+
+                        </td>
+
+
+                        <!-- ACTION -->
+
+                        <td class="text-center">
+
+
+                            {% if item.instance.pk %}
+
+                                {{ item.DELETE }}
+
+                            {% else %}
+
+                                <button
+                                    type="button"
+                                    class="btn btn-sm btn-outline-danger border-0 remove-item"
+                                    title="Remove item"
+                                >
+
+                                    <i class="bi bi-trash"></i>
+
+                                </button>
+
+                            {% endif %}
+
+
+                        </td>
+
+
                     </tr>
+
+
                     {% endfor %}
+
+
                 </tbody>
+
+
             </table>
+
+
         </div>
 
-        <!-- Summary & Balance Block -->
+
+
+        <!-- ================================================= -->
+        <!-- ORDER SUMMARY -->
+        <!-- ================================================= -->
+
         <div class="row mt-4 justify-content-end">
+
+
             <div class="col-12 col-md-5 col-lg-4">
+
+
                 <div class="card-custom p-3 bg-light border">
-                    <h6 class="fw-bold text-dark border-bottom pb-2 mb-3">Order Summary</h6>
+
+
+                    <h6 class="fw-bold text-dark border-bottom pb-2 mb-3">
+
+                        Order Summary
+
+                    </h6>
+
+
+
+                    <!-- GRAND TOTAL -->
+
                     <div class="d-flex justify-content-between mb-2">
-                        <span class="text-muted">Grand Total:</span>
-                        <strong id="grand-total" class="text-dark fs-5">₹0.00</strong>
+
+                        <span class="text-muted">
+
+                            Grand Total:
+
+                        </span>
+
+
+                        <strong
+                            id="grand-total"
+                            class="text-dark fs-5"
+                        >
+
+                            SAR0.00
+
+                        </strong>
+
                     </div>
+
+
+
+                    <!-- ADVANCE -->
+
                     <div class="d-flex justify-content-between mb-2">
-                        <span class="text-muted">Advance Paid:</span>
-                        <strong id="advance-display" class="text-success fs-6">₹0.00</strong>
+
+                        <span class="text-muted">
+
+                            Advance Paid:
+
+                        </span>
+
+
+                        <strong
+                            id="advance-display"
+                            class="text-success"
+                        >
+
+                            SAR0.00
+
+                        </strong>
+
                     </div>
+
+
+
                     <hr class="my-2">
+
+
+
+                    <!-- BALANCE -->
+
                     <div class="d-flex justify-content-between">
-                        <span class="fw-bold text-dark">Balance Due:</span>
-                        <strong id="balance-display" class="text-danger fs-5">₹0.00</strong>
+
+                        <span class="fw-bold text-dark">
+
+                            Balance Due:
+
+                        </span>
+
+
+                        <strong
+                            id="balance-display"
+                            class="text-danger fs-5"
+                        >
+
+                            SAR0.00
+
+                        </strong>
+
                     </div>
+
+
                 </div>
+
+
             </div>
+
+
         </div>
+
+
     </div>
 
-    <!-- Action Buttons -->
-    <div class="d-flex justify-content-end gap-2 mb-5">
-        <a href="{% url 'order_list' %}" class="btn btn-secondary">
-            <i class="bi bi-x-circle me-1"></i> Cancel
-        </a>
-        <button type="submit" class="btn btn-primary">
-            <i class="bi bi-check-circle-fill me-1"></i> Save Order
-        </button>
+
+
+    <!-- ===================================================== -->
+    <!-- ADVANCE PAYMENT -->
+    <!-- ===================================================== -->
+
+    <div class="form-card mb-4">
+
+
+        <h5 class="fw-bold mb-3 text-dark border-bottom pb-2">
+
+            <i class="bi bi-cash-coin text-success me-2"></i>
+
+            Advance Payment
+
+        </h5>
+
+
+
+        <div class="row g-3">
+
+
+            <!-- ADVANCE AMOUNT -->
+
+            <div class="col-md-6">
+
+
+                <label class="form-label fw-semibold">
+
+                    Advance Amount (SAR)
+
+                </label>
+
+
+                {{ advance_form.amount }}
+
+
+                {% if advance_form.amount.errors %}
+
+                    <div class="text-danger small mt-1">
+
+                        {{ advance_form.amount.errors }}
+
+                    </div>
+
+                {% endif %}
+
+
+            </div>
+
+
+
+            <!-- PAYMENT MODE -->
+
+            <div class="col-md-6">
+
+
+                <label class="form-label fw-semibold">
+
+                    Payment Mode
+
+                </label>
+
+
+                {{ advance_form.payment_mode }}
+
+
+                {% if advance_form.payment_mode.errors %}
+
+                    <div class="text-danger small mt-1">
+
+                        {{ advance_form.payment_mode.errors }}
+
+                    </div>
+
+                {% endif %}
+
+
+            </div>
+
+
+        </div>
+
+
     </div>
+
+
+
+    <!-- ===================================================== -->
+    <!-- ACTION BUTTONS -->
+    <!-- ===================================================== -->
+
+    <div class="d-flex justify-content-end gap-2 mb-5">
+
+
+        <a
+            href="{% url 'order_list' %}"
+            class="btn btn-secondary"
+        >
+
+            <i class="bi bi-x-circle me-1"></i>
+
+            Cancel
+
+        </a>
+
+
+
+        <button
+            type="submit"
+            class="btn btn-primary"
+        >
+
+            <i class="bi bi-check-circle-fill me-1"></i>
+
+            Save Order
+
+        </button>
+
+
+    </div>
+
 
 </form>
 
+
+
 <script>
-const addButton = document.getElementById("add-item");
-const table = document.querySelector("#item-table tbody");
-const totalForms = document.getElementById("id_items-TOTAL_FORMS");
+
+
+// =========================================================
+// ELEMENTS
+// =========================================================
+
+const addButton =
+    document.getElementById("add-item");
+
+const table =
+    document.querySelector(
+        "#item-table tbody"
+    );
+
+const totalForms =
+    document.getElementById(
+        "id_items-TOTAL_FORMS"
+    );
+
+
+
+// =========================================================
+// CUSTOMER
+// =========================================================
+
+function getCustomerId() {
+
+    const customer =
+        document.getElementById(
+            "id_customer"
+        );
+
+    return customer
+        ? customer.value
+        : "";
+
+}
+
+
+
+// =========================================================
+// LOAD PRODUCT PRICE
+// =========================================================
+
+function loadProductPrice(
+    productSelect
+) {
+
+
+    const productId =
+        productSelect.value;
+
+
+    const customerId =
+        getCustomerId();
+
+
+    const row =
+        productSelect.closest(
+            ".item-form"
+        );
+
+
+    if (!row) {
+        return;
+    }
+
+
+    const rateInput =
+        row.querySelector(
+            "input[name$='rate']"
+        );
+
+
+    if (!rateInput) {
+        return;
+    }
+
+
+
+    // No customer/product
+
+    if (
+        !productId ||
+        !customerId
+    ) {
+
+        rateInput.value = "";
+
+        calculateTotal();
+
+        return;
+
+    }
+
+
+
+    fetch(
+        `/products/order-price/?product_id=${encodeURIComponent(productId)}&customer_id=${encodeURIComponent(customerId)}`
+    )
+
+
+    .then(
+        response => {
+
+            if (!response.ok) {
+
+                throw new Error(
+                    "Server error: " +
+                    response.status
+                );
+
+            }
+
+            return response.json();
+
+        }
+    )
+
+
+    .then(
+        data => {
+
+
+            if (data.success) {
+
+
+                rateInput.value =
+                    parseFloat(
+                        data.price
+                    ).toFixed(2);
+
+
+            } else {
+
+
+                rateInput.value = "";
+
+
+                if (data.message) {
+
+                    alert(
+                        data.message
+                    );
+
+                }
+
+            }
+
+
+            calculateTotal();
+
+
+        }
+    )
+
+
+    .catch(
+        error => {
+
+            console.error(
+                "Product price error:",
+                error
+            );
+
+        }
+    );
+
+}
+
+
+
+// =========================================================
+// PRODUCT CHANGE
+// =========================================================
+
+document.addEventListener(
+    "change",
+    function(event) {
+
+
+        if (
+            event.target.matches(
+                "select[name$='product']"
+            )
+        ) {
+
+
+            loadProductPrice(
+                event.target
+            );
+
+        }
+
+    }
+);
+
+
+
+// =========================================================
+// CUSTOMER CHANGE
+// =========================================================
+
+const customerSelect =
+    document.getElementById(
+        "id_customer"
+    );
+
+
+if (customerSelect) {
+
+
+    customerSelect.addEventListener(
+        "change",
+        function() {
+
+
+            document
+                .querySelectorAll(
+                    "select[name$='product']"
+                )
+                .forEach(
+                    function(
+                        productSelect
+                    ) {
+
+
+                        if (
+                            productSelect.value
+                        ) {
+
+
+                            loadProductPrice(
+                                productSelect
+                            );
+
+                        }
+
+                    }
+                );
+
+        }
+    );
+
+}
+
+
+
+// =========================================================
+// ADD ITEM
+// =========================================================
 
 if (addButton) {
-    addButton.onclick = function() {
-        let formNum = parseInt(totalForms.value);
-        let first = document.querySelector(".item-form");
-        if (first) {
-            let newRow = first.cloneNode(true);
-            newRow.innerHTML = newRow.innerHTML.replace(/items-0/g, "items-" + formNum);
-            newRow.querySelectorAll("input").forEach(function(input) {
-                input.value = "";
-            });
-            table.appendChild(newRow);
-            totalForms.value = formNum + 1;
+
+
+    addButton.addEventListener(
+        "click",
+        function() {
+
+
+            const formNum =
+                parseInt(
+                    totalForms.value
+                );
+
+
+            const firstRow =
+                document.querySelector(
+                    ".item-form"
+                );
+
+
+            if (!firstRow) {
+
+                return;
+
+            }
+
+
+            const newRow =
+                firstRow.cloneNode(
+                    true
+                );
+
+
+            // -----------------------------------------
+            // CHANGE FORM INDEX
+            // -----------------------------------------
+
+            newRow.innerHTML =
+                newRow.innerHTML.replace(
+                    /items-0/g,
+                    "items-" +
+                    formNum
+                );
+
+
+            // -----------------------------------------
+            // CLEAR INPUTS
+            // -----------------------------------------
+
+            newRow
+                .querySelectorAll(
+                    "input"
+                )
+                .forEach(
+                    function(input) {
+
+
+                        input.value = "";
+
+                    }
+                );
+
+
+            // -----------------------------------------
+            // RESET PRODUCT
+            // -----------------------------------------
+
+            const product =
+                newRow.querySelector(
+                    "select[name$='product']"
+                );
+
+
+            if (product) {
+
+                product.selectedIndex = 0;
+
+            }
+
+
+            // -----------------------------------------
+            // RESET AMOUNT
+            // -----------------------------------------
+
+            const amount =
+                newRow.querySelector(
+                    "input[name$='amount']"
+                );
+
+
+            if (amount) {
+
+                amount.value =
+                    "0.00";
+
+            }
+
+
+            // -----------------------------------------
+            // APPEND
+            // -----------------------------------------
+
+            table.appendChild(
+                newRow
+            );
+
+
+            // -----------------------------------------
+            // INCREASE TOTAL FORMS
+            // -----------------------------------------
+
+            totalForms.value =
+                formNum + 1;
+
+
+            attachRemoveButtons();
+
+            calculateTotal();
+
+
         }
-    };
+    );
+
 }
+
+
+
+// =========================================================
+// REMOVE ITEM
+// =========================================================
+
+function attachRemoveButtons() {
+
+
+    document
+        .querySelectorAll(
+            ".remove-item"
+        )
+        .forEach(
+            function(button) {
+
+
+                button.onclick =
+                    function() {
+
+
+                        const rows =
+                            document.querySelectorAll(
+                                ".item-form"
+                            );
+
+
+                        if (
+                            rows.length > 1
+                        ) {
+
+
+                            this
+                                .closest(
+                                    "tr"
+                                )
+                                .remove();
+
+
+                            calculateTotal();
+
+
+                        }
+
+                    };
+
+            }
+        );
+
+}
+
+
+
+// =========================================================
+// CALCULATE TOTAL
+// =========================================================
 
 function calculateTotal() {
+
+
     let total = 0;
-    document.querySelectorAll(".item-form").forEach(function(row) {
-        let qty = row.querySelector("input[name$='quantity']");
-        let rate = row.querySelector("input[name$='rate']");
-        let amount = row.querySelector("input[name$='amount']");
 
-        if (qty && rate && amount) {
-            let q = parseFloat(qty.value) || 0;
-            let r = parseFloat(rate.value) || 0;
-            let a = q * r;
-            amount.value = a.toFixed(2);
-            total += a;
-        }
-    });
 
-    const grandTotalEl = document.getElementById("grand-total");
-    if (grandTotalEl) grandTotalEl.innerHTML = "₹" + total.toFixed(2);
+    document
+        .querySelectorAll(
+            ".item-form"
+        )
+        .forEach(
+            function(row) {
 
-    const advInput = document.getElementById("id_advance_paid");
-    let advance = advInput ? (parseFloat(advInput.value) || 0) : 0;
 
-    const advDisplay = document.getElementById("advance-display");
-    if (advDisplay) advDisplay.innerHTML = "₹" + advance.toFixed(2);
+                const qty =
+                    row.querySelector(
+                        "input[name$='quantity']"
+                    );
 
-    const balDisplay = document.getElementById("balance-display");
-    if (balDisplay) balDisplay.innerHTML = "₹" + (total - advance).toFixed(2);
+
+                const rate =
+                    row.querySelector(
+                        "input[name$='rate']"
+                    );
+
+
+                const amount =
+                    row.querySelector(
+                        "input[name$='amount']"
+                    );
+
+
+                if (
+                    qty &&
+                    rate &&
+                    amount
+                ) {
+
+
+                    const q =
+                        parseFloat(
+                            qty.value
+                        ) || 0;
+
+
+                    const r =
+                        parseFloat(
+                            rate.value
+                        ) || 0;
+
+
+                    const a =
+                        q * r;
+
+
+                    amount.value =
+                        a.toFixed(2);
+
+
+                    total += a;
+
+
+                }
+
+            }
+        );
+
+
+
+    // =====================================================
+    // GRAND TOTAL
+    // =====================================================
+
+    const grandTotal =
+        document.getElementById(
+            "grand-total"
+        );
+
+
+    if (grandTotal) {
+
+
+        grandTotal.innerHTML =
+            "SAR" +
+            total.toFixed(2);
+
+
+    }
+
+
+
+    // =====================================================
+    // ADVANCE
+    // =====================================================
+
+    const advanceInput =
+        document.querySelector(
+            "[name='amount']"
+        );
+
+
+    let advance = 0;
+
+
+    if (advanceInput) {
+
+
+        advance =
+            parseFloat(
+                advanceInput.value
+            ) || 0;
+
+    }
+
+
+    const advanceDisplay =
+        document.getElementById(
+            "advance-display"
+        );
+
+
+    if (advanceDisplay) {
+
+
+        advanceDisplay.innerHTML =
+            "SAR" +
+            advance.toFixed(2);
+
+    }
+
+
+
+    // =====================================================
+    // BALANCE
+    // =====================================================
+
+    const balance =
+        Math.max(
+            0,
+            total - advance
+        );
+
+
+    const balanceDisplay =
+        document.getElementById(
+            "balance-display"
+        );
+
+
+    if (balanceDisplay) {
+
+
+        balanceDisplay.innerHTML =
+            "SAR" +
+            balance.toFixed(2);
+
+    }
+
 }
 
-document.addEventListener("input", calculateTotal);
-window.onload = calculateTotal;
+
+
+// =========================================================
+// INPUT EVENTS
+// =========================================================
+
+document.addEventListener(
+    "input",
+    function() {
+
+        calculateTotal();
+
+    }
+);
+
+
+
+// =========================================================
+// INITIALIZE
+// =========================================================
+
+window.addEventListener(
+    "load",
+    function() {
+
+        attachRemoveButtons();
+
+        calculateTotal();
+
+    }
+);
+
+
 </script>
 
 {% endblock %}

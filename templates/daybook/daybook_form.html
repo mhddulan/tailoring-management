@@ -1,80 +1,735 @@
 {% extends "base.html" %}
 
-{% block title %}{% if form.instance.pk %}Edit Day Book Entry{% else %}Add Day Book Entry{% endif %} | Stitching Pro{% endblock %}
-{% block page_title %}{% if form.instance.pk %}Edit Day Book Entry{% else %}Add Day Book Entry{% endif %}{% endblock %}
+{% block title %}
+    {% if form.instance.pk %}
+        Edit Day Book Entry
+    {% else %}
+        Add Day Book Entry
+    {% endif %}
+    | Stitching Pro
+{% endblock %}
+
+{% block page_title %}
+    {% if form.instance.pk %}
+        Edit Day Book Entry
+    {% else %}
+        Add Day Book Entry
+    {% endif %}
+{% endblock %}
+
 
 {% block content %}
 
-<div class="page-header-block">
-    <div>
-        <h2 class="page-header-title">
-            {% if form.instance.pk %}Edit Day Book Entry{% else %}Add Day Book Entry{% endif %}
-        </h2>
-        <p class="page-header-sub">Record transaction category, payment mode, income/expense amount, and description.</p>
-    </div>
-    <div>
-        <a href="{% url 'daybook_list' %}" class="btn btn-secondary">
-            <i class="bi bi-arrow-left"></i> Back to Day Book
-        </a>
-    </div>
-</div>
+<div class="container-fluid px-0">
 
-<div class="row justify-content-center">
-    <div class="col-12 col-md-10 col-lg-8">
-        <div class="form-card">
-            <form method="post">
-                {% csrf_token %}
 
-                <div class="row g-3">
-                    {% if request.user.role == "Admin" %}
-                    <div class="col-md-6">
-                        <label class="form-label">{{ form.branch.label }}</label>
-                        {{ form.branch }}
-                    </div>
-                    {% endif %}
+    <!-- =====================================================
+         PAGE HEADER
+    ====================================================== -->
 
-                    <div class="col-md-6">
-                        <label class="form-label">{{ form.date.label }}</label>
-                        {{ form.date }}
-                    </div>
+    <div class="page-header-block">
 
-                    {% if request.user.role == "Admin" %}
-                    <div class="col-md-6">
-                        <label class="form-label">{{ form.transaction_type.label }}</label>
-                        {{ form.transaction_type }}
-                    </div>
-                    {% endif %}
+        <div>
 
-                    <div class="col-md-6">
-                        <label class="form-label">{{ form.category.label }}</label>
-                        {{ form.category }}
-                    </div>
+            <h2 class="page-header-title">
 
-                    <div class="col-md-6">
-                        <label class="form-label">{{ form.payment_mode.label }}</label>
-                        {{ form.payment_mode }}
-                    </div>
+                <i class="bi bi-journal-bookmark-fill me-2"></i>
 
-                    <div class="col-md-6">
-                        <label class="form-label">{{ form.amount.label }} (₹)</label>
-                        {{ form.amount }}
-                    </div>
+                {% if form.instance.pk %}
+                    Edit Day Book Entry
+                {% else %}
+                    Add Day Book Entry
+                {% endif %}
 
-                    <div class="col-12">
-                        <label class="form-label">{{ form.description.label }}</label>
-                        {{ form.description }}
-                    </div>
-                </div>
+            </h2>
 
-                <div class="d-flex justify-content-end gap-2 mt-4">
-                    <a href="{% url 'daybook_list' %}" class="btn btn-secondary">Cancel</a>
-                    <button type="submit" class="btn btn-primary">
-                        <i class="bi bi-check-circle-fill me-1"></i> Save Entry
-                    </button>
-                </div>
-            </form>
+
+            <p class="page-header-sub">
+
+                {% if form.instance.pk %}
+
+                    Update the financial transaction details.
+
+                {% else %}
+
+                    Record income, expense, payment mode,
+                    category and transaction details.
+
+                {% endif %}
+
+            </p>
+
         </div>
+
+
+        <div>
+
+            <a
+                href="{% url 'daybook_list' %}"
+                class="btn btn-secondary"
+            >
+
+                <i class="bi bi-arrow-left me-1"></i>
+
+                Back to Day Book
+
+            </a>
+
+        </div>
+
     </div>
+
+
+    <!-- =====================================================
+         FORM
+    ====================================================== -->
+
+    <div class="row justify-content-center">
+
+        <div class="col-12 col-lg-9 col-xl-8">
+
+            <div class="form-card">
+
+
+                <!-- FORM HEADER -->
+
+                <div class="form-card-header mb-4">
+
+                    <div class="d-flex align-items-center gap-3">
+
+                        <div class="form-title-icon">
+
+                            <i class="bi bi-cash-stack"></i>
+
+                        </div>
+
+                        <div>
+
+                            <h5 class="fw-bold mb-1">
+
+                                Transaction Details
+
+                            </h5>
+
+                            <small class="text-muted">
+
+                                Enter the details of the income
+                                or expense transaction.
+
+                            </small>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- =================================================
+                     FORM
+                ================================================== -->
+
+                <form
+                    method="POST"
+                    novalidate
+                >
+
+                    {% csrf_token %}
+
+
+                    <!-- =================================================
+                         NON FIELD ERRORS
+                    ================================================== -->
+
+                    {% if form.non_field_errors %}
+
+                        <div class="alert alert-danger">
+
+                            <div class="d-flex gap-2">
+
+                                <i class="bi bi-exclamation-triangle-fill"></i>
+
+                                <div>
+
+                                    <strong>
+                                        Please correct the following:
+                                    </strong>
+
+                                    <div class="mt-1">
+
+                                        {{ form.non_field_errors }}
+
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    {% endif %}
+
+
+                    <!-- =================================================
+                         FORM ROW
+                    ================================================== -->
+
+                    <div class="row g-4">
+
+
+                        <!-- =================================================
+                             BRANCH
+                        ================================================== -->
+
+                        {% if request.user.role == "Admin" %}
+
+                            <div class="col-12 col-md-6">
+
+                                <label
+                                    for="{{ form.branch.id_for_label }}"
+                                    class="form-label fw-semibold"
+                                >
+
+                                    Branch
+
+                                    <span class="text-danger">
+                                        *
+                                    </span>
+
+                                </label>
+
+
+                                {{ form.branch }}
+
+
+                                {% if form.branch.errors %}
+
+                                    <div class="text-danger small mt-1">
+
+                                        {{ form.branch.errors }}
+
+                                    </div>
+
+                                {% endif %}
+
+
+                                <div class="form-text">
+
+                                    Select the branch for this transaction.
+
+                                </div>
+
+                            </div>
+
+                        {% endif %}
+
+
+                        <!-- =================================================
+                             DATE
+                        ================================================== -->
+
+                        <div class="col-12 col-md-6">
+
+                            <label
+                                for="{{ form.date.id_for_label }}"
+                                class="form-label fw-semibold"
+                            >
+
+                                Date
+
+                                <span class="text-danger">
+                                    *
+                                </span>
+
+                            </label>
+
+
+                            {{ form.date }}
+
+
+                            {% if form.date.errors %}
+
+                                <div class="text-danger small mt-1">
+
+                                    {{ form.date.errors }}
+
+                                </div>
+
+                            {% endif %}
+
+
+                            <div class="form-text">
+
+                                Transaction date.
+
+                            </div>
+
+                        </div>
+
+
+                        <!-- =================================================
+                             TRANSACTION TYPE
+                             IMPORTANT: BOTH ADMIN AND BRANCH
+                        ================================================== -->
+
+                        <div class="col-12 col-md-6">
+
+    <label
+        for="{{ form.transaction_type.id_for_label }}"
+        class="form-label fw-semibold"
+    >
+        Transaction Type
+    </label>
+
+    {{ form.transaction_type }}
+
+    {% if form.transaction_type.errors %}
+        <div class="text-danger small mt-1">
+            {{ form.transaction_type.errors }}
+        </div>
+    {% endif %}
+
+    <div class="form-text">
+        Automatically selected based on the category.
+    </div>
+
 </div>
+
+
+                        <!-- =================================================
+                             CATEGORY
+                        ================================================== -->
+
+                        <div class="col-12 col-md-6">
+
+                            <label
+                                for="{{ form.category.id_for_label }}"
+                                class="form-label fw-semibold"
+                            >
+
+                                Category
+
+                                <span class="text-danger">
+                                    *
+                                </span>
+
+                            </label>
+
+
+                            {{ form.category }}
+
+
+                            {% if form.category.errors %}
+
+                                <div class="text-danger small mt-1">
+
+                                    {{ form.category.errors }}
+
+                                </div>
+
+                            {% endif %}
+
+
+                            <div class="form-text">
+
+                                Example: Sales, Purchase,
+                                Salary, Rent, Electricity.
+
+                            </div>
+
+                        </div>
+
+
+                        <!-- =================================================
+                             PAYMENT MODE
+                        ================================================== -->
+
+                        <div class="col-12 col-md-6">
+
+                            <label
+                                for="{{ form.payment_mode.id_for_label }}"
+                                class="form-label fw-semibold"
+                            >
+
+                                Payment Mode
+
+                                <span class="text-danger">
+                                    *
+                                </span>
+
+                            </label>
+
+
+                            {{ form.payment_mode }}
+
+
+                            {% if form.payment_mode.errors %}
+
+                                <div class="text-danger small mt-1">
+
+                                    {{ form.payment_mode.errors }}
+
+                                </div>
+
+                            {% endif %}
+
+
+                            <div class="form-text">
+
+                                Cash, Bank, Online, Cheque or POS.
+
+                            </div>
+
+                        </div>
+
+
+                        <!-- =================================================
+                             AMOUNT
+                        ================================================== -->
+
+                        <div class="col-12 col-md-6">
+
+                            <label
+                                for="{{ form.amount.id_for_label }}"
+                                class="form-label fw-semibold"
+                            >
+
+                                Amount
+
+                                <span class="text-danger">
+                                    *
+                                </span>
+
+                            </label>
+
+
+                            <div class="input-group">
+
+                                <span class="input-group-text fw-bold">
+                                    SAR
+                                </span>
+
+                                {{ form.amount }}
+
+                            </div>
+
+
+                            {% if form.amount.errors %}
+
+                                <div class="text-danger small mt-1">
+
+                                    {{ form.amount.errors }}
+
+                                </div>
+
+                            {% endif %}
+
+
+                            <div class="form-text">
+
+                                Enter the transaction amount.
+
+                            </div>
+
+                        </div>
+
+
+                        <!-- =================================================
+                             DESCRIPTION
+                        ================================================== -->
+
+                        <div class="col-12">
+
+                            <label
+                                for="{{ form.description.id_for_label }}"
+                                class="form-label fw-semibold"
+                            >
+
+                                Description
+
+                            </label>
+
+
+                            {{ form.description }}
+
+
+                            {% if form.description.errors %}
+
+                                <div class="text-danger small mt-1">
+
+                                    {{ form.description.errors }}
+
+                                </div>
+
+                            {% endif %}
+
+
+                            <div class="form-text">
+
+                                Add any additional information
+                                about this transaction.
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- =================================================
+                         ACTION BUTTONS
+                    ================================================== -->
+
+                    <div
+                        class="
+                            d-flex
+                            justify-content-end
+                            gap-2
+                            mt-4
+                            pt-4
+                            border-top
+                            flex-wrap
+                        "
+                    >
+
+                        <a
+                            href="{% url 'daybook_list' %}"
+                            class="btn btn-secondary"
+                        >
+
+                            <i class="bi bi-x-circle me-1"></i>
+
+                            Cancel
+
+                        </a>
+
+
+                        <button
+                            type="submit"
+                            class="btn btn-primary"
+                        >
+
+                            <i class="bi bi-check-circle-fill me-1"></i>
+
+                            {% if form.instance.pk %}
+
+                                Update Entry
+
+                            {% else %}
+
+                                Save Entry
+
+                            {% endif %}
+
+                        </button>
+
+                    </div>
+
+                </form>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- =====================================================
+     PAGE CSS
+====================================================== -->
+
+<style>
+
+.form-title-icon {
+
+    width: 46px;
+    height: 46px;
+
+    border-radius: 12px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background: #eef4ff;
+
+    color: #2563eb;
+
+    font-size: 1.25rem;
+
+}
+
+
+.form-card-header {
+
+    padding-bottom: 4px;
+
+}
+
+
+/* Make Django generated controls consistent */
+
+.form-card input,
+.form-card select,
+.form-card textarea {
+
+    width: 100%;
+
+}
+
+
+.form-card textarea {
+
+    min-height: 110px;
+
+    resize: vertical;
+
+}
+
+
+.form-card input:focus,
+.form-card select:focus,
+.form-card textarea:focus {
+
+    border-color: #2563eb;
+
+    box-shadow:
+        0 0 0 0.2rem rgba(37, 99, 235, 0.10);
+
+}
+
+
+.form-label {
+
+    color: #334155;
+
+}
+
+
+.form-text {
+
+    font-size: 0.78rem;
+
+    color: #64748b;
+
+}
+
+
+@media (max-width: 576px) {
+
+    .page-header-block {
+
+        gap: 15px;
+
+    }
+
+
+    .page-header-block > div:last-child {
+
+        width: 100%;
+
+    }
+
+
+    .page-header-block > div:last-child .btn {
+
+        width: 100%;
+
+    }
+
+
+    .form-card {
+
+        padding: 1rem !important;
+
+    }
+
+}
+
+</style>
+<script>
+
+document.addEventListener("DOMContentLoaded", function () {
+
+    const category =
+        document.getElementById("id_category");
+
+    const transactionType =
+        document.getElementById("id_transaction_type");
+
+
+    if (!category || !transactionType) {
+        return;
+    }
+
+
+    const incomeCategories = [
+        "Sales",
+        "Advance",
+        "Balance Payment",
+        "Other Income"
+    ];
+
+
+    const expenseCategories = [
+        "Purchase",
+        "Salary",
+        "Rent",
+        "Electricity",
+        "Water",
+        "Internet",
+        "Fuel",
+        "Maintenance",
+        "Office Expense",
+        "Miscellaneous"
+    ];
+
+
+    function updateTransactionType() {
+
+        const selected =
+            category.value;
+
+
+        if (
+            incomeCategories.includes(selected)
+        ) {
+
+            transactionType.value =
+                "Income";
+
+        }
+
+        else if (
+            expenseCategories.includes(selected)
+        ) {
+
+            transactionType.value =
+                "Expense";
+
+        }
+
+        else {
+
+            transactionType.value = "";
+
+        }
+
+    }
+
+
+    category.addEventListener(
+        "change",
+        updateTransactionType
+    );
+
+
+    updateTransactionType();
+
+});
+
+</script>
 
 {% endblock %}

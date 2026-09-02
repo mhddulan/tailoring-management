@@ -3,27 +3,43 @@ from branches.models import Branch
 from customers.models import Customer
 
 
-# ==========================
-# Product Category
-# ==========================
+# =========================================================
+# PRODUCT CATEGORY
+# =========================================================
 
 class ProductCategory(models.Model):
 
-    name = models.CharField(max_length=100)
+    name = models.CharField(
+        max_length=100
+    )
 
     def __str__(self):
         return self.name
 
 
-# ==========================
-# Product
-# ==========================
+# =========================================================
+# PRODUCT
+# =========================================================
 
 class Product(models.Model):
 
+    SIZE_CHOICES = [
+        ("XS", "XS"),
+        ("S", "S"),
+        ("M", "M"),
+        ("L", "L"),
+        ("XL", "XL"),
+        ("XXL", "XXL"),
+        ("XXXL", "XXXL"),
+        ("XXXXL", "XXXXL"),
+        ("XXXXXL", "XXXXXL"),
+        ("OTHER", "Other"),
+    ]
+
     category = models.ForeignKey(
         ProductCategory,
-        on_delete=models.CASCADE
+        on_delete=models.CASCADE,
+        related_name="products"
     )
 
     name = models.CharField(
@@ -32,11 +48,14 @@ class Product(models.Model):
 
     barcode = models.CharField(
         max_length=100,
-        unique=True
+        unique=True,
+        blank=True,
+        null=True
     )
 
-    size = models.CharField(
-        max_length=50,
+    # Sizes available for this product
+    available_sizes = models.CharField(
+        max_length=200,
         blank=True
     )
 
@@ -55,19 +74,34 @@ class Product(models.Model):
         default=True
     )
 
+    created_at = models.DateTimeField(
+        auto_now_add=True
+    )
+
+    updated_at = models.DateTimeField(
+        auto_now=True
+    )
+
     def __str__(self):
         return self.name
+
+
+# =========================================================
+# BRANCH PRODUCT
+# =========================================================
 
 class BranchProduct(models.Model):
 
     branch = models.ForeignKey(
         Branch,
-        on_delete=models.CASCADE
+        on_delete=models.CASCADE,
+        related_name="branch_products"
     )
 
     product = models.ForeignKey(
         Product,
-        on_delete=models.CASCADE
+        on_delete=models.CASCADE,
+        related_name="branch_products"
     )
 
     stock = models.PositiveIntegerField(
@@ -83,32 +117,36 @@ class BranchProduct(models.Model):
     class Meta:
         unique_together = ("branch", "product")
 
-# ==========================
-# Sale
-# ==========================
+    def __str__(self):
+        return f"{self.branch.name} - {self.product.name}"
+
+
+# =========================================================
+# SALE
+# =========================================================
 
 class Sale(models.Model):
 
     PAYMENT_CHOICES = [
-
         ("Cash", "Cash"),
         ("Bank", "Bank"),
         ("Online", "Online"),
         ("Cheque", "Cheque"),
         ("POS", "POS"),
-
     ]
 
     branch = models.ForeignKey(
         Branch,
-        on_delete=models.CASCADE
+        on_delete=models.CASCADE,
+        related_name="sales"
     )
 
     customer = models.ForeignKey(
         Customer,
         on_delete=models.SET_NULL,
         null=True,
-        blank=True
+        blank=True,
+        related_name="sales"
     )
 
     sale_date = models.DateField()
@@ -124,14 +162,18 @@ class Sale(models.Model):
         default=0
     )
 
-    def __str__(self):
+    created_at = models.DateTimeField(
+        auto_now_add=True
+    )
 
+    def __str__(self):
         return f"Sale #{self.id}"
 
 
-# ==========================
-# Sale Item
-# ==========================
+# =========================================================
+# SALE ITEM
+# =========================================================
+
 class SaleItem(models.Model):
 
     sale = models.ForeignKey(
@@ -142,7 +184,8 @@ class SaleItem(models.Model):
 
     branch_product = models.ForeignKey(
         BranchProduct,
-        on_delete=models.CASCADE
+        on_delete=models.CASCADE,
+        related_name="sale_items"
     )
 
     quantity = models.PositiveIntegerField(
@@ -165,16 +208,27 @@ class SaleItem(models.Model):
         self.amount = self.quantity * self.rate
 
         super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.branch_product.product.name} - {self.quantity}"
+
+
+# =========================================================
+# STOCK TRANSFER
+# =========================================================
+
 class StockTransfer(models.Model):
 
     product = models.ForeignKey(
         Product,
-        on_delete=models.CASCADE
+        on_delete=models.CASCADE,
+        related_name="stock_transfers"
     )
 
     branch = models.ForeignKey(
         Branch,
-        on_delete=models.CASCADE
+        on_delete=models.CASCADE,
+        related_name="stock_transfers"
     )
 
     quantity = models.PositiveIntegerField()
@@ -191,5 +245,4 @@ class StockTransfer(models.Model):
     )
 
     def __str__(self):
-
         return f"{self.product.name} -> {self.branch.name}"

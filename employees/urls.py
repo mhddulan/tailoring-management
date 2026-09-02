@@ -52,4 +52,14 @@ urlpatterns = [
         views.production_delete,
         name="production_delete"
     ),
+    path(
+    "production/employee/<int:employee_id>/",
+    views.employee_performance,
+    name="employee_performance"
+),
+path(
+        "performance/<int:employee_id>/pdf/",
+        views.employee_performance_pdf,
+        name="employee_performance_pdf",
+    ),
 ]

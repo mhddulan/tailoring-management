@@ -70,7 +70,7 @@
                     </td>
                     <td><i class="bi bi-telephone text-muted me-1"></i>{{ employee.mobile|default:"-" }}</td>
                     <td><span class="badge bg-primary-subtle text-primary">{{ employee.designation }}</span></td>
-                    <td class="fw-bold text-dark">₹ {{ employee.salary|floatformat:2 }}</td>
+                    <td class="fw-bold text-dark">SAR {{ employee.salary|floatformat:2 }}</td>
                     <td>
                         {% if employee.active %}
                             <span class="badge bg-success-subtle text-success border border-success-subtle fw-bold"><i class="bi bi-check-circle me-1"></i>Active</span>

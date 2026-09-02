@@ -1,0 +1,352 @@
+{% extends 'base.html' %}
+
+{% block title %}Confirm Delivery | Stitching Pro{% endblock %}
+{% block page_title %}Confirm Delivery{% endblock %}
+
+{% block content %}
+
+<!-- =========================================================
+     HEADER
+========================================================= -->
+
+<div class="page-header-block">
+
+    <div>
+
+        <h2 class="page-header-title">
+            Confirm Delivery
+        </h2>
+
+        <p class="page-header-sub">
+            Confirm that this order has been delivered to the customer.
+        </p>
+
+    </div>
+
+    <div>
+
+        <a
+            href="{% url 'order_list' %}"
+            class="btn btn-secondary"
+        >
+
+            <i class="bi bi-arrow-left me-1"></i>
+
+            Back
+
+        </a>
+
+    </div>
+
+</div>
+
+
+<!-- =========================================================
+     DELIVERY CARD
+========================================================= -->
+
+<div class="row justify-content-center">
+
+    <div class="col-lg-7">
+
+        <div class="card-custom p-4">
+
+
+            <!-- TITLE -->
+
+            <div class="text-center mb-4">
+
+                <div class="fs-1 text-success">
+
+                    <i class="bi bi-box-seam"></i>
+
+                </div>
+
+                <h4 class="fw-bold">
+                    Confirm Order Delivery
+                </h4>
+
+                <p class="text-muted mb-0">
+                    Order #{{ order.id }}
+                </p>
+
+            </div>
+
+
+            <!-- =================================================
+                 ORDER INFORMATION
+            ================================================== -->
+
+            <div class="row g-3 mb-4">
+
+
+                <!-- CUSTOMER -->
+
+                <div class="col-md-6">
+
+                    <div class="border rounded-3 p-3">
+
+                        <small class="text-muted">
+                            Customer
+                        </small>
+
+                        <div class="fw-bold">
+
+                            {{ order.customer.name }}
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- DELIVERY DATE -->
+
+                <div class="col-md-6">
+
+                    <div class="border rounded-3 p-3">
+
+                        <small class="text-muted">
+                            Delivery Date
+                        </small>
+
+                        <div class="fw-bold">
+
+                            {{ order.delivery_date|date:"d-m-Y" }}
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- TOTAL -->
+
+                <div class="col-md-4">
+
+                    <div class="border rounded-3 p-3">
+
+                        <small class="text-muted">
+                            Total Amount
+                        </small>
+
+                        <div class="fw-bold">
+
+                            SAR {{ order.total_amount|floatformat:2 }}
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- ADVANCE -->
+
+                <div class="col-md-4">
+
+                    <div class="border rounded-3 p-3">
+
+                        <small class="text-muted">
+                            Advance Received
+                        </small>
+
+                        <div class="fw-bold text-success">
+
+                            SAR {{ order.advance_received|floatformat:2 }}
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- TOTAL RECEIVED -->
+
+                <div class="col-md-4">
+
+                    <div class="border rounded-3 p-3">
+
+                        <small class="text-muted">
+                            Total Received
+                        </small>
+
+                        <div class="fw-bold text-success">
+
+                            SAR {{ order.total_received|floatformat:2 }}
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- BALANCE -->
+
+                <div class="col-12">
+
+                    <div
+                        class="border rounded-3 p-3
+                        {% if order.balance > 0 %}
+                            border-warning
+                        {% else %}
+                            border-success
+                        {% endif %}"
+                    >
+
+                        <div class="d-flex justify-content-between align-items-center">
+
+                            <div>
+
+                                <small class="text-muted">
+                                    Remaining Balance
+                                </small>
+
+                                <div
+                                    class="fw-bold fs-4
+                                    {% if order.balance > 0 %}
+                                        text-danger
+                                    {% else %}
+                                        text-success
+                                    {% endif %}"
+                                >
+
+                                    SAR {{ order.balance|floatformat:2 }}
+
+                                </div>
+
+                            </div>
+
+
+                            {% if order.balance <= 0 %}
+
+                                <span class="badge bg-success">
+
+                                    <i class="bi bi-check-circle me-1"></i>
+
+                                    Fully Paid
+
+                                </span>
+
+                            {% else %}
+
+                                <span class="badge bg-warning text-dark">
+
+                                    <i class="bi bi-exclamation-circle me-1"></i>
+
+                                    Payment Pending
+
+                                </span>
+
+                            {% endif %}
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- =================================================
+                 PAYMENT WARNING
+            ================================================== -->
+
+            {% if order.balance > 0 %}
+
+            <div class="alert alert-warning">
+
+                <i class="bi bi-exclamation-triangle me-2"></i>
+
+                This order still has a balance of
+
+                <strong>
+                    SAR {{ order.balance|floatformat:2 }}
+                </strong>.
+
+                You can still confirm delivery if your business
+                allows delivery with pending payment.
+
+            </div>
+
+            {% else %}
+
+            <div class="alert alert-success">
+
+                <i class="bi bi-check-circle-fill me-2"></i>
+
+                This order is <strong>fully paid</strong>.
+
+                It is ready to be delivered.
+
+            </div>
+
+            {% endif %}
+
+
+            <!-- =================================================
+                 DELIVERY WARNING
+            ================================================== -->
+
+            <div class="alert alert-info">
+
+                <i class="bi bi-info-circle me-2"></i>
+
+                You are about to mark this order as
+                <strong>Delivered</strong>.
+
+                The system will record the delivery date and
+                the user who confirmed the delivery.
+
+            </div>
+
+
+            <!-- =================================================
+                 CONFIRM FORM
+            ================================================== -->
+
+            <form method="POST">
+
+                {% csrf_token %}
+
+                <div class="d-flex justify-content-end gap-2">
+
+                    <a
+                        href="{% url 'order_list' %}"
+                        class="btn btn-secondary"
+                    >
+
+                        <i class="bi bi-x-lg me-1"></i>
+
+                        Cancel
+
+                    </a>
+
+
+                    <button
+                        type="submit"
+                        class="btn btn-success"
+                    >
+
+                        <i class="bi bi-check-circle me-1"></i>
+
+                        Confirm Delivery
+
+                    </button>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

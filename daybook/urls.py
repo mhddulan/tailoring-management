@@ -17,4 +17,9 @@ path(
         views.daybook_pdf,
         name="daybook_pdf"
     ),
+    path(
+    "opening-balance/",
+    views.opening_balance,
+    name="opening_balance"
+),
 ]

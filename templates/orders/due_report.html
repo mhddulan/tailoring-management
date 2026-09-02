@@ -35,12 +35,12 @@
                 <tr>
                     <td class="fw-semibold text-muted">{{ forloop.counter }}</td>
                     <td class="fw-bold text-dark"><i class="bi bi-person me-1"></i>{{ item.order.customer.name }}</td>
-                    <td>₹ {{ item.amount }}</td>
-                    <td class="text-success">₹ {{ item.advance }}</td>
+                    <td>SAR {{ item.amount }}</td>
+                    <td class="text-success">SAR {{ item.advance }}</td>
                     <td>
                         {% if item.due > 0 %}
                             <span class="badge bg-danger-subtle text-danger border border-danger-subtle fw-bold fs-6">
-                                ₹ {{ item.due }}
+                                SAR {{ item.due }}
                             </span>
                         {% else %}
                             <span class="badge bg-success-subtle text-success border border-success-subtle fw-bold">
@@ -59,7 +59,7 @@
             <tfoot>
                 <tr class="table-light border-top">
                     <th colspan="4" class="text-end fw-bold text-dark fs-5">Total Outstanding Due:</th>
-                    <th class="fw-bold text-danger fs-5">₹ {{ total_due }}</th>
+                    <th class="fw-bold text-danger fs-5">SAR {{ total_due }}</th>
                 </tr>
             </tfoot>
             {% endif %}

@@ -3,33 +3,24 @@ __pycache__/
 *.py[cod]
 *.pyo
 
-# Virtual environment
+# Virtual environments
 .venv/
 venv/
-env/
+
+# Environment variables
+.env
 
 # Django
-*.log
 db.sqlite3
-db_backup*.sqlite3
-media/
 staticfiles/
-
-# Environment / secrets
-.env
-.env.*
-
-# PostgreSQL backups
-backups/
-*.dump
 
 # IDE
 .vscode/
 .idea/
 
-# OS
-.DS_Store
-Thumbs.db
+# Logs
+*.log
+logs/
 
 # Docker
-*.pid
+*.tar

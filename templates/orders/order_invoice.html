@@ -1,0 +1,276 @@
+{% extends "base.html" %}
+
+{% block title %}Invoice #{{ order.id }} | Stitching Pro{% endblock %}
+
+{% block content %}
+
+<div class="container-fluid py-4">
+
+    <div class="d-flex justify-content-between mb-3 no-print">
+
+        <a
+            href="{% url 'order_detail' order.id %}"
+            class="btn btn-secondary"
+        >
+            <i class="bi bi-arrow-left me-1"></i>
+            Back
+        </a>
+
+        <button
+            onclick="window.print()"
+            class="btn btn-primary"
+        >
+            <i class="bi bi-printer me-1"></i>
+            Print Invoice
+        </button>
+
+    </div>
+
+
+    <div class="invoice-paper">
+
+        <!-- HEADER -->
+
+        <div class="text-center border-bottom pb-3 mb-4">
+
+            <h2 class="fw-bold mb-1">
+                STITCHING PRO
+            </h2>
+
+            <p class="mb-0 text-muted">
+                Tailoring & Alteration Services
+            </p>
+
+            <h4 class="mt-3 fw-bold">
+                INVOICE
+            </h4>
+
+        </div>
+
+
+        <!-- CUSTOMER / ORDER -->
+
+        <div class="row mb-4">
+
+            <div class="col-6">
+
+                <h6 class="fw-bold">
+                    Customer
+                </h6>
+
+                <div>
+                    {{ order.customer.name }}
+                </div>
+
+                <div>
+                    {{ order.customer.mobile }}
+                </div>
+
+                <div>
+                    {{ order.customer.address }}
+                </div>
+
+            </div>
+
+
+            <div class="col-6 text-end">
+
+                <h6 class="fw-bold">
+                    Order Details
+                </h6>
+
+                <div>
+                    <strong>Invoice:</strong>
+                    #{{ order.id }}
+                </div>
+
+                <div>
+                    <strong>Order Date:</strong>
+                    {{ order.order_date }}
+                </div>
+
+                <div>
+                    <strong>Delivery Date:</strong>
+                    {{ order.delivery_date }}
+                </div>
+
+                <div>
+                    <strong>Status:</strong>
+                    {{ order.status }}
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- ITEMS -->
+
+        <table class="table table-bordered">
+
+            <thead>
+
+                <tr>
+
+                    <th>#</th>
+                    <th>Item</th>
+                    <th class="text-center">Qty</th>
+                    <th class="text-end">Rate</th>
+                    <th class="text-end">Amount</th>
+
+                </tr>
+
+            </thead>
+
+            <tbody>
+
+                {% for item in items %}
+
+                <tr>
+
+                    <td>
+                        {{ forloop.counter }}
+                    </td>
+
+                    <td>
+                        {{ item.product.name }}
+                    </td>
+
+                    <td class="text-center">
+                        {{ item.quantity }}
+                    </td>
+
+                    <td class="text-end">
+                        SAR {{ item.rate|floatformat:2 }}
+                    </td>
+
+                    <td class="text-end">
+                        SAR {{ item.amount|floatformat:2 }}
+                    </td>
+
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+            <tfoot>
+
+                <tr>
+
+                    <th colspan="4" class="text-end">
+                        Grand Total
+                    </th>
+
+                    <th class="text-end">
+                        SAR {{ order.total_amount|floatformat:2 }}
+                    </th>
+
+                </tr>
+
+            </tfoot>
+
+        </table>
+
+
+        <!-- PAYMENT SUMMARY -->
+
+        <div class="row justify-content-end mt-4">
+
+            <div class="col-md-5">
+
+                <table class="table table-bordered">
+
+                    <tr>
+
+                        <td>
+                            Advance Received
+                        </td>
+
+                        <td class="text-end">
+                            SAR {{ order.advance_received|floatformat:2 }}
+                        </td>
+
+                    </tr>
+
+                    <tr>
+
+                        <td>
+                            Balance Payment
+                        </td>
+
+                        <td class="text-end">
+                            SAR {{ order.balance_received|floatformat:2 }}
+                        </td>
+
+                    </tr>
+
+                    <tr class="fw-bold">
+
+                        <td>
+                            Balance Due
+                        </td>
+
+                        <td class="text-end">
+                            SAR {{ order.balance|floatformat:2 }}
+                        </td>
+
+                    </tr>
+
+                </table>
+
+            </div>
+
+        </div>
+
+
+        <!-- FOOTER -->
+
+        <div class="text-center border-top pt-3 mt-5">
+
+            <p class="mb-1 fw-semibold">
+                Thank you for your business!
+            </p>
+
+            <small class="text-muted">
+                This is a computer-generated invoice.
+            </small>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<style>
+
+.invoice-paper {
+    background: white;
+    max-width: 900px;
+    margin: auto;
+    padding: 40px;
+    box-shadow: 0 0 15px rgba(0,0,0,.08);
+}
+
+@media print {
+
+    body {
+        background: white !important;
+    }
+
+    .no-print {
+        display: none !important;
+    }
+
+    .invoice-paper {
+        box-shadow: none;
+        max-width: none;
+        padding: 20px;
+    }
+
+}
+
+</style>
+
+{% endblock %}

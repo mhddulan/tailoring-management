@@ -1,0 +1,1304 @@
+{% extends "base.html" %}
+
+{% block title %}Employee Performance | Stitching Pro{% endblock %}
+{% block page_title %}Employee Performance{% endblock %}
+
+
+{% block content %}
+
+<div class="container-fluid employee-performance-page">
+
+
+    <!-- =========================================================
+         PAGE HEADER
+    ========================================================== -->
+
+    <div class="page-header-block">
+
+        <div>
+
+            <h2 class="page-header-title">
+
+                <i class="bi bi-person-badge-fill me-2"></i>
+
+                Employee Performance
+
+            </h2>
+
+            <p class="page-header-sub">
+
+                View employee production, stitched pieces,
+                item rates and salary performance.
+
+            </p>
+
+        </div>
+
+
+        <div class="d-flex gap-2 flex-wrap">
+
+            <!-- PDF -->
+
+            <a
+                href="{% url 'employee_performance_pdf' employee.id %}{% if from_date %}?from_date={{ from_date }}&to_date={{ to_date }}{% endif %}"
+                class="btn btn-danger"
+                target="_blank"
+            >
+
+                <i class="bi bi-file-earmark-pdf-fill me-1"></i>
+
+                Download PDF
+
+            </a>
+
+
+            <!-- BACK -->
+
+            <a
+                href="{% url 'employee_list' %}"
+                class="btn btn-secondary"
+            >
+
+                <i class="bi bi-arrow-left me-1"></i>
+
+                Back to Employees
+
+            </a>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- =========================================================
+         EMPLOYEE INFORMATION
+    ========================================================== -->
+
+    <div class="employee-profile-card mb-4">
+
+        <div class="employee-profile-left">
+
+            <div class="employee-avatar">
+
+                <i class="bi bi-person-fill"></i>
+
+            </div>
+
+
+            <div>
+
+                <h3 class="employee-name">
+
+                    {{ employee.name }}
+
+                </h3>
+
+
+                <div class="employee-meta">
+
+                    {% if employee.designation %}
+
+                        <span>
+
+                            <i class="bi bi-briefcase me-1"></i>
+
+                            {{ employee.designation }}
+
+                        </span>
+
+                    {% endif %}
+
+
+                    {% if employee.branch %}
+
+                        <span>
+
+                            <i class="bi bi-building me-1"></i>
+
+                            {{ employee.branch.name }}
+
+                        </span>
+
+                    {% endif %}
+
+
+                    {% if employee.phone %}
+
+                        <span>
+
+                            <i class="bi bi-telephone me-1"></i>
+
+                            {{ employee.phone }}
+
+                        </span>
+
+                    {% endif %}
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- =========================================================
+         DATE FILTER
+    ========================================================== -->
+
+    <div class="filter-card mb-4">
+
+        <form method="GET">
+
+            <div class="row g-3 align-items-end">
+
+
+                <!-- FROM DATE -->
+
+                <div class="col-12 col-md-4">
+
+                    <label class="form-label fw-semibold">
+
+                        From Date
+
+                    </label>
+
+                    <input
+                        type="date"
+                        name="from_date"
+                        value="{{ from_date }}"
+                        class="form-control"
+                    >
+
+                </div>
+
+
+                <!-- TO DATE -->
+
+                <div class="col-12 col-md-4">
+
+                    <label class="form-label fw-semibold">
+
+                        To Date
+
+                    </label>
+
+                    <input
+                        type="date"
+                        name="to_date"
+                        value="{{ to_date }}"
+                        class="form-control"
+                    >
+
+                </div>
+
+
+                <!-- BUTTON -->
+
+                <div class="col-12 col-md-4">
+
+                    <div class="d-flex gap-2">
+
+                        <button
+                            type="submit"
+                            class="btn btn-primary flex-grow-1"
+                        >
+
+                            <i class="bi bi-funnel-fill me-1"></i>
+
+                            Apply Filter
+
+                        </button>
+
+
+                        <a
+                            href="{% url 'employee_performance' employee.id %}"
+                            class="btn btn-secondary"
+                            title="Clear Filter"
+                        >
+
+                            <i class="bi bi-arrow-clockwise"></i>
+
+                        </a>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </form>
+
+    </div>
+
+
+
+    <!-- =========================================================
+         PERFORMANCE SUMMARY
+    ========================================================== -->
+
+    <div class="row g-3 mb-4">
+
+
+        <!-- TOTAL PIECES STITCHED -->
+
+        <div class="col-12 col-md-6">
+
+            <div class="stat-card performance-main-card">
+
+                <div>
+
+                    <div class="stat-label">
+
+                        TOTAL PIECES STITCHED
+
+                    </div>
+
+
+                    <h3 class="stat-value pieces-value">
+
+                        {{ total_pieces }}
+
+                    </h3>
+
+
+                    <small class="text-muted">
+
+                        Total completed production pieces
+
+                    </small>
+
+                </div>
+
+
+                <div class="stat-icon-wrapper stat-icon-success">
+
+                    <i class="bi bi-scissors"></i>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+
+        <!-- TOTAL SALARY -->
+
+        <div class="col-12 col-md-6">
+
+            <div class="stat-card">
+
+                <div>
+
+                    <div class="stat-label">
+
+                        TOTAL SALARY EARNED
+
+                    </div>
+
+
+                    <h3 class="stat-value salary-value">
+
+                        SAR {{ total_salary|floatformat:2 }}
+
+                    </h3>
+
+
+                    <small class="text-muted">
+
+                        Total production-based salary
+
+                    </small>
+
+                </div>
+
+
+                <div class="stat-icon-wrapper stat-icon-purple">
+
+                    <i class="bi bi-currency-rupee"></i>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- =========================================================
+         ITEM-WISE PERFORMANCE
+    ========================================================== -->
+
+    <div class="table-card mb-4">
+
+
+        <div class="table-card-header">
+
+            <div>
+
+                <h5 class="fw-bold mb-1">
+
+                    <i class="bi bi-list-check text-primary me-2"></i>
+
+                    Item-wise Performance
+
+                </h5>
+
+
+                <p class="text-muted mb-0 small">
+
+                    Total pieces and earning rate for each stitched item.
+
+                </p>
+
+            </div>
+
+
+            <span class="badge bg-light text-dark border">
+
+                {{ item_rates|length }} Items
+
+            </span>
+
+        </div>
+
+
+
+        <div class="table-responsive">
+
+            <table class="table app-table align-middle mb-0">
+
+                <thead>
+
+                    <tr>
+
+                        <th width="70">
+
+                            #
+
+                        </th>
+
+                        <th>
+
+                            Item
+
+                        </th>
+
+                        <th class="text-center">
+
+                            Pieces Stitched
+
+                        </th>
+
+                        <th class="text-end">
+
+                            Rate / Piece
+
+                        </th>
+
+                        <th class="text-end">
+
+                            Total Earned
+
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+
+                <tbody>
+
+                    {% for item in item_rates %}
+
+                    <tr>
+
+                        <td class="text-muted fw-semibold">
+
+                            {{ forloop.counter }}
+
+                        </td>
+
+
+                        <td>
+
+                            <div class="fw-bold text-dark">
+
+                                <i class="bi bi-scissors text-primary me-2"></i>
+
+                                {{ item.product.name }}
+
+                            </div>
+
+                        </td>
+
+
+                        <td class="text-center">
+
+                            <span class="badge bg-success-subtle text-success">
+
+                                {{ item.total_pieces }}
+
+                            </span>
+
+                        </td>
+
+
+                        <td class="text-end">
+
+                            <span class="fw-semibold">
+
+                                SAR {{ item.rate|floatformat:2 }}
+
+                            </span>
+
+                        </td>
+
+
+                        <td class="text-end">
+
+                            <span class="fw-bold text-success">
+
+                                SAR {{ item.total_amount|floatformat:2 }}
+
+                            </span>
+
+                        </td>
+
+                    </tr>
+
+
+                    {% empty %}
+
+                    <tr>
+
+                        <td
+                            colspan="5"
+                            class="text-center py-5"
+                        >
+
+                            <div class="text-muted">
+
+                                <i class="bi bi-scissors fs-1 d-block mb-3"></i>
+
+                                <h6 class="fw-bold">
+
+                                    No Production Records
+
+                                </h6>
+
+                                <p class="mb-0">
+
+                                    No production data found for this period.
+
+                                </p>
+
+                            </div>
+
+                        </td>
+
+                    </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+
+                {% if item_rates %}
+
+                <tfoot>
+
+                    <tr class="table-total-row">
+
+                        <td colspan="2">
+
+                            <strong>
+
+                                TOTAL
+
+                            </strong>
+
+                        </td>
+
+
+                        <td class="text-center">
+
+                            <strong>
+
+                                {{ total_pieces }}
+
+                            </strong>
+
+                        </td>
+
+
+                        <td>
+
+                        </td>
+
+
+                        <td class="text-end">
+
+                            <strong class="text-success">
+
+                                SAR {{ total_salary|floatformat:2 }}
+
+                            </strong>
+
+                        </td>
+
+                    </tr>
+
+                </tfoot>
+
+                {% endif %}
+
+            </table>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- =========================================================
+         PRODUCTION DETAILS
+    ========================================================== -->
+
+    <div class="table-card mb-4">
+
+
+        <div class="table-card-header">
+
+            <div>
+
+                <h5 class="fw-bold mb-1">
+
+                    <i class="bi bi-clipboard2-data text-primary me-2"></i>
+
+                    Production Details
+
+                </h5>
+
+
+                <p class="text-muted mb-0 small">
+
+                    Detailed production records for the selected period.
+
+                </p>
+
+            </div>
+
+
+            <span class="badge bg-light text-dark border">
+
+                {{ productions|length }} Records
+
+            </span>
+
+        </div>
+
+
+
+        <div class="table-responsive">
+
+            <table class="table app-table align-middle mb-0">
+
+                <thead>
+
+                    <tr>
+
+                        <th width="70">
+
+                            #
+
+                        </th>
+
+                        <th>
+
+                            Date
+
+                        </th>
+
+                        <th>
+
+                            Item
+
+                        </th>
+
+                        <th class="text-center">
+
+                            Pieces
+
+                        </th>
+
+                        <th class="text-end">
+
+                            Rate / Piece
+
+                        </th>
+
+                        <th class="text-end">
+
+                            Amount
+
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+
+                <tbody>
+
+                    {% for production in productions %}
+
+                    <tr>
+
+                        <td class="text-muted fw-semibold">
+
+                            {{ forloop.counter }}
+
+                        </td>
+
+
+                        <td>
+
+                            <i class="bi bi-calendar3 text-muted me-1"></i>
+
+                            {{ production.production_date|date:"d M Y" }}
+
+                        </td>
+
+
+                        <td>
+
+                            <span class="fw-semibold">
+
+                                {{ production.product.name }}
+
+                            </span>
+
+                        </td>
+
+
+                        <td class="text-center">
+
+                            <span class="badge bg-primary-subtle text-primary">
+
+                                {{ production.quantity }}
+
+                            </span>
+
+                        </td>
+
+
+                        <td class="text-end">
+
+                            SAR {{ production.rate_per_piece|floatformat:2 }}
+
+                        </td>
+
+
+                        <td class="text-end">
+
+                            <strong class="text-success">
+
+                                SAR {{ production.total_amount|floatformat:2 }}
+
+                            </strong>
+
+                        </td>
+
+                    </tr>
+
+
+                    {% empty %}
+
+                    <tr>
+
+                        <td
+                            colspan="6"
+                            class="text-center py-5"
+                        >
+
+                            <div class="text-muted">
+
+                                <i class="bi bi-clipboard-x fs-1 d-block mb-3"></i>
+
+                                <h6 class="fw-bold">
+
+                                    No Production Found
+
+                                </h6>
+
+                                <p class="mb-0">
+
+                                    There are no production records
+                                    for the selected date range.
+
+                                </p>
+
+                            </div>
+
+                        </td>
+
+                    </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+
+                {% if productions %}
+
+                <tfoot>
+
+                    <tr class="table-total-row">
+
+                        <td colspan="3">
+
+                            <strong>
+
+                                TOTAL
+
+                            </strong>
+
+                        </td>
+
+
+                        <td class="text-center">
+
+                            <strong>
+
+                                {{ total_pieces }}
+
+                            </strong>
+
+                        </td>
+
+
+                        <td>
+
+                        </td>
+
+
+                        <td class="text-end">
+
+                            <strong class="text-success">
+
+                                SAR {{ total_salary|floatformat:2 }}
+
+                            </strong>
+
+                        </td>
+
+                    </tr>
+
+                </tfoot>
+
+                {% endif %}
+
+            </table>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- =========================================================
+         SHARE / PDF FOOTER
+    ========================================================== -->
+
+    <div class="report-footer-card">
+
+        <div>
+
+            <h6 class="fw-bold mb-1">
+
+                <i class="bi bi-file-earmark-pdf text-danger me-2"></i>
+
+                Employee Report
+
+            </h6>
+
+            <p class="text-muted small mb-0">
+
+                Generate a PDF containing the employee's
+                production and salary details.
+
+            </p>
+
+        </div>
+
+
+        <a
+            href="{% url 'employee_performance_pdf' employee.id %}{% if from_date %}?from_date={{ from_date }}&to_date={{ to_date }}{% endif %}"
+            class="btn btn-danger"
+            target="_blank"
+        >
+
+            <i class="bi bi-file-earmark-pdf-fill me-1"></i>
+
+            Generate PDF
+
+        </a>
+
+    </div>
+
+
+</div>
+
+
+
+<!-- =========================================================
+     PAGE CSS
+========================================================== -->
+
+<style>
+
+/* =========================================================
+   MAIN
+========================================================= */
+
+.employee-performance-page {
+
+    padding-bottom: 40px;
+
+}
+
+
+/* =========================================================
+   EMPLOYEE PROFILE
+========================================================= */
+
+.employee-profile-card {
+
+    background: #ffffff;
+
+    border: 1px solid #e2e8f0;
+
+    border-radius: 16px;
+
+    padding: 22px 24px;
+
+    box-shadow:
+        0 2px 8px rgba(15, 23, 42, 0.04);
+
+}
+
+
+.employee-profile-left {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 16px;
+
+}
+
+
+.employee-avatar {
+
+    width: 58px;
+
+    height: 58px;
+
+    border-radius: 14px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    background: #2563eb;
+
+    color: #ffffff;
+
+    font-size: 25px;
+
+}
+
+
+.employee-name {
+
+    margin: 0 0 8px;
+
+    font-size: 1.35rem;
+
+    font-weight: 700;
+
+    color: #0f172a;
+
+}
+
+
+.employee-meta {
+
+    display: flex;
+
+    flex-wrap: wrap;
+
+    gap: 15px;
+
+    color: #64748b;
+
+    font-size: 0.9rem;
+
+}
+
+
+/* =========================================================
+   FILTER
+========================================================= */
+
+.filter-card {
+
+    background: #ffffff;
+
+    border: 1px solid #e2e8f0;
+
+    border-radius: 16px;
+
+    padding: 20px;
+
+    box-shadow:
+        0 2px 8px rgba(15, 23, 42, 0.04);
+
+}
+
+
+.filter-card .form-control {
+
+    min-height: 45px;
+
+}
+
+
+/* =========================================================
+   STAT CARDS
+========================================================= */
+
+.stat-card {
+
+    background: #ffffff;
+
+    border: 1px solid #e2e8f0;
+
+    border-radius: 16px;
+
+    padding: 22px;
+
+    min-height: 145px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    box-shadow:
+        0 2px 8px rgba(15, 23, 42, 0.04);
+
+    transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease;
+
+}
+
+
+.stat-card:hover {
+
+    transform: translateY(-2px);
+
+    box-shadow:
+        0 8px 20px rgba(15, 23, 42, 0.08);
+
+}
+
+
+.stat-label {
+
+    font-size: 0.82rem;
+
+    font-weight: 700;
+
+    letter-spacing: 0.04em;
+
+    color: #64748b;
+
+    margin-bottom: 7px;
+
+}
+
+
+.stat-value {
+
+    margin: 0;
+
+    font-size: 2rem;
+
+    font-weight: 800;
+
+    color: #0f172a;
+
+}
+
+
+.pieces-value {
+
+    color: #059669;
+
+}
+
+
+.salary-value {
+
+    color: #7c3aed;
+
+}
+
+
+.stat-icon-wrapper {
+
+    width: 58px;
+
+    height: 58px;
+
+    border-radius: 15px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    font-size: 24px;
+
+    flex-shrink: 0;
+
+}
+
+
+.stat-icon-success {
+
+    background: #ecfdf5;
+
+    color: #059669;
+
+}
+
+
+.stat-icon-purple {
+
+    background: #f5f3ff;
+
+    color: #7c3aed;
+
+}
+
+
+/* =========================================================
+   TABLE TOTAL
+========================================================= */
+
+.table-total-row td {
+
+    background: #f8fafc;
+
+    border-top: 2px solid #e2e8f0;
+
+    padding-top: 14px;
+
+    padding-bottom: 14px;
+
+}
+
+
+/* =========================================================
+   REPORT FOOTER
+========================================================= */
+
+.report-footer-card {
+
+    background: #ffffff;
+
+    border: 1px solid #e2e8f0;
+
+    border-radius: 16px;
+
+    padding: 20px 24px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    gap: 20px;
+
+    box-shadow:
+        0 2px 8px rgba(15, 23, 42, 0.04);
+
+}
+
+
+/* =========================================================
+   RESPONSIVE
+========================================================= */
+
+@media (max-width: 768px) {
+
+    .page-header-block {
+
+        flex-direction: column;
+
+        align-items: flex-start;
+
+        gap: 15px;
+
+    }
+
+
+    .employee-profile-left {
+
+        align-items: flex-start;
+
+    }
+
+
+    .employee-meta {
+
+        flex-direction: column;
+
+        gap: 5px;
+
+    }
+
+
+    .stat-card {
+
+        min-height: 125px;
+
+    }
+
+
+    .stat-value {
+
+        font-size: 1.7rem;
+
+    }
+
+
+    .report-footer-card {
+
+        flex-direction: column;
+
+        align-items: flex-start;
+
+    }
+
+
+    .report-footer-card .btn {
+
+        width: 100%;
+
+    }
+
+}
+
+
+@media (max-width: 576px) {
+
+    .employee-performance-page {
+
+        padding-left: 5px;
+
+        padding-right: 5px;
+
+    }
+
+
+    .stat-card {
+
+        padding: 18px;
+
+    }
+
+
+    .stat-icon-wrapper {
+
+        width: 48px;
+
+        height: 48px;
+
+        font-size: 20px;
+
+    }
+
+}
+
+</style>
+
+
+
+<!-- =========================================================
+     PRINT CSS
+========================================================== -->
+
+<style media="print">
+
+body {
+
+    background: #ffffff !important;
+
+}
+
+
+.employee-performance-page {
+
+    padding: 0 !important;
+
+}
+
+
+.page-header-block,
+.filter-card,
+.report-footer-card,
+.btn {
+
+    display: none !important;
+
+}
+
+
+.employee-profile-card,
+.stat-card,
+.table-card {
+
+    box-shadow: none !important;
+
+    border: 1px solid #ddd !important;
+
+}
+
+
+.stat-card:hover {
+
+    transform: none !important;
+
+}
+
+</style>
+
+
+{% endblock %}

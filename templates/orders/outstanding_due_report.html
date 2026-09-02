@@ -37,11 +37,11 @@
                     <td class="fw-semibold text-muted">{{ forloop.counter }}</td>
                     <td class="fw-bold text-dark"><i class="bi bi-person me-1"></i>{{ item.order.customer }}</td>
                     <td class="fw-semibold text-dark">{{ item.order.dress_type }}</td>
-                    <td>₹ {{ item.amount }}</td>
-                    <td class="text-success">₹ {{ item.paid }}</td>
+                    <td>SAR {{ item.amount }}</td>
+                    <td class="text-success">SAR {{ item.paid }}</td>
                     <td>
                         <span class="badge bg-danger-subtle text-danger border border-danger-subtle fw-bold fs-6">
-                            ₹ {{ item.due }}
+                            SAR {{ item.due }}
                         </span>
                     </td>
                 </tr>
@@ -63,7 +63,7 @@
             <p class="mb-0 text-muted">Sum of all customer balances pending collection across orders.</p>
         </div>
     </div>
-    <h3 class="fw-bold text-danger mb-0">₹ {{ total_due }}</h3>
+    <h3 class="fw-bold text-danger mb-0">SAR {{ total_due }}</h3>
 </div>
 
 {% endblock %}

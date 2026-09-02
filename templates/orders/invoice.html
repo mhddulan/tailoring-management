@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+
+    <title>Invoice #{{ order.id }} | Stitching Pro</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 30px;
+            background: #f2f4f7;
+            font-family: Arial, Helvetica, sans-serif;
+            color: #222;
+        }
+
+        .invoice {
+            width: 210mm;
+            min-height: 297mm;
+            margin: auto;
+            background: #fff;
+            padding: 18mm;
+            box-shadow: 0 0 10px rgba(0,0,0,.12);
+        }
+
+        .top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            border-bottom: 2px solid #222;
+            padding-bottom: 18px;
+            margin-bottom: 20px;
+        }
+
+        .company h1 {
+            margin: 0 0 5px;
+            font-size: 28px;
+            letter-spacing: .5px;
+        }
+
+        .company p {
+            margin: 3px 0;
+            color: #555;
+            font-size: 13px;
+        }
+
+        .invoice-title {
+            text-align: right;
+        }
+
+        .invoice-title h2 {
+            margin: 0 0 8px;
+            font-size: 25px;
+        }
+
+        .invoice-title p {
+            margin: 4px 0;
+            font-size: 13px;
+        }
+
+        .customer-section {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 25px;
+        }
+
+        .box {
+            width: 48%;
+        }
+
+        .box-title {
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+            color: #777;
+            margin-bottom: 6px;
+        }
+
+        .box-content {
+            border: 1px solid #ddd;
+            padding: 12px;
+            min-height: 80px;
+        }
+
+        .box-content strong {
+            font-size: 15px;
+        }
+
+        .box-content p {
+            margin: 5px 0;
+            font-size: 13px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .items th {
+            background: #222;
+            color: #fff;
+            padding: 10px;
+            font-size: 12px;
+            text-align: left;
+        }
+
+        .items td {
+            border-bottom: 1px solid #ddd;
+            padding: 10px;
+            font-size: 13px;
+        }
+
+        .text-center {
+            text-align: center !important;
+        }
+
+        .text-right {
+            text-align: right !important;
+        }
+
+        .summary-wrapper {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 20px;
+        }
+
+        .summary {
+            width: 320px;
+        }
+
+        .summary tr td {
+            padding: 7px 5px;
+            font-size: 13px;
+        }
+
+        .summary .total td {
+            border-top: 2px solid #222;
+            font-size: 17px;
+            font-weight: bold;
+            padding-top: 10px;
+        }
+
+        .summary .advance td {
+            color: #198754;
+        }
+
+        .summary .balance td {
+            color: #dc3545;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .payment-section {
+            margin-top: 30px;
+        }
+
+        .payment-section h3 {
+            font-size: 15px;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 7px;
+        }
+
+        .payment-table th {
+            background: #f1f1f1;
+            padding: 8px;
+            text-align: left;
+            font-size: 12px;
+        }
+
+        .payment-table td {
+            padding: 8px;
+            border-bottom: 1px solid #ddd;
+            font-size: 12px;
+        }
+
+        .paid {
+            color: #198754;
+            font-weight: bold;
+        }
+
+        .pending {
+            color: #dc3545;
+            font-weight: bold;
+        }
+
+        .footer {
+            margin-top: 60px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: #666;
+        }
+
+        .signature {
+            text-align: center;
+            width: 180px;
+            border-top: 1px solid #555;
+            padding-top: 7px;
+        }
+
+        .print-button {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #0d6efd;
+            color: white;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .back-button {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: #6c757d;
+            color: white;
+            text-decoration: none;
+            padding: 10px 18px;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        @media print {
+
+            body {
+                background: #fff;
+                padding: 0;
+            }
+
+            .invoice {
+                width: 100%;
+                min-height: auto;
+                margin: 0;
+                padding: 0;
+                box-shadow: none;
+            }
+
+            .print-button,
+            .back-button {
+                display: none;
+            }
+
+            @page {
+                size: A4;
+                margin: 15mm;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<a href="{% url 'order_detail' order.id %}"
+   class="back-button">
+    ← Back
+</a>
+
+<button onclick="window.print()"
+        class="print-button">
+    🖨 Print Invoice
+</button>
+
+
+<div class="invoice">
+
+    <!-- HEADER -->
+
+    <div class="top">
+
+        <div class="company">
+
+            <h1>STITCHING PRO</h1>
+
+            <p>Tailoring & Garments</p>
+
+            {% if order.customer.branch %}
+                <p>
+                    {{ order.customer.branch.name }}
+                </p>
+            {% endif %}
+
+        </div>
+
+
+        <div class="invoice-title">
+
+            <h2>INVOICE</h2>
+
+            <p>
+                <strong>Invoice No:</strong>
+                INV-{{ order.id|stringformat:"04d" }}
+            </p>
+
+            <p>
+                <strong>Date:</strong>
+                {{ order.order_date|date:"d-m-Y" }}
+            </p>
+
+        </div>
+
+    </div>
+
+
+    <!-- CUSTOMER INFORMATION -->
+
+    <div class="customer-section">
+
+        <div class="box">
+
+            <div class="box-title">
+                Bill To
+            </div>
+
+            <div class="box-content">
+
+                <strong>
+                    {{ order.customer.name }}
+                </strong>
+
+                {% if order.customer.mobile %}
+                <p>
+                    Mobile:
+                    {{ order.customer.mobile }}
+                </p>
+                {% endif %}
+
+                {% if order.customer.address %}
+                <p>
+                    {{ order.customer.address }}
+                </p>
+                {% endif %}
+
+            </div>
+
+        </div>
+
+
+        <div class="box">
+
+            <div class="box-title">
+                Order Details
+            </div>
+
+            <div class="box-content">
+
+                <p>
+                    <strong>Order:</strong>
+                    #{{ order.id }}
+                </p>
+
+                <p>
+                    <strong>Order Date:</strong>
+                    {{ order.order_date|date:"d-m-Y" }}
+                </p>
+
+                <p>
+                    <strong>Delivery Date:</strong>
+                    {{ order.delivery_date|date:"d-m-Y" }}
+                </p>
+
+                <p>
+                    <strong>Status:</strong>
+                    {{ order.status }}
+                </p>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- ITEMS -->
+
+    <table class="items">
+
+        <thead>
+
+            <tr>
+                <th width="8%">#</th>
+                <th>Item Description</th>
+                <th width="15%" class="text-center">Qty</th>
+                <th width="18%" class="text-right">Rate</th>
+                <th width="20%" class="text-right">Amount</th>
+            </tr>
+
+        </thead>
+
+        <tbody>
+
+            {% for item in order.items.all %}
+
+            <tr>
+
+                <td>
+                    {{ forloop.counter }}
+                </td>
+
+                <td>
+                    {{ item.item_name }}
+                </td>
+
+                <td class="text-center">
+                    {{ item.quantity }}
+                </td>
+
+                <td class="text-right">
+                    SAR {{ item.rate|floatformat:2 }}
+                </td>
+
+                <td class="text-right">
+                    SAR {{ item.amount|floatformat:2 }}
+                </td>
+
+            </tr>
+
+            {% empty %}
+
+            <tr>
+                <td colspan="5"
+                    class="text-center">
+                    No items
+                </td>
+            </tr>
+
+            {% endfor %}
+
+        </tbody>
+
+    </table>
+
+
+    <!-- SUMMARY -->
+
+    <div class="summary-wrapper">
+
+        <table class="summary">
+
+            <tr>
+                <td>
+                    Subtotal
+                </td>
+
+                <td class="text-right">
+                    SAR {{ order.total_amount|floatformat:2 }}
+                </td>
+            </tr>
+
+
+            <tr class="advance">
+
+                <td>
+                    Advance Received
+                </td>
+
+                <td class="text-right">
+                    SAR {{ order.advance_received|floatformat:2 }}
+                </td>
+
+            </tr>
+
+
+            <tr class="total">
+
+                <td>
+                    Total Received
+                </td>
+
+                <td class="text-right">
+                    SAR {{ order.total_received|floatformat:2 }}
+                </td>
+
+            </tr>
+
+
+            <tr class="balance">
+
+                <td>
+                    Balance Due
+                </td>
+
+                <td class="text-right">
+                    SAR {{ order.balance|floatformat:2 }}
+                </td>
+
+            </tr>
+
+        </table>
+
+    </div>
+
+
+    <!-- PAYMENT HISTORY -->
+
+    <div class="payment-section">
+
+        <h3>
+            Payment Details
+        </h3>
+
+        <table class="payment-table">
+
+            <thead>
+
+                <tr>
+                    <th>Date</th>
+                    <th>Payment Type</th>
+                    <th>Payment Mode</th>
+                    <th class="text-right">Amount</th>
+                </tr>
+
+            </thead>
+
+            <tbody>
+
+                {% for payment in order.payments.all %}
+
+                <tr>
+
+                    <td>
+                        {{ payment.payment_date|date:"d-m-Y" }}
+                    </td>
+
+                    <td>
+                        {{ payment.payment_type }}
+                    </td>
+
+                    <td>
+                        {{ payment.payment_mode }}
+                    </td>
+
+                    <td class="text-right paid">
+                        SAR {{ payment.amount|floatformat:2 }}
+                    </td>
+
+                </tr>
+
+                {% empty %}
+
+                <tr>
+
+                    <td colspan="4"
+                        class="text-center">
+
+                        No payments recorded.
+
+                    </td>
+
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+
+    <!-- FOOTER -->
+
+    <div class="footer">
+
+        <div>
+
+            <strong>
+                Thank you for your business!
+            </strong>
+
+            <p>
+                Please keep this invoice for your records.
+            </p>
+
+        </div>
+
+
+        <div class="signature">
+
+            Authorized Signature
+
+        </div>
+
+    </div>
+
+</div>
+
+</body>
+</html>

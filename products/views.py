@@ -1,5 +1,5 @@
 from datetime import date
-from django.http import JsonResponse
+from django.http import JsonResponse, request
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db.models import Sum, Q
@@ -579,55 +579,61 @@ def branch_stock(request):
         }
 
     )
-@login_required
-def update_price(request, id):
 
-    stock = get_object_or_404(
-        BranchProduct,
+
+@login_required
+def product_edit(request, id):
+
+    product = get_object_or_404(
+        Product,
         id=id
     )
 
     if request.user.role != "Admin":
 
-        if stock.branch != request.user.branch:
+        messages.error(
+            request,
+            "Only Admin can edit products."
+        )
 
-            messages.error(
-                request,
-                "Permission denied."
-            )
-
-            return redirect("branch_stock")
+        return redirect("product_list")
 
     if request.method == "POST":
 
-        stock.selling_price = request.POST.get(
-            "selling_price"
+        form = ProductForm(
+            request.POST,
+            instance=product
         )
 
-        stock.save()
+        if form.is_valid():
 
-        messages.success(
-            request,
-            "Selling price updated."
-        )
+            form.save()
 
-        return redirect(
-            "branch_stock"
+            messages.success(
+                request,
+                "Product updated successfully."
+            )
+
+            return redirect("product_list")
+
+    else:
+
+        form = ProductForm(
+            instance=product
         )
 
     return render(
-
         request,
-
-        "products/update_price.html",
-
+        "products/product_form.html",
         {
-
-            "stock": stock
-
+            "form": form,
+            "product": product,
+            "title": "Edit Product",
         }
-
     )
+
+
+
 @login_required
 def stock_report(request):
 
@@ -690,17 +696,16 @@ def stock_report(request):
 @login_required
 def search_product(request):
 
-    keyword = request.GET.get("q", "")
+    keyword = request.GET.get("q", "").strip()
 
     products = BranchProduct.objects.filter(
         branch=request.user.branch,
         product__active=True
     ).filter(
-
         Q(product__name__icontains=keyword) |
-
         Q(product__barcode__icontains=keyword)
-
+    ).select_related(
+        "product"
     )
 
     data = []
@@ -708,71 +713,17 @@ def search_product(request):
     for item in products:
 
         data.append({
-
             "id": item.id,
-
             "name": item.product.name,
-
-            "barcode": item.product.barcode,
-
+            "barcode": item.product.barcode or "",
             "stock": item.stock,
-
             "price": float(item.selling_price),
-
         })
 
-    return JsonResponse(data, safe=False)
-@login_required
-def product_edit(request, id):
-
-    product = get_object_or_404(
-        Product,
-        id=id
+    return JsonResponse(
+        data,
+        safe=False
     )
-
-    if request.user.role != "Admin":
-
-        messages.error(
-            request,
-            "Only Admin can edit products."
-        )
-
-        return redirect("product_list")
-
-    if request.method == "POST":
-
-        form = ProductForm(
-            request.POST,
-            instance=product
-        )
-
-        if form.is_valid():
-
-            form.save()
-
-            messages.success(
-                request,
-                "Product updated successfully."
-            )
-
-            return redirect("product_list")
-
-    else:
-
-        form = ProductForm(
-            instance=product
-        )
-
-    return render(
-        request,
-        "products/product_form.html",
-        {
-            "form": form,
-            "product": product,
-            "title": "Edit Product",
-        }
-    )
-
 
 @login_required
 def product_delete(request, id):
@@ -888,14 +839,60 @@ def category_delete(request, id):
         }
     )
 @login_required
+def product_create(request):
+
+    if request.user.role != "Admin":
+
+        messages.error(
+            request,
+            "Only Admin can create products."
+        )
+
+        return redirect("product_list")
+
+    if request.method == "POST":
+
+        form = ProductForm(request.POST)
+
+        if form.is_valid():
+
+            form.save()
+
+            messages.success(
+                request,
+                "Product created successfully."
+            )
+
+            return redirect("product_list")
+
+    else:
+
+        form = ProductForm()
+
+    return render(
+        request,
+        "products/product_form.html",
+        {
+            "form": form,
+            "title": "Add Product",
+        }
+    )
+
+
+
+
+@login_required
 def update_price(request, id):
 
     if request.user.role == "Admin":
+
         branch_product = get_object_or_404(
             BranchProduct,
             id=id
         )
+
     else:
+
         branch_product = get_object_or_404(
             BranchProduct,
             id=id,
@@ -909,11 +906,19 @@ def update_price(request, id):
         if price:
 
             branch_product.selling_price = price
+
             branch_product.save()
 
             messages.success(
                 request,
                 "Selling price updated successfully."
+            )
+
+        else:
+
+            messages.error(
+                request,
+                "Please enter a valid selling price."
             )
 
         return redirect("branch_stock")

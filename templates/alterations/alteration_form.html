@@ -1,0 +1,461 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} | Stitching Pro{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block content %}
+
+<div class="page-header-block">
+
+    <div>
+        <h2 class="page-header-title">
+            {{ title }}
+        </h2>
+
+        <p class="page-header-sub">
+            Record customer alteration details, measurements and advance payment.
+        </p>
+    </div>
+
+    <div>
+        <a href="{% url 'alteration_list' %}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left me-1"></i>
+            Back to Alterations
+        </a>
+    </div>
+
+</div>
+
+
+<div class="row justify-content-center">
+
+    <div class="col-12 col-lg-8">
+
+        <div class="form-card">
+
+            <!-- HEADER -->
+
+            <div class="d-flex align-items-center mb-4">
+
+                <div class="stat-icon-wrapper stat-icon-warning me-3">
+                    <i class="bi bi-scissors"></i>
+                </div>
+
+                <div>
+
+                    <h5 class="fw-bold mb-1">
+                        Alteration Details
+                    </h5>
+
+                    <p class="text-muted mb-0">
+                        Enter the customer's alteration requirements.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <!-- SUCCESS / ERROR MESSAGES -->
+
+            {% if messages %}
+
+                {% for message in messages %}
+
+                    <div
+                        class="alert
+                        {% if message.tags == 'success' %}
+                            alert-success
+                        {% elif message.tags == 'error' %}
+                            alert-danger
+                        {% else %}
+                            alert-info
+                        {% endif %}
+                        alert-dismissible fade show"
+                        role="alert"
+                    >
+
+                        {% if message.tags == "success" %}
+
+                            <i class="bi bi-check-circle-fill me-2"></i>
+
+                        {% else %}
+
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+
+                        {% endif %}
+
+                        {{ message }}
+
+                        <button
+                            type="button"
+                            class="btn-close"
+                            data-bs-dismiss="alert"
+                        ></button>
+
+                    </div>
+
+                {% endfor %}
+
+            {% endif %}
+
+
+            <!-- FORM ERRORS -->
+
+            {% if form.non_field_errors %}
+
+                <div class="alert alert-danger">
+
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+
+                    <strong>Please correct the following:</strong>
+
+                    {% for error in form.non_field_errors %}
+
+                        <div class="mt-1">
+                            {{ error }}
+                        </div>
+
+                    {% endfor %}
+
+                </div>
+
+            {% endif %}
+
+
+            <form method="POST">
+
+                {% csrf_token %}
+
+
+                <div class="row g-3">
+                    {% if request.user.role == "Admin" %}
+
+<div class="col-md-6">
+
+    <label class="form-label fw-semibold">
+        Branch *
+    </label>
+
+    {{ form.branch }}
+
+    {% if form.branch.errors %}
+        <div class="text-danger small mt-1">
+            {{ form.branch.errors }}
+        </div>
+    {% endif %}
+
+</div>
+
+{% else %}
+
+<div class="col-md-6">
+
+    <label class="form-label fw-semibold">
+        Branch
+    </label>
+
+    {{ form.branch }}
+
+</div>
+
+{% endif %}
+
+
+                    <!-- CUSTOMER NAME -->
+
+                    <div class="col-md-6">
+
+                        <label class="form-label fw-semibold">
+                            Customer Name *
+                        </label>
+
+                        {{ form.customer_name }}
+
+                        {% if form.customer_name.errors %}
+
+                            <div class="text-danger small mt-1">
+
+                                {{ form.customer_name.errors }}
+
+                            </div>
+
+                        {% endif %}
+
+                    </div>
+
+
+                    <!-- PHONE -->
+
+                    <div class="col-md-6">
+
+                        <label class="form-label fw-semibold">
+                            Phone Number *
+                        </label>
+
+                        {{ form.phone }}
+
+                        {% if form.phone.errors %}
+
+                            <div class="text-danger small mt-1">
+
+                                {{ form.phone.errors }}
+
+                            </div>
+
+                        {% endif %}
+
+                    </div>
+
+
+                    <!-- DATE -->
+
+                    <div class="col-md-6">
+
+                        <label class="form-label fw-semibold">
+                            Alteration Date
+                        </label>
+
+                        {{ form.alteration_date }}
+
+                        {% if form.alteration_date.errors %}
+
+                            <div class="text-danger small mt-1">
+
+                                {{ form.alteration_date.errors }}
+
+                            </div>
+
+                        {% endif %}
+
+                    </div>
+
+
+                    <!-- OUR PRODUCT -->
+
+                    <div class="col-md-6">
+
+                        <label class="form-label fw-semibold">
+                            Our Product
+                        </label>
+
+                        {{ form.product }}
+
+                        <div class="form-text">
+                            Select if the item is one of your products.
+                        </div>
+
+                        {% if form.product.errors %}
+
+                            <div class="text-danger small mt-1">
+
+                                {{ form.product.errors }}
+
+                            </div>
+
+                        {% endif %}
+
+                    </div>
+
+
+                    <!-- OUTSIDE ITEM -->
+
+                    <div class="col-md-6">
+
+                        <label class="form-label fw-semibold">
+                            Outside / Customer Item
+                        </label>
+
+                        {{ form.item_name }}
+
+                        <div class="form-text">
+                            Enter the item if the customer brings their own item.
+                        </div>
+
+                        {% if form.item_name.errors %}
+
+                            <div class="text-danger small mt-1">
+
+                                {{ form.item_name.errors }}
+
+                            </div>
+
+                        {% endif %}
+
+                    </div>
+
+
+                    <!-- CUSTOM SIZE -->
+
+                    <div class="col-12">
+
+                        <label class="form-label fw-semibold">
+                            Custom Size / Alteration Measurements
+                        </label>
+
+                        {{ form.custom_size }}
+
+                        <div class="form-text">
+
+                            Example:
+                            Sleeve +1 inch,
+                            Shoulder -0.5 inch,
+                            Length +1 inch.
+
+                        </div>
+
+                        {% if form.custom_size.errors %}
+
+                            <div class="text-danger small mt-1">
+
+                                {{ form.custom_size.errors }}
+
+                            </div>
+
+                        {% endif %}
+
+                    </div>
+
+
+                    <!-- NOTES -->
+
+                    <div class="col-12">
+
+                        <label class="form-label fw-semibold">
+                            Notes
+                        </label>
+
+                        {{ form.notes }}
+
+                        {% if form.notes.errors %}
+
+                            <div class="text-danger small mt-1">
+
+                                {{ form.notes.errors }}
+
+                            </div>
+
+                        {% endif %}
+
+                    </div>
+
+
+                    <!-- DIVIDER -->
+
+                    <div class="col-12">
+
+                        <hr class="my-2">
+
+                        <h5 class="fw-bold mb-1">
+
+                            <i class="bi bi-cash-coin text-success me-2"></i>
+
+                            Advance Payment
+
+                        </h5>
+
+                        <p class="text-muted small mb-0">
+
+                            Enter the advance received from the customer.
+
+                        </p>
+
+                    </div>
+
+
+                    <!-- ADVANCE AMOUNT -->
+
+                    <div class="col-md-6">
+
+                        <label class="form-label fw-semibold">
+                            Advance Amount (SAR)
+                        </label>
+
+                        {{ form.advance_amount }}
+
+                        {% if form.advance_amount.errors %}
+
+                            <div class="text-danger small mt-1">
+
+                                {{ form.advance_amount.errors }}
+
+                            </div>
+
+                        {% endif %}
+
+                    </div>
+
+
+                    <!-- PAYMENT MODE -->
+
+                    <div class="col-md-6">
+
+                        <label class="form-label fw-semibold">
+                            Payment Mode
+                        </label>
+
+                        {{ form.advance_payment_mode }}
+
+                        {% if form.advance_payment_mode.errors %}
+
+                            <div class="text-danger small mt-1">
+
+                                {{ form.advance_payment_mode.errors }}
+
+                            </div>
+
+                        {% endif %}
+
+                    </div>
+
+
+                </div>
+
+
+                <!-- BUTTONS -->
+
+                <div class="d-flex justify-content-end gap-2 mt-4">
+
+                    <a
+                        href="{% url 'alteration_list' %}"
+                        class="btn btn-secondary"
+                    >
+
+                        <i class="bi bi-x-circle me-1"></i>
+
+                        Cancel
+
+                    </a>
+
+
+                    <button
+                        type="submit"
+                        class="btn btn-primary"
+                    >
+
+                        <i class="bi bi-check-circle-fill me-1"></i>
+
+                        {% if alteration %}
+
+                            Update Alteration
+
+                        {% else %}
+
+                            Save Alteration
+
+                        {% endif %}
+
+                    </button>
+
+                </div>
+
+
+            </form>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

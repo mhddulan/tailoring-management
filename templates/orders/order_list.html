@@ -1,84 +1,1943 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
 
-{% block title %}Orders | Stitching Pro{% endblock %}
+{% block title %}Orders Management | Stitching Pro{% endblock %}
 {% block page_title %}Orders Management{% endblock %}
 
 {% block content %}
 
-<div class="page-header-block">
-    <div>
-        <h2 class="page-header-title">Order Directory</h2>
-        <p class="page-header-sub">Track tailoring orders, delivery schedules, and fulfillment statuses.</p>
-    </div>
-    <div>
-        <a href="/orders/add/" class="btn btn-primary">
-            <i class="bi bi-plus-lg"></i> New Order
-        </a>
-    </div>
-</div>
+<div class="orders-page">
 
-<div class="table-card">
-    <div class="table-card-header">
-        <h5 class="fw-bold mb-0 text-dark">
-            <i class="bi bi-bag-check-fill text-primary me-2"></i>All Tailoring Orders
-        </h5>
+    <!-- =====================================================
+         PAGE HEADER
+    ====================================================== -->
+
+    <div class="page-header-block">
+
+        <div>
+            <h2 class="page-header-title">
+                <i class="bi bi-bag-check-fill me-2"></i>
+                Order Directory
+            </h2>
+
+            <p class="page-header-sub">
+                Manage tailoring orders, payments, delivery dates
+                and order status.
+            </p>
+        </div>
+
+        <div>
+            <a href="{% url 'order_create' %}"
+               class="btn btn-primary new-order-btn">
+
+                <i class="bi bi-plus-lg me-1"></i>
+                New Order
+
+            </a>
+        </div>
+
     </div>
 
-    <div class="table-responsive">
-        <table class="table app-table">
-            <thead>
-                <tr>
-                    <th width="70">#</th>
-                    <th>Customer Name</th>
-                    <th>Dress Type</th>
-                    <th>Delivery Date</th>
-                    <th>Status</th>
-                    <th width="150" class="text-end">Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for order in orders %}
-                <tr>
-                    <td class="fw-semibold text-muted">{{ forloop.counter }}</td>
-                    <td>
-                        <a href="/orders/{{ order.id }}/" class="fw-bold text-primary text-decoration-none">
-                            <i class="bi bi-person me-1"></i>{{ order.customer }}
-                        </a>
-                    </td>
-                    <td class="fw-semibold text-dark">{{ order.dress_type }}</td>
-                    <td><i class="bi bi-calendar-event text-muted me-1"></i>{{ order.delivery_date }}</td>
-                    <td>
-                        {% if order.status == "Pending" %}
-                            <span class="badge-status badge-status-pending"><i class="bi bi-clock"></i> Pending</span>
-                        {% elif order.status == "Cutting" %}
-                            <span class="badge-status badge-status-cutting"><i class="bi bi-scissors"></i> Cutting</span>
-                        {% elif order.status == "Stitching" %}
-                            <span class="badge-status badge-status-stitching"><i class="bi bi-gear"></i> Stitching</span>
-                        {% elif order.status == "Ready" %}
-                            <span class="badge-status badge-status-ready"><i class="bi bi-check-circle"></i> Ready</span>
-                        {% elif order.status == "Delivered" %}
-                            <span class="badge-status badge-status-delivered"><i class="bi bi-box-square"></i> Delivered</span>
+
+    <!-- =====================================================
+         SEARCH + FILTER CARD
+    ====================================================== -->
+
+    <div class="filter-card">
+
+        <!-- SEARCH FORM -->
+
+        <form method="GET"
+              action="{% url 'order_list' %}">
+
+            <div class="search-row">
+
+                <div class="search-box">
+
+                    <i class="bi bi-search"></i>
+
+                    <input
+                        type="text"
+                        name="search"
+                        value="{{ search }}"
+                        placeholder="Search customer, phone or order ID..."
+                        autocomplete="off"
+                    >
+
+                </div>
+
+                <button
+                    type="submit"
+                    class="search-button"
+                >
+
+                    <i class="bi bi-search"></i>
+
+                    Search
+
+                </button>
+
+                {% if search %}
+
+                <a
+                    href="{% url 'order_list' %}?status={{ selected_status }}"
+                    class="clear-button"
+                    title="Clear Search"
+                >
+
+                    <i class="bi bi-x-lg"></i>
+
+                </a>
+
+                {% endif %}
+
+            </div>
+
+        </form>
+
+
+        <!-- =================================================
+             STATUS FILTER BUTTONS
+        ================================================== -->
+
+        <div class="status-filter-area">
+
+            <span class="filter-label">
+                Filter by status:
+            </span>
+
+            <div class="status-buttons">
+
+
+                <!-- ALL -->
+
+                <a
+                    href="{% url 'order_list' %}{% if search %}?search={{ search|urlencode }}{% endif %}"
+                    class="status-filter-btn
+                    {% if selected_status == 'All' %}
+                        active
+                    {% endif %}"
+                >
+
+                    <i class="bi bi-grid-fill"></i>
+
+                    All
+
+                </a>
+
+
+                <!-- PENDING -->
+
+                <a
+                    href="{% url 'order_list' %}?status=Pending{% if search %}&search={{ search|urlencode }}{% endif %}"
+                    class="status-filter-btn
+                    {% if selected_status == 'Pending' %}
+                        active
+                    {% endif %}"
+                >
+
+                    <i class="bi bi-clock"></i>
+
+                    Pending
+
+                </a>
+
+
+                <!-- CUTTING -->
+
+                <a
+                    href="{% url 'order_list' %}?status=Cutting{% if search %}&search={{ search|urlencode }}{% endif %}"
+                    class="status-filter-btn
+                    {% if selected_status == 'Cutting' %}
+                        active
+                    {% endif %}"
+                >
+
+                    <i class="bi bi-scissors"></i>
+
+                    Cutting
+
+                </a>
+
+
+                <!-- STITCHING -->
+
+                <a
+                    href="{% url 'order_list' %}?status=Stitching{% if search %}&search={{ search|urlencode }}{% endif %}"
+                    class="status-filter-btn
+                    {% if selected_status == 'Stitching' %}
+                        active
+                    {% endif %}"
+                >
+
+                    <i class="bi bi-gear"></i>
+
+                    Stitching
+
+                </a>
+
+
+                <!-- READY -->
+
+                <a
+                    href="{% url 'order_list' %}?status=Ready{% if search %}&search={{ search|urlencode }}{% endif %}"
+                    class="status-filter-btn
+                    {% if selected_status == 'Ready' %}
+                        active
+                    {% endif %}"
+                >
+
+                    <i class="bi bi-check-circle"></i>
+
+                    Ready
+
+                </a>
+
+
+                <!-- DELIVERY -->
+
+                <a
+                    href="{% url 'order_list' %}?status=Delivery{% if search %}&search={{ search|urlencode }}{% endif %}"
+                    class="status-filter-btn
+                    {% if selected_status == 'Delivery' %}
+                        active
+                    {% endif %}"
+                >
+
+                    <i class="bi bi-box-seam"></i>
+
+                    Delivery
+
+                </a>
+
+
+                <!-- DELIVERED -->
+
+                <a
+                    href="{% url 'order_list' %}?status=Delivered{% if search %}&search={{ search|urlencode }}{% endif %}"
+                    class="status-filter-btn
+                    {% if selected_status == 'Delivered' %}
+                        active
+                    {% endif %}"
+                >
+
+                    <i class="bi bi-check2-all"></i>
+
+                    Delivered
+
+                </a>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- =====================================================
+         ORDERS CARD
+    ====================================================== -->
+
+    <div class="orders-card">
+
+
+        <!-- CARD HEADER -->
+
+        <div class="orders-card-header">
+
+            <div>
+
+                <div class="orders-title-row">
+
+                    <h4>
+
+                        <i class="bi bi-list-check"></i>
+
+                        {% if selected_status == "All" %}
+                            All Orders
                         {% else %}
-                            <span class="badge-status badge-status-delivered">{{ order.status }}</span>
+                            {{ selected_status }} Orders
                         {% endif %}
-                    </td>
-                    <td class="text-end">
-                        <a href="/orders/{{ order.id }}/" class="btn btn-sm btn-outline-primary btn-icon-only me-1" title="View Order">
-                            <i class="bi bi-eye"></i>
-                        </a>
-                        <a href="/orders/edit/{{ order.id }}/" class="btn btn-sm btn-secondary btn-icon-only me-1" title="Edit Order">
-                            <i class="bi bi-pencil"></i>
-                        </a>
-                    </td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="6" class="text-center py-4 text-muted">No orders found.</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+
+                    </h4>
+
+                </div>
+
+                <p>
+                    Update order status directly from the table.
+                </p>
+
+            </div>
+
+
+            <div class="order-count-box">
+
+                <strong>
+                    {{ orders|length }}
+                </strong>
+
+                <span>
+                    order{{ orders|length|pluralize }}
+                </span>
+
+            </div>
+
+        </div>
+
+
+        <!-- =================================================
+             TABLE
+        ================================================== -->
+
+        <div class="table-wrapper">
+
+            <table class="orders-table">
+
+                <thead>
+
+                    <tr>
+
+                        <th class="col-number">
+                            #
+                        </th>
+
+                        <th class="col-customer">
+                            Customer
+                        </th>
+
+                        <th class="col-items">
+                            Items
+                        </th>
+
+                        <th class="col-date">
+                            Order Date
+                        </th>
+
+                        <th class="col-date">
+                            Delivery
+                        </th>
+
+                        <th class="col-money">
+                            Amount
+                        </th>
+
+                        <th class="col-money">
+                            Advance
+                        </th>
+
+                        <th class="col-money">
+                            Balance
+                        </th>
+
+                        <th class="col-status">
+                            Status
+                        </th>
+
+                        <th class="col-actions">
+                            Actions
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+
+                <tbody>
+
+
+                    {% for order in orders %}
+
+                    <tr>
+
+
+                        <!-- =================================
+                             NUMBER
+                        ================================== -->
+
+                        <td>
+
+                            <span class="order-number">
+                                {{ forloop.counter }}
+                            </span>
+
+                        </td>
+
+
+                        <!-- =================================
+                             CUSTOMER
+                        ================================== -->
+
+                        <td>
+
+                            {% if order.customer %}
+
+                            <a
+                                href="{% url 'customer_detail' order.customer.id %}"
+                                class="customer-link"
+                            >
+
+                                <span class="customer-name">
+
+                                    {{ order.customer.name }}
+
+                                </span>
+
+
+                                {% if order.customer.mobile %}
+
+                                <span class="customer-phone">
+
+                                    <i class="bi bi-telephone"></i>
+
+                                    {{ order.customer.mobile }}
+
+                                </span>
+
+                                {% endif %}
+
+                            </a>
+
+                            {% else %}
+
+                            <span class="walkin-customer">
+                                Walk-in Customer
+                            </span>
+
+                            {% endif %}
+
+                        </td>
+
+
+                        <!-- =================================
+                             ITEMS
+                        ================================== -->
+
+                        <td>
+
+                            <div class="items-container">
+
+                                {% for item in order.items.all %}
+
+                                <div class="item-row">
+
+                                    <i class="bi bi-scissors"></i>
+
+                                    <span>
+                                        {{ item.product.name }}
+                                    </span>
+
+                                    <small>
+                                        × {{ item.quantity }}
+                                    </small>
+
+                                </div>
+
+                                {% empty %}
+
+                                <span class="no-items">
+                                    No items
+                                </span>
+
+                                {% endfor %}
+
+                            </div>
+
+                        </td>
+
+
+                        <!-- =================================
+                             ORDER DATE
+                        ================================== -->
+
+                        <td>
+
+                            <span class="date-text">
+
+                                <i class="bi bi-calendar3"></i>
+
+                                {{ order.order_date|date:"d M Y" }}
+
+                            </span>
+
+                        </td>
+
+
+                        <!-- =================================
+                             DELIVERY DATE
+                        ================================== -->
+
+                        <td>
+
+                            <span class="date-text">
+
+                                <i class="bi bi-calendar-check"></i>
+
+                                {{ order.delivery_date|date:"d M Y" }}
+
+                            </span>
+
+                        </td>
+
+
+                        <!-- =================================
+                             TOTAL AMOUNT
+                        ================================== -->
+
+                        <td class="money-cell">
+
+                            <span class="amount-value">
+
+                                SAR {{ order.total_amount|floatformat:2 }}
+
+                            </span>
+
+                        </td>
+
+
+                        <!-- =================================
+                             ADVANCE
+                        ================================== -->
+
+                        <td class="money-cell">
+
+                            <span class="advance-value">
+
+                                SAR {{ order.advance_received|floatformat:2 }}
+
+                            </span>
+
+                        </td>
+
+
+                        <!-- =================================
+                             BALANCE
+                        ================================== -->
+
+                        <td class="money-cell">
+
+                            {% if order.balance > 0 %}
+
+                            <span class="balance-value">
+
+                                SAR {{ order.balance|floatformat:2 }}
+
+                            </span>
+
+                            {% else %}
+
+                            <span class="paid-value">
+
+                                <i class="bi bi-check-circle-fill"></i>
+
+                                Paid
+
+                            </span>
+
+                            {% endif %}
+
+                        </td>
+
+
+                        <!-- =================================
+                             STATUS DROPDOWN
+                        ================================== -->
+
+                        <td>
+
+                            <form
+                                method="POST"
+                                action="{% url 'order_status_update' order.id %}"
+                                class="status-form"
+                            >
+
+                                {% csrf_token %}
+
+                                <select
+                                    name="status"
+                                    class="status-dropdown
+                                    {% if order.status == 'Pending' %}
+                                        status-pending
+                                    {% elif order.status == 'Cutting' %}
+                                        status-cutting
+                                    {% elif order.status == 'Stitching' %}
+                                        status-stitching
+                                    {% elif order.status == 'Ready' %}
+                                        status-ready
+                                    {% elif order.status == 'Delivery' %}
+                                        status-delivery
+                                    {% elif order.status == 'Delivered' %}
+                                        status-delivered
+                                    {% endif %}"
+                                    onchange="this.form.submit()"
+                                    title="Change order status"
+                                >
+
+                                    {% for value, label in status_choices %}
+
+                                    <option
+                                        value="{{ value }}"
+                                        {% if order.status == value %}
+                                            selected
+                                        {% endif %}
+                                    >
+
+                                        {{ label }}
+
+                                    </option>
+
+                                    {% endfor %}
+
+                                </select>
+
+                            </form>
+
+                        </td>
+
+
+                        <!-- =================================
+                             ACTIONS
+                        ================================== -->
+
+                        <td>
+
+                            <div class="action-buttons">
+
+
+                                <!-- VIEW -->
+
+                                <a
+                                    href="{% url 'order_detail' order.id %}"
+                                    class="action-button view"
+                                    title="View Order"
+                                >
+
+                                    <i class="bi bi-eye"></i>
+
+                                </a>
+
+
+                                <!-- EDIT -->
+
+                                <a
+                                    href="{% url 'order_edit' order.id %}"
+                                    class="action-button edit"
+                                    title="Edit Order"
+                                >
+
+                                    <i class="bi bi-pencil"></i>
+
+                                </a>
+
+
+                            </div>
+
+                        </td>
+
+                    </tr>
+
+
+                    {% empty %}
+
+
+                    <!-- =================================
+                         EMPTY
+                    ================================== -->
+
+                    <tr>
+
+                        <td
+                            colspan="10"
+                            class="empty-cell"
+                        >
+
+                            <div class="empty-state">
+
+                                <div class="empty-icon">
+
+                                    <i class="bi bi-bag-x"></i>
+
+                                </div>
+
+                                <h5>
+                                    No Orders Found
+                                </h5>
+
+                                {% if search %}
+
+                                <p>
+                                    No orders found for
+                                    <strong>
+                                        "{{ search }}"
+                                    </strong>
+                                </p>
+
+                                <a
+                                    href="{% url 'order_list' %}"
+                                    class="btn btn-outline-secondary btn-sm"
+                                >
+
+                                    Clear Search
+
+                                </a>
+
+                                {% else %}
+
+                                <p>
+                                    There are no orders in this
+                                    status.
+                                </p>
+
+                                <a
+                                    href="{% url 'order_create' %}"
+                                    class="btn btn-primary btn-sm"
+                                >
+
+                                    <i class="bi bi-plus-lg me-1"></i>
+
+                                    Create Order
+
+                                </a>
+
+                                {% endif %}
+
+                            </div>
+
+                        </td>
+
+                    </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
     </div>
+
 </div>
+
+
+<!-- =========================================================
+     COMPLETE CSS
+========================================================= -->
+
+<style>
+
+/* =====================================================
+   MAIN PAGE
+===================================================== */
+
+.orders-page {
+
+    width: 100%;
+
+    max-width: 100%;
+
+    box-sizing: border-box;
+
+}
+
+
+/* =====================================================
+   NEW ORDER
+===================================================== */
+
+.new-order-btn {
+
+    white-space: nowrap;
+
+    padding: 10px 17px;
+
+}
+
+
+/* =====================================================
+   FILTER CARD
+===================================================== */
+
+.filter-card {
+
+    width: 100%;
+
+    background: #ffffff;
+
+    border: 1px solid #e4e8ee;
+
+    border-radius: 14px;
+
+    padding: 18px;
+
+    margin-bottom: 20px;
+
+    box-shadow:
+        0 2px 10px rgba(15, 23, 42, 0.04);
+
+    box-sizing: border-box;
+
+}
+
+
+/* =====================================================
+   SEARCH
+===================================================== */
+
+.search-row {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 10px;
+
+    width: 100%;
+
+}
+
+
+.search-box {
+
+    position: relative;
+
+    flex: 1;
+
+    min-width: 0;
+
+}
+
+
+.search-box i {
+
+    position: absolute;
+
+    left: 15px;
+
+    top: 50%;
+
+    transform: translateY(-50%);
+
+    color: #64748b;
+
+    font-size: 16px;
+
+    pointer-events: none;
+
+}
+
+
+.search-box input {
+
+    width: 100%;
+
+    height: 44px;
+
+    padding: 0 14px 0 42px;
+
+    border: 1px solid #d7dee7;
+
+    border-radius: 8px;
+
+    outline: none;
+
+    color: #172033;
+
+    background: #ffffff;
+
+    font-size: 13px;
+
+    box-sizing: border-box;
+
+}
+
+
+.search-box input::placeholder {
+
+    color: #94a3b8;
+
+}
+
+
+.search-box input:focus {
+
+    border-color: #2563eb;
+
+    box-shadow:
+        0 0 0 3px rgba(37, 99, 235, 0.08);
+
+}
+
+
+.search-button {
+
+    height: 44px;
+
+    min-width: 130px;
+
+    border: 0;
+
+    border-radius: 8px;
+
+    background: #2563eb;
+
+    color: #ffffff;
+
+    font-size: 13px;
+
+    font-weight: 600;
+
+    cursor: pointer;
+
+    flex-shrink: 0;
+
+}
+
+
+.search-button:hover {
+
+    background: #1d4ed8;
+
+}
+
+
+.clear-button {
+
+    width: 44px;
+
+    height: 44px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    flex-shrink: 0;
+
+    border: 1px solid #d7dee7;
+
+    border-radius: 8px;
+
+    background: #ffffff;
+
+    color: #64748b;
+
+    text-decoration: none;
+
+}
+
+
+.clear-button:hover {
+
+    background: #f8fafc;
+
+    color: #dc3545;
+
+}
+
+
+/* =====================================================
+   STATUS FILTER AREA
+===================================================== */
+
+.status-filter-area {
+
+    margin-top: 15px;
+
+    padding-top: 15px;
+
+    border-top: 1px solid #edf0f3;
+
+}
+
+
+.filter-label {
+
+    display: block;
+
+    margin-bottom: 9px;
+
+    color: #64748b;
+
+    font-size: 12px;
+
+    font-weight: 600;
+
+}
+
+
+.status-buttons {
+
+    display: flex;
+
+    flex-wrap: wrap;
+
+    gap: 8px;
+
+}
+
+
+.status-filter-btn {
+
+    min-height: 38px;
+
+    padding: 7px 13px;
+
+    display: inline-flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    gap: 6px;
+
+    border: 1px solid #d7dee7;
+
+    border-radius: 8px;
+
+    background: #ffffff;
+
+    color: #475569;
+
+    text-decoration: none;
+
+    font-size: 12px;
+
+    font-weight: 600;
+
+    white-space: nowrap;
+
+    transition: .15s ease;
+
+}
+
+
+.status-filter-btn:hover {
+
+    background: #f8fafc;
+
+    border-color: #2563eb;
+
+    color: #2563eb;
+
+}
+
+
+.status-filter-btn.active {
+
+    background: #2563eb;
+
+    border-color: #2563eb;
+
+    color: #ffffff;
+
+}
+
+
+/* =====================================================
+   ORDERS CARD
+===================================================== */
+
+.orders-card {
+
+    width: 100%;
+
+    background: #ffffff;
+
+    border: 1px solid #e4e8ee;
+
+    border-radius: 14px;
+
+    overflow: hidden;
+
+    box-shadow:
+        0 2px 10px rgba(15, 23, 42, 0.04);
+
+}
+
+
+/* =====================================================
+   CARD HEADER
+===================================================== */
+
+.orders-card-header {
+
+    min-height: 90px;
+
+    padding: 18px 20px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    gap: 15px;
+
+    border-bottom: 1px solid #e5e9ef;
+
+    box-sizing: border-box;
+
+}
+
+
+.orders-card-header h4 {
+
+    margin: 0 0 4px;
+
+    color: #172033;
+
+    font-size: 18px;
+
+    font-weight: 700;
+
+}
+
+
+.orders-card-header h4 i {
+
+    color: #2563eb;
+
+    margin-right: 6px;
+
+}
+
+
+.orders-card-header p {
+
+    margin: 0;
+
+    color: #64748b;
+
+    font-size: 12px;
+
+}
+
+
+.order-count-box {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 5px;
+
+    padding: 7px 11px;
+
+    border: 1px solid #dbe2ea;
+
+    border-radius: 7px;
+
+    background: #f8fafc;
+
+    color: #64748b;
+
+    font-size: 12px;
+
+    white-space: nowrap;
+
+}
+
+
+.order-count-box strong {
+
+    color: #172033;
+
+}
+
+
+/* =====================================================
+   TABLE WRAPPER
+===================================================== */
+
+.table-wrapper {
+
+    width: 100%;
+
+    overflow-x: auto;
+
+    overflow-y: hidden;
+
+    -webkit-overflow-scrolling: touch;
+
+}
+
+
+/* =====================================================
+   TABLE
+===================================================== */
+
+.orders-table {
+
+    width: 100%;
+
+    min-width: 1160px;
+
+    border-collapse: collapse;
+
+    table-layout: fixed;
+
+}
+
+
+/* =====================================================
+   TABLE HEADER
+===================================================== */
+
+.orders-table thead th {
+
+    height: 48px;
+
+    padding: 9px 10px;
+
+    background: #f8fafc;
+
+    border-bottom: 1px solid #e2e8f0;
+
+    color: #64748b;
+
+    font-size: 10px;
+
+    font-weight: 700;
+
+    text-align: left;
+
+    text-transform: uppercase;
+
+    letter-spacing: .25px;
+
+    white-space: nowrap;
+
+}
+
+
+/* =====================================================
+   TABLE BODY
+===================================================== */
+
+.orders-table tbody td {
+
+    padding: 13px 10px;
+
+    border-bottom: 1px solid #edf0f3;
+
+    vertical-align: middle;
+
+    color: #172033;
+
+    font-size: 12px;
+
+}
+
+
+.orders-table tbody tr {
+
+    transition: background .15s ease;
+
+}
+
+
+.orders-table tbody tr:hover {
+
+    background: #fafcff;
+
+}
+
+
+.orders-table tbody tr:last-child td {
+
+    border-bottom: none;
+
+}
+
+
+/* =====================================================
+   COLUMN WIDTH
+===================================================== */
+
+.col-number {
+
+    width: 45px;
+
+}
+
+
+.col-customer {
+
+    width: 165px;
+
+}
+
+
+.col-items {
+
+    width: 165px;
+
+}
+
+
+.col-date {
+
+    width: 115px;
+
+}
+
+
+.col-money {
+
+    width: 105px;
+
+}
+
+
+.col-status {
+
+    width: 145px;
+
+}
+
+
+.col-actions {
+
+    width: 82px;
+
+}
+
+
+/* =====================================================
+   NUMBER
+===================================================== */
+
+.order-number {
+
+    color: #64748b;
+
+    font-weight: 600;
+
+}
+
+
+/* =====================================================
+   CUSTOMER
+===================================================== */
+
+.customer-link {
+
+    display: block;
+
+    max-width: 155px;
+
+    text-decoration: none;
+
+}
+
+
+.customer-name {
+
+    display: block;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+
+    white-space: nowrap;
+
+    color: #2563eb;
+
+    font-size: 13px;
+
+    font-weight: 700;
+
+}
+
+
+.customer-link:hover .customer-name {
+
+    text-decoration: underline;
+
+}
+
+
+.customer-phone {
+
+    display: block;
+
+    margin-top: 3px;
+
+    color: #64748b;
+
+    font-size: 10px;
+
+    white-space: nowrap;
+
+}
+
+
+.customer-phone i {
+
+    margin-right: 3px;
+
+}
+
+
+.walkin-customer {
+
+    color: #64748b;
+
+}
+
+
+/* =====================================================
+   ITEMS
+===================================================== */
+
+.items-container {
+
+    max-width: 155px;
+
+}
+
+
+.item-row {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 5px;
+
+    max-width: 100%;
+
+    margin-bottom: 4px;
+
+}
+
+
+.item-row:last-child {
+
+    margin-bottom: 0;
+
+}
+
+
+.item-row i {
+
+    flex-shrink: 0;
+
+    color: #64748b;
+
+    font-size: 11px;
+
+}
+
+
+.item-row span {
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+
+    white-space: nowrap;
+
+    font-weight: 500;
+
+}
+
+
+.item-row small {
+
+    flex-shrink: 0;
+
+    color: #64748b;
+
+    font-size: 10px;
+
+}
+
+
+.no-items {
+
+    color: #94a3b8;
+
+}
+
+
+/* =====================================================
+   DATE
+===================================================== */
+
+.date-text {
+
+    display: inline-flex;
+
+    align-items: center;
+
+    gap: 5px;
+
+    white-space: nowrap;
+
+    color: #334155;
+
+    font-size: 11px;
+
+}
+
+
+.date-text i {
+
+    color: #64748b;
+
+    flex-shrink: 0;
+
+}
+
+
+/* =====================================================
+   MONEY
+===================================================== */
+
+.money-cell {
+
+    width: 105px;
+
+    min-width: 105px;
+
+    white-space: nowrap;
+
+}
+
+
+/* TOTAL AMOUNT */
+
+.amount-value {
+
+    display: inline-block;
+
+    color: #172033 !important;
+
+    font-size: 13px;
+
+    font-weight: 700;
+
+    white-space: nowrap;
+
+    visibility: visible !important;
+
+    opacity: 1 !important;
+
+}
+
+
+/* ADVANCE */
+
+.advance-value {
+
+    display: inline-block;
+
+    color: #198754 !important;
+
+    font-size: 13px;
+
+    font-weight: 700;
+
+    white-space: nowrap;
+
+    visibility: visible !important;
+
+    opacity: 1 !important;
+
+}
+
+
+/* BALANCE */
+
+.balance-value {
+
+    display: inline-block;
+
+    color: #dc3545 !important;
+
+    font-size: 13px;
+
+    font-weight: 700;
+
+    white-space: nowrap;
+
+    visibility: visible !important;
+
+    opacity: 1 !important;
+
+}
+
+
+/* PAID */
+
+.paid-value {
+
+    display: inline-flex;
+
+    align-items: center;
+
+    gap: 4px;
+
+    color: #198754 !important;
+
+    font-size: 12px;
+
+    font-weight: 700;
+
+    white-space: nowrap;
+
+}
+
+
+/* =====================================================
+   STATUS
+===================================================== */
+
+.status-form {
+
+    margin: 0;
+
+    width: 100%;
+
+}
+
+
+.status-dropdown {
+
+    width: 135px;
+
+    height: 36px;
+
+    padding: 4px 28px 4px 9px;
+
+    border-radius: 8px;
+
+    font-size: 11px;
+
+    font-weight: 700;
+
+    cursor: pointer;
+
+    outline: none;
+
+    box-sizing: border-box;
+
+}
+
+
+.status-dropdown:focus {
+
+    box-shadow:
+        0 0 0 3px rgba(37, 99, 235, .12);
+
+}
+
+
+/* PENDING */
+
+.status-pending {
+
+    background: #fff3cd;
+
+    color: #856404;
+
+    border: 1px solid #ffe69c;
+
+}
+
+
+/* CUTTING */
+
+.status-cutting {
+
+    background: #cff4fc;
+
+    color: #087990;
+
+    border: 1px solid #9eeaf9;
+
+}
+
+
+/* STITCHING */
+
+.status-stitching {
+
+    background: #e2d9f3;
+
+    color: #59359a;
+
+    border: 1px solid #c5b3e6;
+
+}
+
+
+/* READY */
+
+.status-ready {
+
+    background: #d1e7dd;
+
+    color: #0f5132;
+
+    border: 1px solid #a3cfbb;
+
+}
+
+
+/* DELIVERY */
+
+.status-delivery {
+
+    background: #ffe5d0;
+
+    color: #984c0c;
+
+    border: 1px solid #ffcd99;
+
+}
+
+
+/* DELIVERED */
+
+.status-delivered {
+
+    background: #d1e7dd;
+
+    color: #0f5132;
+
+    border: 1px solid #a3cfbb;
+
+}
+
+
+/* =====================================================
+   ACTION BUTTONS
+===================================================== */
+
+.action-buttons {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 5px;
+
+}
+
+
+.action-button {
+
+    width: 32px;
+
+    height: 32px;
+
+    display: inline-flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    border-radius: 7px;
+
+    text-decoration: none;
+
+    font-size: 13px;
+
+    box-sizing: border-box;
+
+    transition: .15s ease;
+
+}
+
+
+/* VIEW */
+
+.action-button.view {
+
+    color: #2563eb;
+
+    background: #ffffff;
+
+    border: 1px solid #2563eb;
+
+}
+
+
+.action-button.view:hover {
+
+    color: #ffffff;
+
+    background: #2563eb;
+
+}
+
+
+/* EDIT */
+
+.action-button.edit {
+
+    color: #475569;
+
+    background: #ffffff;
+
+    border: 1px solid #d7dee7;
+
+}
+
+
+.action-button.edit:hover {
+
+    background: #f1f5f9;
+
+    color: #172033;
+
+}
+
+
+/* =====================================================
+   EMPTY STATE
+===================================================== */
+
+.empty-cell {
+
+    padding: 60px 20px !important;
+
+    text-align: center;
+
+}
+
+
+.empty-state {
+
+    padding: 10px;
+
+}
+
+
+.empty-icon {
+
+    width: 60px;
+
+    height: 60px;
+
+    margin: 0 auto 13px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    border-radius: 14px;
+
+    background: #f1f5f9;
+
+    color: #94a3b8;
+
+    font-size: 27px;
+
+}
+
+
+.empty-state h5 {
+
+    margin: 0 0 5px;
+
+    color: #172033;
+
+    font-size: 16px;
+
+    font-weight: 700;
+
+}
+
+
+.empty-state p {
+
+    margin: 0 0 15px;
+
+    color: #64748b;
+
+    font-size: 13px;
+
+}
+
+
+/* =====================================================
+   RESPONSIVE
+===================================================== */
+
+@media (max-width: 900px) {
+
+    .search-row {
+
+        flex-wrap: wrap;
+
+    }
+
+
+    .search-box {
+
+        flex: 1 1 100%;
+
+    }
+
+
+    .search-button {
+
+        flex: 1;
+
+    }
+
+
+    .status-buttons {
+
+        overflow-x: auto;
+
+        flex-wrap: nowrap;
+
+        padding-bottom: 5px;
+
+    }
+
+
+    .status-filter-btn {
+
+        flex-shrink: 0;
+
+    }
+
+
+    .orders-card-header {
+
+        flex-direction: column;
+
+        align-items: flex-start;
+
+    }
+
+}
+
+
+@media (max-width: 600px) {
+
+    .filter-card {
+
+        padding: 13px;
+
+    }
+
+
+    .search-button {
+
+        min-width: 100px;
+
+    }
+
+}
+
+</style>
 
 {% endblock %}

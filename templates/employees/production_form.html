@@ -1,74 +1,723 @@
 {% extends "base.html" %}
 
 {% block title %}{{ title }} | Stitching Pro{% endblock %}
-{% block page_title %}{{ title }}{% endblock %}
+{% block page_title %}Employee Performance{% endblock %}
 
 {% block content %}
 
 <div class="page-header-block">
+
     <div>
-        <h2 class="page-header-title">{{ title }}</h2>
-        <p class="page-header-sub">Log employee stitching count and daily production output.</p>
+        <h2 class="page-header-title">
+            {{ title }}
+        </h2>
+
+        <p class="page-header-sub">
+            Add multiple stitching items for an employee.
+        </p>
     </div>
+
     <div>
-        <a href="{% url 'production_list' %}" class="btn btn-secondary">
-            <i class="bi bi-arrow-left"></i> Back to Production
+        <a href="{% url 'production_list' %}"
+           class="btn btn-secondary">
+
+            <i class="bi bi-arrow-left me-1"></i>
+            Back to Production
+
         </a>
     </div>
+
 </div>
 
-<div class="row justify-content-center">
-    <div class="col-12 col-md-10 col-lg-8">
-        <div class="form-card">
-            <form method="POST">
-                {% csrf_token %}
 
-                {% if form.non_field_errors %}
-                <div class="alert alert-danger alert-custom mb-3">
-                    {{ form.non_field_errors }}
-                </div>
-                {% endif %}
+<form method="POST">
 
-                <div class="row g-3">
-                    <div class="col-md-6">
-                        <label class="form-label">Employee</label>
-                        {{ form.employee }}
-                        {% if form.employee.errors %}<div class="text-danger small mt-1">{{ form.employee.errors }}</div>{% endif %}
-                    </div>
+    {% csrf_token %}
 
-                    <div class="col-md-6">
-                        <label class="form-label">Production Date</label>
-                        {{ form.production_date }}
-                        {% if form.production_date.errors %}<div class="text-danger small mt-1">{{ form.production_date.errors }}</div>{% endif %}
-                    </div>
+    <!-- =====================================================
+         EMPLOYEE / DATE
+    ====================================================== -->
 
-                    <div class="col-md-6">
-                        <label class="form-label">Product / Item</label>
-                        {{ form.product }}
-                        {% if form.product.errors %}<div class="text-danger small mt-1">{{ form.product.errors }}</div>{% endif %}
-                    </div>
+    <div class="form-card mb-4">
 
-                    <div class="col-md-6">
-                        <label class="form-label">Pieces Stitched</label>
-                        {{ form.quantity }}
-                        {% if form.quantity.errors %}<div class="text-danger small mt-1">{{ form.quantity.errors }}</div>{% endif %}
-                    </div>
+        <h5 class="fw-bold mb-3 border-bottom pb-2">
 
-                    <div class="col-12">
-                        <label class="form-label">Remarks</label>
-                        {{ form.remarks }}
-                    </div>
-                </div>
+            <i class="bi bi-person-workspace text-primary me-2"></i>
 
-                <div class="d-flex justify-content-end gap-2 mt-4">
-                    <a href="{% url 'production_list' %}" class="btn btn-secondary">Cancel</a>
-                    <button type="submit" class="btn btn-primary">
-                        <i class="bi bi-check-circle-fill me-1"></i> Save Production Record
-                    </button>
-                </div>
-            </form>
+            Performance Details
+
+        </h5>
+
+
+        <div class="row g-3">
+
+            <!-- EMPLOYEE -->
+
+            <div class="col-md-6">
+
+                <label class="form-label fw-semibold">
+                    Employee
+                </label>
+
+                <select name="employee"
+                        class="form-select"
+                        required>
+
+                    <option value="">
+                        Select Employee
+                    </option>
+
+                    {% for employee in employees %}
+
+                        <option value="{{ employee.id }}"
+                            {% if selected_employee|stringformat:"s" == employee.id|stringformat:"s" %}
+                                selected
+                            {% endif %}>
+
+                            {{ employee.name }}
+
+                            {% if request.user.role == "Admin" %}
+                                - {{ employee.branch.name }}
+                            {% endif %}
+
+                        </option>
+
+                    {% endfor %}
+
+                </select>
+
+            </div>
+
+
+            <!-- DATE -->
+
+            <div class="col-md-6">
+
+                <label class="form-label fw-semibold">
+                    Production Date
+                </label>
+
+                <input type="date"
+                       name="production_date"
+                       class="form-control"
+                       value="{% if selected_date %}{{ selected_date|date:'Y-m-d' }}{% else %}{{ today|date:'Y-m-d' }}{% endif %}"
+                       required>
+
+            </div>
+
         </div>
+
     </div>
-</div>
+
+
+    <!-- =====================================================
+         MULTIPLE STITCHING ITEMS
+    ====================================================== -->
+
+    <div class="form-card mb-4">
+
+        <div class="d-flex justify-content-between align-items-center mb-3">
+
+            <div>
+
+                <h5 class="fw-bold mb-1">
+
+                    <i class="bi bi-scissors text-primary me-2"></i>
+
+                    Stitching Items
+
+                </h5>
+
+                <small class="text-muted">
+                    Add multiple products for the same employee and date.
+                </small>
+
+            </div>
+
+
+            <!-- ADD ITEM BUTTON -->
+
+            <button type="button"
+                    id="add-item"
+                    class="btn btn-primary">
+
+                <i class="bi bi-plus-lg me-1"></i>
+
+                Add More Item
+
+            </button>
+
+        </div>
+
+
+        <!-- FORMSET MANAGEMENT -->
+
+        {{ formset.management_form }}
+
+
+        {% if formset.non_form_errors %}
+
+            <div class="alert alert-danger">
+
+                {{ formset.non_form_errors }}
+
+            </div>
+
+        {% endif %}
+
+
+        <div class="table-responsive">
+
+            <table class="table align-middle">
+
+                <thead>
+
+                    <tr>
+
+                        <th style="min-width:220px;">
+                            Item / Product
+                        </th>
+
+                        <th style="width:150px;">
+                            Quantity
+                        </th>
+
+                        <th style="width:170px;">
+                            Rate / Piece
+                        </th>
+
+                        <th style="width:170px;">
+                            Total
+                        </th>
+
+                        <th style="width:70px;"
+                            class="text-center">
+
+                            Action
+
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+
+                <tbody id="items-container">
+
+                    {% for form in formset %}
+
+                    <tr class="production-row">
+
+                        <!-- PRODUCT -->
+
+                        <td>
+
+                            {{ form.product }}
+
+                            {% if form.product.errors %}
+
+                                <div class="text-danger small mt-1">
+
+                                    {{ form.product.errors }}
+
+                                </div>
+
+                            {% endif %}
+
+                        </td>
+
+
+                        <!-- QUANTITY -->
+
+                        <td>
+
+                            {{ form.quantity }}
+
+                            {% if form.quantity.errors %}
+
+                                <div class="text-danger small mt-1">
+
+                                    {{ form.quantity.errors }}
+
+                                </div>
+
+                            {% endif %}
+
+                        </td>
+
+
+                        <!-- RATE -->
+
+                        <td>
+
+                            {{ form.rate_per_piece }}
+
+                            <small class="text-muted">
+                                Optional
+                            </small>
+
+                            {% if form.rate_per_piece.errors %}
+
+                                <div class="text-danger small">
+
+                                    {{ form.rate_per_piece.errors }}
+
+                                </div>
+
+                            {% endif %}
+
+                        </td>
+
+
+                        <!-- TOTAL -->
+
+                        <td>
+
+                            <input type="text"
+                                   class="form-control item-total"
+                                   value="0.00"
+                                   readonly>
+
+                        </td>
+
+
+                        <!-- REMOVE -->
+
+                        <td class="text-center">
+
+                            <button type="button"
+                                    class="btn btn-sm btn-outline-danger remove-item"
+                                    title="Remove Item">
+
+                                <i class="bi bi-trash"></i>
+
+                            </button>
+
+                        </td>
+
+                    </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+
+        <!-- =================================================
+             GRAND TOTAL
+        ================================================== -->
+
+        <div class="border-top pt-3 mt-3">
+
+            <div class="row justify-content-end">
+
+                <div class="col-md-4">
+
+                    <div class="d-flex justify-content-between">
+
+                        <span class="fw-semibold">
+                            Total Pieces
+                        </span>
+
+                        <span class="fw-bold"
+                              id="grand-quantity">
+
+                            0
+
+                        </span>
+
+                    </div>
+
+
+                    <div class="d-flex justify-content-between mt-2">
+
+                        <span class="fw-semibold">
+                            Total Salary
+                        </span>
+
+                        <span class="fw-bold fs-4 text-primary">
+
+                            SAR <span id="grand-total">
+                                0.00
+                            </span>
+
+                        </span>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- =====================================================
+         REMARKS
+    ====================================================== -->
+
+    <div class="form-card mb-4">
+
+        <h5 class="fw-bold mb-3 border-bottom pb-2">
+
+            <i class="bi bi-journal-text text-secondary me-2"></i>
+
+            Notes
+
+        </h5>
+
+        <p class="text-muted mb-0">
+
+            Remarks can be entered individually for each production
+            item if required.
+
+        </p>
+
+    </div>
+
+
+    <!-- =====================================================
+         BUTTONS
+    ====================================================== -->
+
+    <div class="d-flex justify-content-end gap-2 mb-5">
+
+        <a href="{% url 'production_list' %}"
+           class="btn btn-secondary">
+
+            <i class="bi bi-x-circle me-1"></i>
+
+            Cancel
+
+        </a>
+
+
+        <button type="submit"
+                class="btn btn-primary">
+
+            <i class="bi bi-check-circle-fill me-1"></i>
+
+            Save Performance
+
+        </button>
+
+    </div>
+
+</form>
+
+
+<!-- =========================================================
+     EMPTY FORM TEMPLATE
+========================================================= -->
+
+<template id="empty-form-template">
+
+    <tr class="production-row">
+
+        <td>
+
+            {{ formset.empty_form.product }}
+
+        </td>
+
+        <td>
+
+            {{ formset.empty_form.quantity }}
+
+        </td>
+
+        <td>
+
+            {{ formset.empty_form.rate_per_piece }}
+
+            <small class="text-muted">
+                Optional
+            </small>
+
+        </td>
+
+        <td>
+
+            <input type="text"
+                   class="form-control item-total"
+                   value="0.00"
+                   readonly>
+
+        </td>
+
+        <td class="text-center">
+
+            <button type="button"
+                    class="btn btn-sm btn-outline-danger remove-item"
+                    title="Remove Item">
+
+                <i class="bi bi-trash"></i>
+
+            </button>
+
+        </td>
+
+    </tr>
+
+</template>
+
+
+<script>
+
+document.addEventListener("DOMContentLoaded", function () {
+
+    const container =
+        document.getElementById("items-container");
+
+    const addButton =
+        document.getElementById("add-item");
+
+    const totalForms =
+        document.getElementById(
+            "id_form-TOTAL_FORMS"
+        );
+
+    const template =
+        document.getElementById(
+            "empty-form-template"
+        );
+
+
+    // =====================================================
+    // CALCULATE TOTALS
+    // =====================================================
+
+    function calculateTotals() {
+
+        let grandQuantity = 0;
+        let grandTotal = 0;
+
+
+        document
+            .querySelectorAll(".production-row")
+            .forEach(function (row) {
+
+                const quantityInput =
+                    row.querySelector(
+                        ".quantity-input"
+                    );
+
+                const rateInput =
+                    row.querySelector(
+                        ".rate-input"
+                    );
+
+                const totalInput =
+                    row.querySelector(
+                        ".item-total"
+                    );
+
+
+                const quantity =
+                    parseFloat(
+                        quantityInput?.value
+                    ) || 0;
+
+
+                const rate =
+                    parseFloat(
+                        rateInput?.value
+                    ) || 0;
+
+
+                const total =
+                    quantity * rate;
+
+
+                grandQuantity += quantity;
+
+                grandTotal += total;
+
+
+                if (totalInput) {
+
+                    totalInput.value =
+                        total.toFixed(2);
+
+                }
+
+            });
+
+
+        document.getElementById(
+            "grand-quantity"
+        ).textContent =
+            grandQuantity;
+
+
+        document.getElementById(
+            "grand-total"
+        ).textContent =
+            grandTotal.toFixed(2);
+
+    }
+
+
+    // =====================================================
+    // ATTACH ROW EVENTS
+    // =====================================================
+
+    function attachRowEvents(row) {
+
+        const inputs =
+            row.querySelectorAll(
+                ".quantity-input, .rate-input"
+            );
+
+
+        inputs.forEach(function (input) {
+
+            input.addEventListener(
+                "input",
+                calculateTotals
+            );
+
+        });
+
+
+        const removeButton =
+            row.querySelector(
+                ".remove-item"
+            );
+
+
+        if (removeButton) {
+
+            removeButton.addEventListener(
+                "click",
+                function () {
+
+                    const rows =
+                        document.querySelectorAll(
+                            ".production-row"
+                        );
+
+
+                    // Keep at least one row
+
+                    if (rows.length <= 1) {
+
+                        row.querySelectorAll(
+                            "input"
+                        ).forEach(function (input) {
+
+                            if (
+                                input.type !== "hidden"
+                            ) {
+                                input.value = "";
+                            }
+
+                        });
+
+
+                        row.querySelectorAll(
+                            "select"
+                        ).forEach(function (select) {
+
+                            select.selectedIndex = 0;
+
+                        });
+
+
+                        calculateTotals();
+
+                        return;
+                    }
+
+
+                    row.remove();
+
+                    calculateTotals();
+
+                }
+            );
+
+        }
+
+    }
+
+
+    // =====================================================
+    // INITIAL ROWS
+    // =====================================================
+
+    document
+        .querySelectorAll(".production-row")
+        .forEach(function (row) {
+
+            attachRowEvents(row);
+
+        });
+
+
+    // =====================================================
+    // ADD MORE ITEM
+    // =====================================================
+
+    addButton.addEventListener(
+        "click",
+        function () {
+
+            const index =
+                parseInt(
+                    totalForms.value
+                );
+
+
+            const html =
+                template.innerHTML
+                    .replace(
+                        /__prefix__/g,
+                        index
+                    );
+
+
+            container.insertAdjacentHTML(
+                "beforeend",
+                html
+            );
+
+
+            totalForms.value =
+                index + 1;
+
+
+            const rows =
+                document.querySelectorAll(
+                    ".production-row"
+                );
+
+
+            const newRow =
+                rows[rows.length - 1];
+
+
+            attachRowEvents(newRow);
+
+            calculateTotals();
+
+        }
+    );
+
+
+    // =====================================================
+    // INITIAL CALCULATION
+    // =====================================================
+
+    calculateTotals();
+
+});
+
+</script>
 
 {% endblock %}

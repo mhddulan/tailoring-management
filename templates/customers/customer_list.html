@@ -5,77 +5,344 @@
 
 {% block content %}
 
+<!-- =========================================================
+     HEADER
+========================================================= -->
+
 <div class="page-header-block">
+
     <div>
-        <h2 class="page-header-title">Customer Directory</h2>
-        <p class="page-header-sub">View, search, register, and manage tailoring client profiles and measurements.</p>
+        <h2 class="page-header-title">
+            Customer Directory
+        </h2>
+
+        <p class="page-header-sub">
+            View, search, and manage customer profiles,
+            measurements, orders, and payments.
+        </p>
     </div>
+
     <div>
-        <a href="{% url 'customer_create' %}" class="btn btn-primary">
-            <i class="bi bi-person-plus-fill me-1"></i> Add Customer
+        <a
+            href="{% url 'customer_create' %}"
+            class="btn btn-primary"
+        >
+            <i class="bi bi-person-plus-fill me-1"></i>
+            Add Customer
         </a>
     </div>
+
 </div>
 
-<div class="table-card">
-    
+
+<!-- =========================================================
+     SEARCH
+========================================================= -->
+
+<div class="table-card mb-4">
+
     <div class="table-card-header">
-        <form method="GET" class="row g-2 align-items-center w-100">
+
+        <form
+            method="GET"
+            class="row g-2 align-items-center w-100"
+        >
+
             <div class="col-12 col-md-9 col-lg-10">
-                <div class="header-search w-100" style="max-width: 100%;">
+
+                <div
+                    class="header-search w-100"
+                    style="max-width:100%;"
+                >
+
                     <i class="bi bi-search"></i>
-                    <input type="text" name="search" value="{{ request.GET.search }}" class="form-control" placeholder="Search customer name or mobile number...">
+
+                    <input
+                        type="text"
+                        name="search"
+                        value="{{ search }}"
+                        class="form-control"
+                        placeholder="Search customer name or mobile number..."
+                    >
+
                 </div>
+
             </div>
+
+
             <div class="col-12 col-md-3 col-lg-2">
-                <button type="submit" class="btn btn-secondary w-100">
-                    <i class="bi bi-funnel-fill me-1"></i> Search
+
+                <button
+                    type="submit"
+                    class="btn btn-secondary w-100"
+                >
+
+                    <i class="bi bi-search me-1"></i>
+                    Search
+
                 </button>
+
             </div>
+
         </form>
+
     </div>
 
+
+    <!-- =====================================================
+         CUSTOMER TABLE
+    ====================================================== -->
+
     <div class="table-responsive">
+
         <table class="table app-table">
+
             <thead>
+
                 <tr>
-                    <th width="70">#</th>
-                    <th>Customer Name</th>
-                    <th>Mobile</th>
-                    <th>Branch</th>
-                    <th width="200" class="text-end">Actions</th>
+
+                    <th width="60">
+                        #
+                    </th>
+
+                    <th>
+                        Customer
+                    </th>
+
+                    <th>
+                        Mobile
+                    </th>
+
+                    <th>
+                        Branch
+                    </th>
+
+                    <th class="text-center">
+                        Orders
+                    </th>
+
+                    <th class="text-end">
+                        Total
+                    </th>
+
+                    <th class="text-end">
+                        Paid
+                    </th>
+
+                    <th class="text-end">
+                        Balance
+                    </th>
+
+                    <th
+                        width="150"
+                        class="text-end"
+                    >
+                        Actions
+                    </th>
+
                 </tr>
+
             </thead>
+
+
             <tbody>
-                {% for customer in customers %}
+
+                {% for data in customer_data %}
+
+                {% with customer=data.customer %}
+
                 <tr>
-                    <td class="fw-semibold text-muted">{{ forloop.counter }}</td>
+
+                    <!-- NUMBER -->
+
+                    <td class="fw-semibold text-muted">
+
+                        {{ forloop.counter }}
+
+                    </td>
+
+
+                    <!-- CUSTOMER -->
+
                     <td>
-                        <a href="{% url 'customer_detail' customer.id %}" class="fw-bold text-primary text-decoration-none">
-                            <i class="bi bi-person-circle me-2"></i>{{ customer.name }}
+
+                        <a
+                            href="{% url 'customer_detail' customer.id %}"
+                            class="fw-bold text-primary text-decoration-none"
+                        >
+
+                            <i class="bi bi-person-circle me-2"></i>
+
+                            {{ customer.name }}
+
                         </a>
+
                     </td>
-                    <td><i class="bi bi-telephone text-muted me-1"></i>{{ customer.mobile }}</td>
-                    <td><span class="badge bg-light text-dark border"><i class="bi bi-building me-1"></i>{{ customer.branch }}</span></td>
+
+
+                    <!-- MOBILE -->
+
+                    <td>
+
+                        <i class="bi bi-telephone text-muted me-1"></i>
+
+                        {{ customer.mobile }}
+
+                    </td>
+
+
+                    <!-- BRANCH -->
+
+                    <td>
+
+                        <span class="badge bg-light text-dark border">
+
+                            <i class="bi bi-building me-1"></i>
+
+                            {{ customer.branch }}
+
+                        </span>
+
+                    </td>
+
+
+                    <!-- ORDERS -->
+
+                    <td class="text-center">
+
+                        <span class="badge bg-primary-subtle text-primary border">
+
+                            {{ data.total_orders }}
+
+                        </span>
+
+                    </td>
+
+
+                    <!-- TOTAL -->
+
+                    <td class="text-end fw-semibold">
+
+                        SAR {{ data.total_amount|floatformat:2 }}
+
+                    </td>
+
+
+                    <!-- PAID -->
+
+                    <td class="text-end fw-semibold text-success">
+
+                        SAR {{ data.total_paid|floatformat:2 }}
+
+                    </td>
+
+
+                    <!-- BALANCE -->
+
+                    <td class="text-end fw-bold">
+
+                        {% if data.balance > 0 %}
+
+                            <span class="text-danger">
+
+                                SAR {{ data.balance|floatformat:2 }}
+
+                            </span>
+
+                        {% else %}
+
+                            <span class="text-success">
+
+                                SAR 0.00
+
+                            </span>
+
+                        {% endif %}
+
+                    </td>
+
+
+                    <!-- ACTIONS -->
+
                     <td class="text-end">
-                        <a href="{% url 'customer_detail' customer.id %}" class="btn btn-sm btn-outline-primary btn-icon-only me-1" title="View Detail">
+
+                        <a
+                            href="{% url 'customer_detail' customer.id %}"
+                            class="btn btn-sm btn-outline-primary btn-icon-only me-1"
+                            title="View Customer"
+                        >
+
                             <i class="bi bi-eye"></i>
+
                         </a>
-                        <a href="{% url 'customer_edit' customer.id %}" class="btn btn-sm btn-secondary btn-icon-only me-1" title="Edit Customer">
+
+
+                        <a
+                            href="{% url 'customer_edit' customer.id %}"
+                            class="btn btn-sm btn-secondary btn-icon-only me-1"
+                            title="Edit Customer"
+                        >
+
                             <i class="bi bi-pencil"></i>
+
                         </a>
-                        <a href="{% url 'customer_delete' customer.id %}" class="btn btn-sm btn-outline-danger btn-icon-only" title="Delete Customer" onclick="return confirm('Are you sure you want to delete {{ customer.name|escapejs }}?')">
+
+
+                        <a
+                            href="{% url 'customer_delete' customer.id %}"
+                            class="btn btn-sm btn-outline-danger btn-icon-only"
+                            title="Delete Customer"
+                        >
+
                             <i class="bi bi-trash"></i>
+
                         </a>
+
                     </td>
+
                 </tr>
+
+                {% endwith %}
+
                 {% empty %}
+
                 <tr>
-                    <td colspan="5" class="text-center py-4 text-muted">No customers found.</td>
+
+                    <td
+                        colspan="9"
+                        class="text-center py-5 text-muted"
+                    >
+
+                        <i class="bi bi-people fs-1 d-block mb-2"></i>
+
+                        <strong>
+                            No customers found.
+                        </strong>
+
+                        {% if search %}
+
+                        <div class="small mt-1">
+                            Try a different customer name or mobile number.
+                        </div>
+
+                        {% else %}
+
+                        <div class="small mt-1">
+                            Click "Add Customer" to create your first customer.
+                        </div>
+
+                        {% endif %}
+
+                    </td>
+
                 </tr>
+
                 {% endfor %}
+
             </tbody>
+
         </table>
+
     </div>
 
 </div>

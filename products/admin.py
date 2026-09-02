@@ -39,7 +39,7 @@ class ProductAdmin(admin.ModelAdmin):
         "name",
         "barcode",
         "category",
-        "size",
+        "available_sizes",
         "color",
         "purchase_price",
         "active",
@@ -54,7 +54,7 @@ class ProductAdmin(admin.ModelAdmin):
         "name",
         "barcode",
         "color",
-        "size",
+        "available_sizes",
     )
 
     list_filter = (

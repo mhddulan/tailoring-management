@@ -88,13 +88,13 @@
                     </div>
 
                     <div class="col-md-2">
-                        <label class="form-label">Rate (₹) <small class="text-muted">(Editable)</small></label>
+                        <label class="form-label">Rate (SAR) <small class="text-muted">(Editable)</small></label>
                         {{ item.rate }}
                         {% if item.rate.errors %}<div class="text-danger small mt-1">{{ item.rate.errors }}</div>{% endif %}
                     </div>
 
                     <div class="col-md-2">
-                        <label class="form-label">Subtotal (₹)</label>
+                        <label class="form-label">Subtotal (SAR)</label>
                         <input type="number" class="form-control amount fw-bold bg-white" value="0.00" readonly>
                     </div>
 
@@ -120,7 +120,7 @@
         <div class="d-flex justify-content-between align-items-center">
             <div>
                 <span class="text-muted fw-semibold d-block fs-7">BILL GRAND TOTAL</span>
-                <h3 class="fw-bold text-success mb-0">₹ <span id="grandTotal">0.00</span></h3>
+                <h3 class="fw-bold text-success mb-0">SAR <span id="grandTotal">0.00</span></h3>
             </div>
             <div class="stat-icon-wrapper stat-icon-success" style="width:52px; height:52px; font-size:1.6rem;">
                 <i class="bi bi-cart-check-fill"></i>

@@ -5,158 +5,832 @@
 
 {% block content %}
 
-<div class="page-header-block">
-    <div>
-        <h2 class="page-header-title">Customer Registration & Measurements</h2>
-        <p class="page-header-sub">Enter customer details along with tailoring measurement profiles.</p>
+<div class="container-fluid">
+
+    <!-- =========================================================
+         PAGE HEADER
+    ========================================================== -->
+
+    <div class="page-header-block">
+
+        <div>
+            <h2 class="page-header-title">
+                Customer Registration & Measurements
+            </h2>
+
+            <p class="page-header-sub">
+                Enter customer details along with tailoring measurement profiles.
+            </p>
+        </div>
+
+        <div>
+            <a
+                href="{% url 'customer_list' %}"
+                class="btn btn-secondary"
+            >
+                <i class="bi bi-arrow-left me-1"></i>
+                Back to Customers
+            </a>
+        </div>
+
     </div>
-    <div>
-        <a href="{% url 'customer_list' %}" class="btn btn-secondary">
-            <i class="bi bi-arrow-left"></i> Back to Customers
-        </a>
-    </div>
+
+
+    <!-- =========================================================
+         FORM
+    ========================================================== -->
+
+    <form method="POST">
+
+        {% csrf_token %}
+
+
+        <!-- =====================================================
+             ERROR MESSAGES
+        ====================================================== -->
+
+        {% if customer_form.errors %}
+
+        <div class="alert alert-danger alert-custom mb-3">
+
+            <i class="bi bi-exclamation-triangle-fill text-danger fs-5"></i>
+
+            <div>
+
+                <strong>Customer Errors:</strong>
+
+                {{ customer_form.errors }}
+
+            </div>
+
+        </div>
+
+        {% endif %}
+
+
+        {% if measurement_form.errors %}
+
+        <div class="alert alert-danger alert-custom mb-3">
+
+            <i class="bi bi-exclamation-triangle-fill text-danger fs-5"></i>
+
+            <div>
+
+                <strong>Measurement Errors:</strong>
+
+                {{ measurement_form.errors }}
+
+            </div>
+
+        </div>
+
+        {% endif %}
+
+
+
+        <!-- =====================================================
+             CUSTOMER INFORMATION
+        ====================================================== -->
+
+        <div class="form-card mb-4">
+
+            <h5 class="fw-bold mb-3 text-dark border-bottom pb-2">
+
+                <i class="bi bi-person-badge-fill text-primary me-2"></i>
+
+                Customer Information
+
+            </h5>
+
+
+            <div class="row g-3">
+
+
+                <!-- CUSTOMER NAME -->
+
+                <div class="col-12 col-md-6">
+
+                    <label class="form-label">
+                        Customer Name
+                    </label>
+
+                    {{ customer_form.name }}
+
+                </div>
+
+
+                <!-- MOBILE -->
+
+                <div class="col-12 col-md-6">
+
+                    <label class="form-label">
+                        Mobile Number
+                    </label>
+
+                    {{ customer_form.mobile }}
+
+                </div>
+
+
+                <!-- ADDRESS -->
+
+                <div class="col-12">
+
+                    <label class="form-label">
+                        Address
+                    </label>
+
+                    {{ customer_form.address }}
+
+                </div>
+
+
+                <!-- BRANCH -->
+
+                {% if request.user.role == "Admin" %}
+
+                <div class="col-12 col-md-6">
+
+                    <label class="form-label">
+                        Branch
+                    </label>
+
+                    {{ customer_form.branch }}
+
+                </div>
+
+                {% endif %}
+
+
+            </div>
+
+        </div>
+
+
+
+        <!-- =====================================================
+             SHIRT / TOP MEASUREMENTS
+        ====================================================== -->
+
+        <div class="form-card mb-4">
+
+            <div class="d-flex justify-content-between align-items-center mb-3">
+
+                <h5 class="fw-bold mb-0 text-dark">
+
+                    <i class="bi bi-scissors text-info me-2"></i>
+
+                    Shirt / Top Measurements
+
+                </h5>
+
+            </div>
+
+
+            <div class="row g-3">
+
+
+                <!-- LENGTH -->
+
+                <div class="col-12 col-sm-6 col-md-4">
+
+                    <label class="form-label">
+                        Length
+                    </label>
+
+                    {{ measurement_form.top_length }}
+
+                </div>
+
+
+                <!-- SHOULDER -->
+
+                <div class="col-12 col-sm-6 col-md-4">
+
+                    <label class="form-label">
+                        Shoulder
+                    </label>
+
+                    {{ measurement_form.shoulder }}
+
+                </div>
+
+
+                <!-- SLEEVE -->
+
+                <div class="col-12 col-sm-6 col-md-4">
+
+                    <label class="form-label">
+                        Sleeve
+                    </label>
+
+                    {{ measurement_form.sleeve }}
+
+                </div>
+
+
+                <!-- SLEEVE DOWN -->
+
+                <div class="col-12 col-sm-6 col-md-4">
+
+                    <label class="form-label">
+                        Sleeve Down
+                    </label>
+
+                    {{ measurement_form.sleeve_down }}
+
+                </div>
+
+
+                <!-- BODY -->
+
+                <div class="col-12 col-sm-6 col-md-4">
+
+                    <label class="form-label">
+                        Body
+                    </label>
+
+                    {{ measurement_form.body }}
+
+                </div>
+
+
+                <!-- COLLAR -->
+
+                <div class="col-12 col-sm-6 col-md-4">
+
+                    <label class="form-label">
+                        Collar
+                    </label>
+
+                    {{ measurement_form.collar }}
+
+                </div>
+
+
+            </div>
+
+        </div>
+
+
+
+        <!-- =====================================================
+             PANT MEASUREMENTS
+        ====================================================== -->
+
+        <div class="form-card mb-4">
+
+            <h5 class="fw-bold mb-3 text-dark border-bottom pb-2">
+
+                <i class="bi bi-rulers text-warning me-2"></i>
+
+                Pant Measurements
+
+            </h5>
+
+
+            <div class="row g-3">
+
+
+                <!-- PANT LENGTH -->
+
+                <div class="col-12 col-sm-6 col-md-4">
+
+                    <label class="form-label">
+                        Length
+                    </label>
+
+                    {{ measurement_form.pant_length }}
+
+                </div>
+
+
+                <!-- BAND -->
+
+                <div class="col-12 col-sm-6 col-md-4">
+
+                    <label class="form-label">
+                        Band
+                    </label>
+
+                    {{ measurement_form.band }}
+
+                </div>
+
+
+                <!-- HIP -->
+
+                <div class="col-12 col-sm-6 col-md-4">
+
+                    <label class="form-label">
+                        Hip
+                    </label>
+
+                    {{ measurement_form.hip }}
+
+                </div>
+
+
+                <!-- BELL -->
+
+                <div class="col-12 col-sm-6 col-md-4">
+
+                    <label class="form-label">
+                        Bell
+                    </label>
+
+                    {{ measurement_form.bell }}
+
+                </div>
+
+
+                <!-- LOOSE -->
+
+                <div class="col-12 col-sm-6 col-md-4">
+
+                    <label class="form-label">
+                        Loose
+                    </label>
+
+                    {{ measurement_form.loose }}
+
+                </div>
+
+
+                <!-- MUTT -->
+
+                <div class="col-12 col-sm-6 col-md-4">
+
+                    <label class="form-label">
+                        Mutt
+                    </label>
+
+                    {{ measurement_form.mutt }}
+
+                </div>
+
+
+                <!-- PLAY -->
+
+                <div class="col-12 col-sm-6 col-md-4">
+
+                    <label class="form-label">
+                        Play
+                    </label>
+
+                    {{ measurement_form.play }}
+
+                </div>
+
+
+            </div>
+
+        </div>
+
+
+
+        <!-- =====================================================
+             OTHER ITEM MEASUREMENTS
+        ====================================================== -->
+
+        <div class="form-card mb-4">
+
+            <h5 class="fw-bold mb-2 text-dark border-bottom pb-2">
+
+                <i class="bi bi-rulers text-success me-2"></i>
+
+                Other Item Measurements
+
+            </h5>
+
+
+            <p class="text-muted small mb-4">
+
+                Add measurements for another clothing item.
+                Only the item name is required.
+
+            </p>
+
+
+            <div class="row g-3">
+
+
+                <!-- =================================================
+                     ITEM NAME - REQUIRED
+                ================================================== -->
+
+                <div class="col-12 col-md-6">
+
+                    <label class="form-label">
+
+                        Item Name
+
+                        <span class="text-danger">*</span>
+
+                    </label>
+
+                    <input
+                        type="text"
+                        name="other_item_name"
+                        id="other_item_name"
+                        class="form-control"
+                        placeholder="Example: Thobe, Jubba, Safari..."
+                    >
+
+                    <div class="form-text">
+
+                        Enter the clothing item name.
+
+                    </div>
+
+                </div>
+
+
+                <!-- =================================================
+                     LENGTH - OPTIONAL
+                ================================================== -->
+
+                <div class="col-12 col-sm-6 col-md-3">
+
+                    <label class="form-label">
+                        Length
+                    </label>
+
+                    <input
+                        type="text"
+                        name="other_length"
+                        id="other_length"
+                        class="form-control"
+                        placeholder="Length"
+                    >
+
+                </div>
+
+
+                <!-- =================================================
+                     SHOULDER - OPTIONAL
+                ================================================== -->
+
+                <div class="col-12 col-sm-6 col-md-3">
+
+                    <label class="form-label">
+                        Shoulder
+                    </label>
+
+                    <input
+                        type="text"
+                        name="other_shoulder"
+                        id="other_shoulder"
+                        class="form-control"
+                        placeholder="Shoulder"
+                    >
+
+                </div>
+
+
+                <!-- =================================================
+                     BODY / CHEST - OPTIONAL
+                ================================================== -->
+
+                <div class="col-12 col-sm-6 col-md-3">
+
+                    <label class="form-label">
+                        Body / Chest
+                    </label>
+
+                    <input
+                        type="text"
+                        name="other_body"
+                        id="other_body"
+                        class="form-control"
+                        placeholder="Body / Chest"
+                    >
+
+                </div>
+
+
+                <!-- =================================================
+                     SLEEVE - OPTIONAL
+                ================================================== -->
+
+                <div class="col-12 col-sm-6 col-md-3">
+
+                    <label class="form-label">
+                        Sleeve
+                    </label>
+
+                    <input
+                        type="text"
+                        name="other_sleeve"
+                        id="other_sleeve"
+                        class="form-control"
+                        placeholder="Sleeve"
+                    >
+
+                </div>
+
+
+                <!-- =================================================
+                     COLLAR - OPTIONAL
+                ================================================== -->
+
+                <div class="col-12 col-sm-6 col-md-3">
+
+                    <label class="form-label">
+                        Collar
+                    </label>
+
+                    <input
+                        type="text"
+                        name="other_collar"
+                        id="other_collar"
+                        class="form-control"
+                        placeholder="Collar"
+                    >
+
+                </div>
+
+
+                <!-- =================================================
+                     WAIST - OPTIONAL
+                ================================================== -->
+
+                <div class="col-12 col-sm-6 col-md-3">
+
+                    <label class="form-label">
+                        Waist
+                    </label>
+
+                    <input
+                        type="text"
+                        name="other_waist"
+                        id="other_waist"
+                        class="form-control"
+                        placeholder="Waist"
+                    >
+
+                </div>
+
+
+                <!-- =================================================
+                     HIP - OPTIONAL
+                ================================================== -->
+
+                <div class="col-12 col-sm-6 col-md-3">
+
+                    <label class="form-label">
+                        Hip
+                    </label>
+
+                    <input
+                        type="text"
+                        name="other_hip"
+                        id="other_hip"
+                        class="form-control"
+                        placeholder="Hip"
+                    >
+
+                </div>
+
+
+                <!-- =================================================
+                     BOTTOM - OPTIONAL
+                ================================================== -->
+
+                <div class="col-12 col-sm-6 col-md-3">
+
+                    <label class="form-label">
+                        Bottom
+                    </label>
+
+                    <input
+                        type="text"
+                        name="other_bottom"
+                        id="other_bottom"
+                        class="form-control"
+                        placeholder="Bottom"
+                    >
+
+                </div>
+
+
+                <!-- =================================================
+                     ADDITIONAL MEASUREMENTS - OPTIONAL
+                ================================================== -->
+
+                <div class="col-12">
+
+                    <label class="form-label">
+                        Additional Measurements
+                    </label>
+
+                    <textarea
+                        name="other_measurements"
+                        id="other_measurements"
+                        class="form-control"
+                        rows="4"
+                        placeholder="Example:
+Cuff: 9
+Pocket: 7
+Front: 30
+Back: 32
+Special cut: 2"
+                    ></textarea>
+
+                    <div class="form-text">
+
+                        Add any measurements that are not listed above.
+
+                    </div>
+
+                </div>
+
+
+            </div>
+
+        </div>
+
+
+
+        <!-- =====================================================
+             TAILORING NOTES
+        ====================================================== -->
+
+        <div class="form-card mb-4">
+
+            <h5 class="fw-bold mb-3 text-dark border-bottom pb-2">
+
+                <i class="bi bi-journal-text text-secondary me-2"></i>
+
+                Tailoring Notes
+
+            </h5>
+
+
+            <div class="row">
+
+                <div class="col-12">
+
+                    <label class="form-label">
+
+                        Additional Instructions / Style Notes
+
+                    </label>
+
+                    {{ measurement_form.notes }}
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+
+        <!-- =====================================================
+             ACTION BUTTONS
+        ====================================================== -->
+
+        <div class="d-flex justify-content-end gap-2 mb-5">
+
+            <a
+                href="{% url 'customer_list' %}"
+                class="btn btn-secondary"
+            >
+
+                <i class="bi bi-x-circle me-1"></i>
+
+                Cancel
+
+            </a>
+
+
+            <button
+                type="submit"
+                class="btn btn-primary"
+            >
+
+                <i class="bi bi-check-circle-fill me-1"></i>
+
+                Save Customer
+
+            </button>
+
+        </div>
+
+
+    </form>
+
 </div>
 
-<form method="POST">
-    {% csrf_token %}
 
-    {% if customer_form.errors %}
-    <div class="alert alert-danger alert-custom mb-3">
-        <i class="bi bi-exclamation-triangle-fill text-danger fs-5"></i>
-        <div><strong>Customer Errors:</strong> {{ customer_form.errors }}</div>
-    </div>
-    {% endif %}
 
-    {% if measurement_form.errors %}
-    <div class="alert alert-danger alert-custom mb-3">
-        <i class="bi bi-exclamation-triangle-fill text-danger fs-5"></i>
-        <div><strong>Measurement Errors:</strong> {{ measurement_form.errors }}</div>
-    </div>
-    {% endif %}
+<!-- =============================================================
+     PAGE-SPECIFIC CSS
+============================================================== -->
 
-    <!-- CUSTOMER INFORMATION CARD -->
-    <div class="form-card mb-4">
-        <h5 class="fw-bold mb-3 text-dark border-bottom pb-2">
-            <i class="bi bi-person-badge-fill text-primary me-2"></i>Customer Information
-        </h5>
-        
-        <div class="row g-3">
-            <div class="col-md-6">
-                <label class="form-label">Customer Name</label>
-                {{ customer_form.name }}
-            </div>
-            <div class="col-md-6">
-                <label class="form-label">Mobile Number</label>
-                {{ customer_form.mobile }}
-            </div>
-            <div class="col-md-12">
-                <label class="form-label">Address</label>
-                {{ customer_form.address }}
-            </div>
-            {% if request.user.role == "Admin" %}
-            <div class="col-md-6">
-                <label class="form-label">Branch</label>
-                {{ customer_form.branch }}
-            </div>
-            {% endif %}
-        </div>
-    </div>
+<style>
 
-    <!-- SHIRT / TOP MEASUREMENTS CARD -->
-    <div class="form-card mb-4">
-        <h5 class="fw-bold mb-3 text-dark border-bottom pb-2">
-            <i class="bi bi-scissors text-info me-2"></i>Shirt / Top Measurements
-        </h5>
-        
-        <div class="row g-3">
-            <div class="col-12 col-sm-6 col-md-4">
-                <label class="form-label">Length</label>
-                {{ measurement_form.top_length }}
-            </div>
-            <div class="col-12 col-sm-6 col-md-4">
-                <label class="form-label">Shoulder</label>
-                {{ measurement_form.shoulder }}
-            </div>
-            <div class="col-12 col-sm-6 col-md-4">
-                <label class="form-label">Sleeve</label>
-                {{ measurement_form.sleeve }}
-            </div>
-            <div class="col-12 col-sm-6 col-md-4">
-                <label class="form-label">Sleeve Down</label>
-                {{ measurement_form.sleeve_down }}
-            </div>
-            <div class="col-12 col-sm-6 col-md-4">
-                <label class="form-label">Body</label>
-                {{ measurement_form.body }}
-            </div>
-            <div class="col-12 col-sm-6 col-md-4">
-                <label class="form-label">Collar</label>
-                {{ measurement_form.collar }}
-            </div>
-        </div>
-    </div>
+    .form-card {
 
-    <!-- PANT MEASUREMENTS CARD -->
-    <div class="form-card mb-4">
-        <h5 class="fw-bold mb-3 text-dark border-bottom pb-2">
-            <i class="bi bi-rulers text-warning me-2"></i>Pant Measurements
-        </h5>
-        
-        <div class="row g-3">
-            <div class="col-12 col-sm-6 col-md-4">
-                <label class="form-label">Length</label>
-                {{ measurement_form.pant_length }}
-            </div>
-            <div class="col-12 col-sm-6 col-md-4">
-                <label class="form-label">Band</label>
-                {{ measurement_form.band }}
-            </div>
-            <div class="col-12 col-sm-6 col-md-4">
-                <label class="form-label">Hip</label>
-                {{ measurement_form.hip }}
-            </div>
-            <div class="col-12 col-sm-6 col-md-4">
-                <label class="form-label">Bell</label>
-                {{ measurement_form.bell }}
-            </div>
-            <div class="col-12 col-sm-6 col-md-4">
-                <label class="form-label">Loose</label>
-                {{ measurement_form.loose }}
-            </div>
-            <div class="col-12 col-sm-6 col-md-4">
-                <label class="form-label">Mutt</label>
-                {{ measurement_form.mutt }}
-            </div>
-            <div class="col-12 col-sm-6 col-md-4">
-                <label class="form-label">Play</label>
-                {{ measurement_form.play }}
-            </div>
-        </div>
-    </div>
+        background: #ffffff;
 
-    <!-- NOTES CARD -->
-    <div class="form-card mb-4">
-        <h5 class="fw-bold mb-3 text-dark border-bottom pb-2">
-            <i class="bi bi-journal-text text-secondary me-2"></i>Tailoring Notes
-        </h5>
-        <div class="row">
-            <div class="col-12">
-                <label class="form-label">Additional Instructions / Style Notes</label>
-                {{ measurement_form.notes }}
-            </div>
-        </div>
-    </div>
+        border: 1px solid #e2e8f0;
 
-    <!-- ACTION BUTTONS -->
-    <div class="d-flex justify-content-end gap-2 mb-5">
-        <a href="{% url 'customer_list' %}" class="btn btn-secondary">
-            <i class="bi bi-x-circle me-1"></i> Cancel
-        </a>
-        <button type="submit" class="btn btn-primary">
-            <i class="bi bi-check-circle-fill me-1"></i> Save Customer
-        </button>
-    </div>
+        border-radius: 16px;
 
-</form>
+        padding: 24px;
+
+        box-shadow:
+            0 2px 8px rgba(15, 23, 42, 0.04);
+
+    }
+
+
+    .form-card h5 {
+
+        font-size: 1rem;
+
+    }
+
+
+    .form-label {
+
+        font-weight: 600;
+
+        color: #334155;
+
+        margin-bottom: 7px;
+
+    }
+
+
+    .form-control,
+    .form-select {
+
+        min-height: 44px;
+
+        border-radius: 9px;
+
+        border: 1px solid #cbd5e1;
+
+    }
+
+
+    textarea.form-control {
+
+        min-height: 100px;
+
+    }
+
+
+    .form-control:focus,
+    .form-select:focus {
+
+        border-color: #2563eb;
+
+        box-shadow:
+            0 0 0 3px rgba(37, 99, 235, 0.10);
+
+    }
+
+
+    .form-text {
+
+        color: #64748b;
+
+        font-size: 0.78rem;
+
+        margin-top: 5px;
+
+    }
+
+
+    .alert-custom {
+
+        display: flex;
+
+        align-items: flex-start;
+
+        gap: 12px;
+
+        border-radius: 12px;
+
+    }
+
+
+    @media (max-width: 768px) {
+
+        .form-card {
+
+            padding: 18px;
+
+            border-radius: 12px;
+
+        }
+
+    }
+
+</style>
 
 {% endblock %}

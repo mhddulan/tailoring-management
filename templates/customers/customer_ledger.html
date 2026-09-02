@@ -1,0 +1,684 @@
+{% extends "base.html" %}
+
+{% block title %}
+{{ customer.name }} | Customer Ledger
+{% endblock %}
+
+{% block page_title %}
+Customer Ledger
+{% endblock %}
+
+
+{% block content %}
+
+
+<!-- =========================================================
+     HEADER
+========================================================= -->
+
+<div class="page-header-block">
+
+    <div>
+
+        <h2 class="page-header-title">
+
+            Customer Ledger
+
+        </h2>
+
+        <p class="page-header-sub">
+
+            {{ customer.name }}
+
+            &bull;
+
+            {{ customer.mobile }}
+
+            &bull;
+
+            {{ customer.branch }}
+
+        </p>
+
+    </div>
+
+
+    <div class="d-flex gap-2 flex-wrap">
+
+        <a
+            href="{% url 'customer_detail' customer.id %}"
+            class="btn btn-secondary"
+        >
+
+            <i class="bi bi-arrow-left me-1"></i>
+
+            Customer Profile
+
+        </a>
+
+
+        <button
+            onclick="window.print()"
+            class="btn btn-primary"
+        >
+
+            <i class="bi bi-printer me-1"></i>
+
+            Print
+
+        </button>
+
+    </div>
+
+</div>
+
+
+<!-- =========================================================
+     SUMMARY CARDS
+========================================================= -->
+
+<div class="row g-3 mb-4">
+
+
+    <!-- TOTAL ORDERS -->
+
+    <div class="col-12 col-sm-6 col-xl-3">
+
+        <div class="stat-card">
+
+            <div>
+
+                <div class="stat-label">
+                    Total Orders
+                </div>
+
+                <h3 class="stat-value text-primary">
+                    {{ orders|length }}
+                </h3>
+
+            </div>
+
+            <div class="stat-icon-wrapper stat-icon-primary">
+
+                <i class="bi bi-bag-check-fill"></i>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- TOTAL BILL -->
+
+    <div class="col-12 col-sm-6 col-xl-3">
+
+        <div class="stat-card">
+
+            <div>
+
+                <div class="stat-label">
+                    Total Bill
+                </div>
+
+                <h3 class="stat-value">
+
+                    SAR {{ total_amount|floatformat:2 }}
+
+                </h3>
+
+            </div>
+
+            <div class="stat-icon-wrapper stat-icon-info">
+
+                <i class="bi bi-receipt"></i>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- RECEIVED -->
+
+    <div class="col-12 col-sm-6 col-xl-3">
+
+        <div class="stat-card">
+
+            <div>
+
+                <div class="stat-label">
+                    Total Received
+                </div>
+
+                <h3 class="stat-value text-success">
+
+                    SAR {{ total_received|floatformat:2 }}
+
+                </h3>
+
+            </div>
+
+            <div class="stat-icon-wrapper stat-icon-success">
+
+                <i class="bi bi-check-circle-fill"></i>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- BALANCE -->
+
+    <div class="col-12 col-sm-6 col-xl-3">
+
+        <div class="stat-card">
+
+            <div>
+
+                <div class="stat-label">
+                    Outstanding Balance
+                </div>
+
+                <h3 class="stat-value text-danger">
+
+                    SAR {{ total_balance|floatformat:2 }}
+
+                </h3>
+
+            </div>
+
+            <div class="stat-icon-wrapper stat-icon-danger">
+
+                <i class="bi bi-wallet2"></i>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- =========================================================
+     CUSTOMER INFORMATION
+========================================================= -->
+
+<div class="card-custom p-4 mb-4">
+
+    <div class="row g-3">
+
+        <div class="col-md-4">
+
+            <small class="text-muted d-block">
+                Customer
+            </small>
+
+            <strong class="fs-5">
+                {{ customer.name }}
+            </strong>
+
+        </div>
+
+
+        <div class="col-md-4">
+
+            <small class="text-muted d-block">
+                Mobile
+            </small>
+
+            <strong>
+                {{ customer.mobile }}
+            </strong>
+
+        </div>
+
+
+        <div class="col-md-4">
+
+            <small class="text-muted d-block">
+                Branch
+            </small>
+
+            <strong>
+                {{ customer.branch }}
+            </strong>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- =========================================================
+     ORDER LEDGER
+========================================================= -->
+
+<div class="table-card mb-4">
+
+    <div class="table-card-header">
+
+        <h5 class="fw-bold mb-0 text-dark">
+
+            <i class="bi bi-journal-text text-primary me-2"></i>
+
+            Order Ledger
+
+        </h5>
+
+    </div>
+
+
+    <div class="table-responsive">
+
+        <table class="table app-table">
+
+            <thead>
+
+                <tr>
+
+                    <th>
+                        Order
+                    </th>
+
+                    <th>
+                        Date
+                    </th>
+
+                    <th>
+                        Items
+                    </th>
+
+                    <th>
+                        Status
+                    </th>
+
+                    <th class="text-end">
+                        Bill
+                    </th>
+
+                    <th class="text-end">
+                        Advance
+                    </th>
+
+                    <th class="text-end">
+                        Received
+                    </th>
+
+                    <th class="text-end">
+                        Balance
+                    </th>
+
+                </tr>
+
+            </thead>
+
+
+            <tbody>
+
+                {% for order in orders %}
+
+                <tr>
+
+                    <!-- ORDER -->
+
+                    <td>
+
+                        <a
+                            href="/orders/{{ order.id }}/"
+                            class="fw-bold text-primary text-decoration-none"
+                        >
+
+                            #{{ order.id }}
+
+                        </a>
+
+                    </td>
+
+
+                    <!-- DATE -->
+
+                    <td>
+
+                        {{ order.order_date|date:"d-m-Y" }}
+
+                    </td>
+
+
+                    <!-- ITEMS -->
+
+                    <td>
+
+                        {% for item in order.items.all %}
+
+                            <span
+                                class="badge bg-light text-dark border me-1"
+                            >
+
+                                {{ item.item_name }}
+
+                                ×
+
+                                {{ item.quantity }}
+
+                            </span>
+
+                        {% empty %}
+
+                            <span class="text-muted">
+                                No items
+                            </span>
+
+                        {% endfor %}
+
+                    </td>
+
+
+                    <!-- STATUS -->
+
+                    <td>
+
+                        {% if order.status == "Pending" %}
+
+                            <span class="badge-status badge-status-pending">
+                                Pending
+                            </span>
+
+                        {% elif order.status == "Cutting" %}
+
+                            <span class="badge-status badge-status-cutting">
+                                Cutting
+                            </span>
+
+                        {% elif order.status == "Stitching" %}
+
+                            <span class="badge-status badge-status-stitching">
+                                Stitching
+                            </span>
+
+                        {% elif order.status == "Ready" %}
+
+                            <span class="badge-status badge-status-ready">
+                                Ready
+                            </span>
+
+                        {% elif order.status == "Delivery" %}
+
+                            <span class="badge bg-info-subtle text-info border">
+                                Delivery
+                            </span>
+
+                        {% elif order.status == "Delivered" %}
+
+                            <span class="badge-status badge-status-delivered">
+                                Delivered
+                            </span>
+
+                        {% else %}
+
+                            <span class="badge bg-secondary">
+                                {{ order.status }}
+                            </span>
+
+                        {% endif %}
+
+                    </td>
+
+
+                    <!-- BILL -->
+
+                    <td class="text-end fw-bold">
+
+                        SAR {{ order.total_amount|floatformat:2 }}
+
+                    </td>
+
+
+                    <!-- ADVANCE -->
+
+                    <td class="text-end text-info fw-semibold">
+
+                        SAR {{ order.advance_received|floatformat:2 }}
+
+                    </td>
+
+
+                    <!-- RECEIVED -->
+
+                    <td class="text-end text-success fw-bold">
+
+                        SAR {{ order.total_received|floatformat:2 }}
+
+                    </td>
+
+
+                    <!-- BALANCE -->
+
+                    <td class="text-end fw-bold">
+
+                        {% if order.balance > 0 %}
+
+                            <span class="text-danger">
+
+                                SAR {{ order.balance|floatformat:2 }}
+
+                            </span>
+
+                        {% else %}
+
+                            <span class="text-success">
+
+                                SAR 0.00
+
+                            </span>
+
+                        {% endif %}
+
+                    </td>
+
+                </tr>
+
+
+                <!-- PAYMENT HISTORY -->
+
+                {% for payment in order.payments.all %}
+
+                <tr class="bg-light">
+
+                    <td></td>
+
+                    <td>
+
+                        <small class="text-muted">
+
+                            <i class="bi bi-arrow-return-right me-1"></i>
+
+                            {{ payment.payment_date|date:"d-m-Y" }}
+
+                        </small>
+
+                    </td>
+
+                    <td colspan="2">
+
+                        <small>
+
+                            Payment:
+
+                            <strong>
+                                {{ payment.payment_type }}
+                            </strong>
+
+                            &bull;
+
+                            {{ payment.payment_mode }}
+
+                        </small>
+
+                    </td>
+
+                    <td colspan="2"></td>
+
+                    <td class="text-end text-success">
+
+                        <small>
+
+                            SAR {{ payment.amount|floatformat:2 }}
+
+                        </small>
+
+                    </td>
+
+                    <td></td>
+
+                </tr>
+
+                {% endfor %}
+
+
+                {% empty %}
+
+                <tr>
+
+                    <td
+                        colspan="8"
+                        class="text-center py-5 text-muted"
+                    >
+
+                        <i class="bi bi-journal-x fs-1 d-block mb-2"></i>
+
+                        No transactions found for this customer.
+
+                    </td>
+
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+
+            <!-- TOTAL -->
+
+            <tfoot>
+
+                <tr class="fw-bold">
+
+                    <td colspan="4">
+                        TOTAL
+                    </td>
+
+                    <td class="text-end">
+
+                        SAR {{ total_amount|floatformat:2 }}
+
+                    </td>
+
+                    <td class="text-end text-info">
+
+                        SAR {{ total_advance|floatformat:2 }}
+
+                    </td>
+
+                    <td class="text-end text-success">
+
+                        SAR {{ total_received|floatformat:2 }}
+
+                    </td>
+
+                    <td class="text-end text-danger">
+
+                        SAR {{ total_balance|floatformat:2 }}
+
+                    </td>
+
+                </tr>
+
+            </tfoot>
+
+        </table>
+
+    </div>
+
+</div>
+
+
+<!-- =========================================================
+     FOOTER
+========================================================= -->
+
+<div class="d-flex justify-content-between flex-wrap gap-2 mb-5">
+
+    <a
+        href="{% url 'customer_detail' customer.id %}"
+        class="btn btn-secondary"
+    >
+
+        <i class="bi bi-arrow-left me-1"></i>
+
+        Back to Customer
+
+    </a>
+
+
+    <a
+        href="{% url 'customer_order_create' customer.id %}"
+        class="btn btn-primary"
+    >
+
+        <i class="bi bi-plus-lg me-1"></i>
+
+        New Order
+
+    </a>
+
+</div>
+
+
+<!-- =========================================================
+     PRINT CSS
+========================================================= -->
+
+<style>
+
+@media print {
+
+    body {
+        background: white !important;
+    }
+
+    .sidebar,
+    .navbar,
+    .page-header-block .btn,
+    button,
+    .btn {
+        display: none !important;
+    }
+
+    .page-header-block {
+        margin-bottom: 20px;
+    }
+
+    .table-card,
+    .card-custom,
+    .stat-card {
+        box-shadow: none !important;
+        border: 1px solid #ddd !important;
+    }
+
+    @page {
+        size: A4 landscape;
+        margin: 10mm;
+    }
+
+}
+
+</style>
+
+
+{% endblock %}

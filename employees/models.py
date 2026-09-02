@@ -47,7 +47,6 @@ class Employee(models.Model):
 
     def __str__(self):
         return f"{self.name} - {self.branch.name}"
-
 class DailyProduction(models.Model):
 
     branch = models.ForeignKey(
@@ -70,18 +69,80 @@ class DailyProduction(models.Model):
 
     production_date = models.DateField()
 
-    quantity = models.PositiveIntegerField(default=0)
+    quantity = models.PositiveIntegerField(
+        default=0
+    )
+
+    rate_per_piece = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0
+    )
+
+    total_amount = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0
+    )
 
     remarks = models.CharField(
         max_length=255,
         blank=True
     )
 
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(
+        auto_now_add=True
+    )
+
+    def save(self, *args, **kwargs):
+
+        self.total_amount = (
+            self.quantity * self.rate_per_piece
+        )
+
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+
+        return (
+            f"{self.employee.name} - "
+            f"{self.product.name} - "
+            f"{self.quantity}"
+        )
+# ============================================================
+# EMPLOYEE PRODUCT RATE
+# ============================================================
+class EmployeeProductRate(models.Model):
+
+    employee = models.ForeignKey(
+        Employee,
+        on_delete=models.CASCADE,
+        related_name="product_rates"
+    )
+
+    product = models.ForeignKey(
+        Product,
+        on_delete=models.CASCADE,
+        related_name="employee_rates"
+    )
+
+    rate_per_piece = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0
+    )
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["employee", "product"],
+                name="unique_employee_product_rate"
+            )
+        ]
 
     def __str__(self):
         return (
             f"{self.employee.name} - "
             f"{self.product.name} - "
-            f"{self.quantity}"
+            f"SAR{self.rate_per_piece}"
         )

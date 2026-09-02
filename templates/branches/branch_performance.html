@@ -1,0 +1,2032 @@
+{% extends "base.html" %}
+
+{% block title %}
+    {{ branch.name }} Performance | Stitching Pro
+{% endblock %}
+
+{% block page_title %}
+    Branch Performance
+{% endblock %}
+
+{% block content %}
+
+<div class="container-fluid">
+
+
+<!-- =====================================================
+     HEADER
+====================================================== -->
+
+<div class="page-header-block mb-4">
+
+    <div>
+
+        <h2 class="page-header-title">
+
+            <i class="bi bi-building me-2"></i>
+
+            {{ branch.name }}
+
+        </h2>
+
+        <p class="page-header-sub">
+
+            Branch performance and financial overview
+
+        </p>
+
+    </div>
+
+
+    <div>
+
+        <a href="{% url 'branch_list' %}"
+           class="btn btn-outline-secondary">
+
+            <i class="bi bi-arrow-left me-1"></i>
+
+            Back to Branches
+
+        </a>
+
+    </div>
+
+</div>
+
+
+
+<!-- =====================================================
+     DATE FILTER
+====================================================== -->
+
+<div class="card border-0 shadow-sm rounded-4 mb-4">
+
+    <div class="card-body p-4">
+
+        <div class="d-flex
+                    flex-wrap
+                    justify-content-between
+                    align-items-center
+                    gap-3">
+
+
+            <div>
+
+                <h5 class="fw-bold mb-1">
+
+                    <i class="bi bi-calendar-range text-primary me-2"></i>
+
+                    Performance Period
+
+                </h5>
+
+                <small class="text-muted">
+
+                    {{ from_date|date:"d-m-Y" }}
+
+                    -
+
+                    {{ to_date|date:"d-m-Y" }}
+
+                </small>
+
+            </div>
+
+
+            <div class="d-flex flex-wrap gap-2">
+
+
+                <a href="?filter=today"
+                   class="btn btn-sm
+                   {% if filter_type == 'today' %}
+                       btn-primary
+                   {% else %}
+                       btn-outline-primary
+                   {% endif %}">
+
+                    Today
+
+                </a>
+
+
+                <a href="?filter=yesterday"
+                   class="btn btn-sm
+                   {% if filter_type == 'yesterday' %}
+                       btn-primary
+                   {% else %}
+                       btn-outline-primary
+                   {% endif %}">
+
+                    Yesterday
+
+                </a>
+
+
+                <a href="?filter=week"
+                   class="btn btn-sm
+                   {% if filter_type == 'week' %}
+                       btn-primary
+                   {% else %}
+                       btn-outline-primary
+                   {% endif %}">
+
+                    This Week
+
+                </a>
+
+
+                <a href="?filter=month"
+                   class="btn btn-sm
+                   {% if filter_type == 'month' %}
+                       btn-primary
+                   {% else %}
+                       btn-outline-primary
+                   {% endif %}">
+
+                    This Month
+
+                </a>
+
+
+                <button type="button"
+                        id="customFilterButton"
+                        class="btn btn-sm
+                        {% if filter_type == 'custom' %}
+                            btn-primary
+                        {% else %}
+                            btn-outline-primary
+                        {% endif %}">
+
+                    Custom
+
+                </button>
+
+            </div>
+
+        </div>
+
+
+        <!-- CUSTOM DATE -->
+
+        <div id="customDateBox"
+             class="mt-4
+             {% if filter_type != 'custom' %}
+                 d-none
+             {% endif %}">
+
+            <form method="GET">
+
+                <input type="hidden"
+                       name="filter"
+                       value="custom">
+
+
+                <div class="row g-3 align-items-end">
+
+                    <div class="col-md-5">
+
+                        <label class="form-label fw-semibold">
+
+                            From Date
+
+                        </label>
+
+                        <input type="date"
+                               name="from_date"
+                               class="form-control"
+                               value="{{ from_date|date:'Y-m-d' }}"
+                               required>
+
+                    </div>
+
+
+                    <div class="col-md-5">
+
+                        <label class="form-label fw-semibold">
+
+                            To Date
+
+                        </label>
+
+                        <input type="date"
+                               name="to_date"
+                               class="form-control"
+                               value="{{ to_date|date:'Y-m-d' }}"
+                               required>
+
+                    </div>
+
+
+                    <div class="col-md-2">
+
+                        <button type="submit"
+                                class="btn btn-primary w-100">
+
+                            <i class="bi bi-funnel-fill me-1"></i>
+
+                            Apply
+
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+
+<!-- =====================================================
+     MAIN KPI
+====================================================== -->
+
+<div class="row g-3 mb-4">
+
+
+    <!-- CUSTOMERS -->
+
+    <div class="col-12 col-sm-6 col-xl-3">
+
+        <div class="performance-card blue">
+
+            <div>
+
+                <div class="performance-label">
+                    Customers
+                </div>
+
+                <div class="performance-value">
+                    {{ customers }}
+                </div>
+
+            </div>
+
+            <div class="performance-icon">
+                <i class="bi bi-people-fill"></i>
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- ORDERS -->
+
+    <div class="col-12 col-sm-6 col-xl-3">
+
+        <div class="performance-card orange">
+
+            <div>
+
+                <div class="performance-label">
+                    Orders
+                </div>
+
+                <div class="performance-value">
+                    {{ total_orders }}
+                </div>
+
+            </div>
+
+            <div class="performance-icon">
+                <i class="bi bi-bag-check-fill"></i>
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- SALES -->
+
+    <div class="col-12 col-sm-6 col-xl-3">
+
+        <div class="performance-card green">
+
+            <div>
+
+                <div class="performance-label">
+                    Sales Income
+                </div>
+
+                <div class="performance-value">
+                    SAR {{ total_sales|floatformat:2 }}
+                </div>
+
+            </div>
+
+            <div class="performance-icon">
+                <i class="bi bi-currency-rupee"></i>
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- PROFIT -->
+
+    <div class="col-12 col-sm-6 col-xl-3">
+
+        <div class="performance-card purple">
+
+            <div>
+
+                <div class="performance-label">
+                    Net Profit
+                </div>
+
+                <div class="performance-value">
+                    SAR {{ net_profit|floatformat:2 }}
+                </div>
+
+            </div>
+
+            <div class="performance-icon">
+                <i class="bi bi-graph-up-arrow"></i>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+
+<!-- =====================================================
+     FINANCIAL SUMMARY
+====================================================== -->
+
+<div class="row g-4 mb-4">
+
+
+    <div class="col-lg-6">
+
+        <div class="standard-card h-100">
+
+            <div class="standard-card-header">
+
+                <h5>
+
+                    <i class="bi bi-cash-stack me-2"></i>
+
+                    Financial Summary
+
+                </h5>
+
+            </div>
+
+
+            <div class="standard-card-body">
+
+                <div class="summary-row">
+
+                    <span>
+                        Sales Income
+                    </span>
+
+                    <strong class="text-success">
+                        SAR {{ total_sales|floatformat:2 }}
+                    </strong>
+
+                </div>
+
+
+                <div class="summary-row">
+
+                    <span>
+                        Purchase
+                    </span>
+
+                    <strong>
+                        SAR {{ total_purchase|floatformat:2 }}
+                    </strong>
+
+                </div>
+
+
+                <div class="summary-row">
+
+                    <span>
+                        Other Expenses
+                    </span>
+
+                    <strong class="text-danger">
+                        SAR {{ total_expense|floatformat:2 }}
+                    </strong>
+
+                </div>
+
+
+                <div class="summary-row total-row">
+
+                    <span>
+                        Net Profit
+                    </span>
+
+                    <strong class="text-primary">
+                        SAR {{ net_profit|floatformat:2 }}
+                    </strong>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- COLLECTION -->
+
+    <div class="col-lg-6">
+
+        <div class="standard-card h-100">
+
+            <div class="standard-card-header">
+
+                <h5>
+
+                    <i class="bi bi-wallet2 me-2"></i>
+
+                    Collection Summary
+
+                </h5>
+
+            </div>
+
+
+            <div class="standard-card-body">
+
+
+                <div class="summary-row">
+
+                    <span>
+                        Total Billed
+                    </span>
+
+                    <strong>
+                        SAR {{ total_billed|floatformat:2 }}
+                    </strong>
+
+                </div>
+
+
+                <div class="summary-row">
+
+                    <span>
+                        Advance
+                    </span>
+
+                    <strong class="text-success">
+                        SAR {{ total_advance|floatformat:2 }}
+                    </strong>
+
+                </div>
+
+
+                <div class="summary-row">
+
+                    <span>
+                        Balance Payment
+                    </span>
+
+                    <strong class="text-primary">
+                        SAR {{ total_balance_payment|floatformat:2 }}
+                    </strong>
+
+                </div>
+
+
+                <div class="summary-row">
+
+                    <span>
+                        Total Received
+                    </span>
+
+                    <strong class="text-success">
+                        SAR {{ collection|floatformat:2 }}
+                    </strong>
+
+                </div>
+
+
+                <div class="summary-row total-row">
+
+                    <span>
+                        Outstanding
+                    </span>
+
+                    <strong class="text-danger">
+                        SAR {{ outstanding_balance|floatformat:2 }}
+                    </strong>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+
+<!-- =====================================================
+     PAYMENT MODES
+====================================================== -->
+
+<div class="standard-card mb-4">
+
+    <div class="standard-card-header">
+
+        <h5>
+
+            <i class="bi bi-credit-card me-2"></i>
+
+            Payment Modes
+
+        </h5>
+
+    </div>
+
+
+    <div class="standard-card-body">
+
+        <div class="row g-3">
+
+
+            <div class="col-6 col-md-4 col-xl">
+
+                <div class="payment-box">
+
+                    <i class="bi bi-cash-stack"></i>
+
+                    <span>Cash</span>
+
+                    <strong>
+                        SAR {{ cash|floatformat:2 }}
+                    </strong>
+
+                </div>
+
+            </div>
+
+
+            <div class="col-6 col-md-4 col-xl">
+
+                <div class="payment-box">
+
+                    <i class="bi bi-bank"></i>
+
+                    <span>Bank</span>
+
+                    <strong>
+                        SAR {{ bank|floatformat:2 }}
+                    </strong>
+
+                </div>
+
+            </div>
+
+
+            <div class="col-6 col-md-4 col-xl">
+
+                <div class="payment-box">
+
+                    <i class="bi bi-phone"></i>
+
+                    <span>Online</span>
+
+                    <strong>
+                        SAR {{ online|floatformat:2 }}
+                    </strong>
+
+                </div>
+
+            </div>
+
+
+            <div class="col-6 col-md-4 col-xl">
+
+                <div class="payment-box">
+
+                    <i class="bi bi-receipt"></i>
+
+                    <span>Cheque</span>
+
+                    <strong>
+                        SAR {{ cheque|floatformat:2 }}
+                    </strong>
+
+                </div>
+
+            </div>
+
+
+            <div class="col-6 col-md-4 col-xl">
+
+                <div class="payment-box">
+
+                    <i class="bi bi-credit-card"></i>
+
+                    <span>POS</span>
+
+                    <strong>
+                        SAR {{ pos|floatformat:2 }}
+                    </strong>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+
+<!-- =====================================================
+     ORDER STATUS
+====================================================== -->
+
+<div class="standard-card mb-4">
+
+    <div class="standard-card-header">
+
+        <h5>
+
+            <i class="bi bi-list-check me-2"></i>
+
+            Order Status
+
+        </h5>
+
+    </div>
+
+
+    <div class="standard-card-body">
+
+        <div class="row g-3">
+
+
+            <div class="col-6 col-md-4 col-xl">
+
+                <div class="status-box">
+
+                    <span>Pending</span>
+
+                    <strong>
+                        {{ pending }}
+                    </strong>
+
+                </div>
+
+            </div>
+
+
+            <div class="col-6 col-md-4 col-xl">
+
+                <div class="status-box">
+
+                    <span>Cutting</span>
+
+                    <strong>
+                        {{ cutting }}
+                    </strong>
+
+                </div>
+
+            </div>
+
+
+            <div class="col-6 col-md-4 col-xl">
+
+                <div class="status-box">
+
+                    <span>Stitching</span>
+
+                    <strong>
+                        {{ stitching }}
+                    </strong>
+
+                </div>
+
+            </div>
+
+
+            <div class="col-6 col-md-4 col-xl">
+
+                <div class="status-box">
+
+                    <span>Ready</span>
+
+                    <strong>
+                        {{ ready }}
+                    </strong>
+
+                </div>
+
+            </div>
+
+
+            <div class="col-6 col-md-4 col-xl">
+
+                <div class="status-box">
+
+                    <span>Delivery</span>
+
+                    <strong>
+                        {{ delivery }}
+                    </strong>
+
+                </div>
+
+            </div>
+
+
+            <div class="col-6 col-md-4 col-xl">
+
+                <div class="status-box">
+
+                    <span>Delivered</span>
+
+                    <strong>
+                        {{ delivered }}
+                    </strong>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+
+<!-- =====================================================
+     CHARTS
+====================================================== -->
+
+<div class="row g-4 mb-4">
+
+
+    <!-- FINANCIAL -->
+
+    <div class="col-lg-6">
+
+        <div class="standard-card">
+
+            <div class="standard-card-header">
+
+                <h5>
+
+                    <i class="bi bi-bar-chart me-2"></i>
+
+                    Financial Overview
+
+                </h5>
+
+            </div>
+
+            <div class="standard-card-body">
+
+                <div class="chart-wrapper">
+
+                    <canvas id="financialChart"></canvas>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- PAYMENT -->
+
+    <div class="col-lg-6">
+
+        <div class="standard-card">
+
+            <div class="standard-card-header">
+
+                <h5>
+
+                    <i class="bi bi-pie-chart me-2"></i>
+
+                    Payment Distribution
+
+                </h5>
+
+            </div>
+
+            <div class="standard-card-body">
+
+                <div class="chart-wrapper">
+
+                    <canvas id="paymentChart"></canvas>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+
+<!-- =====================================================
+     EMPLOYEE PERFORMANCE
+====================================================== -->
+
+<div class="row g-4 mb-4">
+
+
+    <div class="col-xl-5">
+
+        <div class="standard-card h-100">
+
+            <div class="standard-card-header">
+
+                <h5>
+
+                    <i class="bi bi-scissors me-2"></i>
+
+                    Employee Production
+
+                </h5>
+
+            </div>
+
+
+            <div class="standard-card-body">
+
+
+                <div class="production-total">
+
+                    <strong>
+                        {{ total_pieces }}
+                    </strong>
+
+                    <span>
+                        Total Pieces
+                    </span>
+
+                </div>
+
+
+                <div class="table-responsive mt-4">
+
+                    <table class="table align-middle">
+
+                        <thead>
+
+                            <tr>
+
+                                <th>
+                                    Employee
+                                </th>
+
+                                <th class="text-end">
+                                    Pieces
+                                </th>
+
+                            </tr>
+
+                        </thead>
+
+
+                        <tbody>
+
+                            {% for employee in performance_employees %}
+
+                            <tr>
+
+                                <td>
+
+                                    <i class="bi bi-person-circle me-2 text-muted"></i>
+
+                                    {{ employee.name }}
+
+                                </td>
+
+                                <td class="text-end fw-bold">
+
+                                    {{ employee.total_pieces|default:0 }}
+
+                                </td>
+
+                            </tr>
+
+                            {% empty %}
+
+                            <tr>
+
+                                <td colspan="2"
+                                    class="text-center text-muted py-4">
+
+                                    No production records.
+
+                                </td>
+
+                            </tr>
+
+                            {% endfor %}
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+
+    <div class="col-xl-7">
+
+        <div class="standard-card h-100">
+
+            <div class="standard-card-header">
+
+                <h5>
+
+                    <i class="bi bi-bar-chart-fill me-2"></i>
+
+                    Employee Performance
+
+                </h5>
+
+            </div>
+
+
+            <div class="standard-card-body">
+
+                <div class="chart-wrapper">
+
+                    <canvas id="employeeChart"></canvas>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+
+<!-- =====================================================
+     SALES TREND
+====================================================== -->
+
+<div class="standard-card mb-4">
+
+    <div class="standard-card-header">
+
+        <h5>
+
+            <i class="bi bi-graph-up me-2"></i>
+
+            Sales Trend
+
+        </h5>
+
+    </div>
+
+
+    <div class="standard-card-body">
+
+        <div class="chart-wrapper chart-large">
+
+            <canvas id="salesChart"></canvas>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+
+<!-- =====================================================
+     RECENT ORDERS
+====================================================== -->
+
+<div class="standard-card mb-4">
+
+    <div class="standard-card-header">
+
+        <h5>
+
+            <i class="bi bi-bag-check me-2"></i>
+
+            Recent Orders
+
+        </h5>
+
+    </div>
+
+
+    <div class="standard-card-body p-0">
+
+        <div class="table-responsive">
+
+            <table class="table app-table mb-0">
+
+                <thead>
+
+                    <tr>
+
+                        <th>
+                            Order
+                        </th>
+
+                        <th>
+                            Customer
+                        </th>
+
+                        <th>
+                            Date
+                        </th>
+
+                        <th>
+                            Status
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+
+                <tbody>
+
+                    {% for order in recent_orders %}
+
+                    <tr>
+
+                        <td class="fw-bold">
+
+                            #{{ order.id }}
+
+                        </td>
+
+                        <td>
+
+                            {{ order.customer.name }}
+
+                        </td>
+
+                        <td>
+
+                            {{ order.order_date|date:"d-m-Y" }}
+
+                        </td>
+
+                        <td>
+
+                            <span class="badge bg-light text-dark border">
+
+                                {{ order.status }}
+
+                            </span>
+
+                        </td>
+
+                    </tr>
+
+                    {% empty %}
+
+                    <tr>
+
+                        <td colspan="4"
+                            class="text-center text-muted py-4">
+
+                            No orders found.
+
+                        </td>
+
+                    </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+
+<!-- =====================================================
+     RECENT PAYMENTS
+====================================================== -->
+
+<div class="standard-card mb-4">
+
+    <div class="standard-card-header">
+
+        <h5>
+
+            <i class="bi bi-credit-card-2-front me-2"></i>
+
+            Recent Payments
+
+        </h5>
+
+    </div>
+
+
+    <div class="standard-card-body p-0">
+
+        <div class="table-responsive">
+
+            <table class="table app-table mb-0">
+
+                <thead>
+
+                    <tr>
+
+                        <th>
+                            #
+                        </th>
+
+                        <th>
+                            Customer
+                        </th>
+
+                        <th>
+                            Date
+                        </th>
+
+                        <th>
+                            Mode
+                        </th>
+
+                        <th>
+                            Type
+                        </th>
+
+                        <th class="text-end">
+                            Amount
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+
+                <tbody>
+
+                    {% for payment in recent_payments %}
+
+                    <tr>
+
+                        <td class="fw-bold">
+
+                            #{{ payment.id }}
+
+                        </td>
+
+                        <td>
+
+                            {{ payment.order.customer.name }}
+
+                        </td>
+
+                        <td>
+
+                            {{ payment.payment_date|date:"d-m-Y" }}
+
+                        </td>
+
+                        <td>
+
+                            <span class="badge bg-light text-dark border">
+
+                                {{ payment.payment_mode }}
+
+                            </span>
+
+                        </td>
+
+                        <td>
+
+                            <span class="badge bg-primary-subtle text-primary">
+
+                                {{ payment.payment_type }}
+
+                            </span>
+
+                        </td>
+
+                        <td class="text-end fw-bold text-success">
+
+                            SAR {{ payment.amount|floatformat:2 }}
+
+                        </td>
+
+                    </tr>
+
+                    {% empty %}
+
+                    <tr>
+
+                        <td colspan="6"
+                            class="text-center text-muted py-4">
+
+                            No payments found.
+
+                        </td>
+
+                    </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+</div>
+
+
+
+<!-- =====================================================
+     CHART DATA
+====================================================== -->
+
+<script id="performance-data"
+        type="application/json">
+
+{
+    "income": {{ total_income|default:0 }},
+    "purchase": {{ total_purchase|default:0 }},
+    "expense": {{ total_expense|default:0 }},
+    "profit": {{ net_profit|default:0 }},
+
+    "cash": {{ cash|default:0 }},
+    "bank": {{ bank|default:0 }},
+    "online": {{ online|default:0 }},
+    "cheque": {{ cheque|default:0 }},
+    "pos": {{ pos|default:0 }},
+
+    "employeeLabels": [
+        {% for employee in performance_employees %}
+            "{{ employee.name|escapejs }}"
+            {% if not forloop.last %},{% endif %}
+        {% endfor %}
+    ],
+
+    "employeeValues": [
+        {% for employee in performance_employees %}
+            {{ employee.total_pieces|default:0 }}
+            {% if not forloop.last %},{% endif %}
+        {% endfor %}
+    ],
+
+    "months": [
+        {% for month in months %}
+            "{{ month|escapejs }}"
+            {% if not forloop.last %},{% endif %}
+        {% endfor %}
+    ],
+
+    "monthlySales": [
+        {% for amount in monthly_sales %}
+            {{ amount }}
+            {% if not forloop.last %},{% endif %}
+        {% endfor %}
+    ]
+}
+
+</script>
+
+
+
+<!-- =====================================================
+     CHART.JS
+====================================================== -->
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+
+<script>
+
+document.addEventListener(
+    "DOMContentLoaded",
+    function () {
+
+
+        /* ==========================================
+           CUSTOM DATE
+        ========================================== */
+
+        const customButton =
+            document.getElementById(
+                "customFilterButton"
+            );
+
+
+        const customBox =
+            document.getElementById(
+                "customDateBox"
+            );
+
+
+        if (customButton && customBox) {
+
+            customButton.addEventListener(
+                "click",
+                function () {
+
+                    customBox.classList.toggle(
+                        "d-none"
+                    );
+
+                }
+            );
+
+        }
+
+
+        /* ==========================================
+           DATA
+        ========================================== */
+
+        const dataElement =
+            document.getElementById(
+                "performance-data"
+            );
+
+
+        let data = {};
+
+
+        try {
+
+            data = JSON.parse(
+                dataElement.textContent
+            );
+
+        } catch (error) {
+
+            console.error(
+                "Performance data error:",
+                error
+            );
+
+        }
+
+
+        /* ==========================================
+           FINANCIAL CHART
+        ========================================== */
+
+        const financialCanvas =
+            document.getElementById(
+                "financialChart"
+            );
+
+
+        if (financialCanvas) {
+
+            new Chart(
+                financialCanvas,
+                {
+
+                    type: "bar",
+
+                    data: {
+
+                        labels: [
+                            "Income",
+                            "Purchase",
+                            "Expense",
+                            "Profit"
+                        ],
+
+                        datasets: [
+
+                            {
+
+                                label: "Amount",
+
+                                data: [
+
+                                    Number(data.income) || 0,
+
+                                    Number(data.purchase) || 0,
+
+                                    Number(data.expense) || 0,
+
+                                    Number(data.profit) || 0
+
+                                ],
+
+                                borderWidth: 1
+
+                            }
+
+                        ]
+
+                    },
+
+                    options: {
+
+                        responsive: true,
+
+                        maintainAspectRatio: false,
+
+                        plugins: {
+
+                            legend: {
+                                display: false
+                            }
+
+                        },
+
+                        scales: {
+
+                            y: {
+                                beginAtZero: true
+                            }
+
+                        }
+
+                    }
+
+                }
+            );
+
+        }
+
+
+        /* ==========================================
+           PAYMENT CHART
+        ========================================== */
+
+        const paymentCanvas =
+            document.getElementById(
+                "paymentChart"
+            );
+
+
+        if (paymentCanvas) {
+
+            new Chart(
+                paymentCanvas,
+                {
+
+                    type: "doughnut",
+
+                    data: {
+
+                        labels: [
+                            "Cash",
+                            "Bank",
+                            "Online",
+                            "Cheque",
+                            "POS"
+                        ],
+
+                        datasets: [
+
+                            {
+
+                                data: [
+
+                                    Number(data.cash) || 0,
+
+                                    Number(data.bank) || 0,
+
+                                    Number(data.online) || 0,
+
+                                    Number(data.cheque) || 0,
+
+                                    Number(data.pos) || 0
+
+                                ],
+
+                                borderWidth: 2
+
+                            }
+
+                        ]
+
+                    },
+
+                    options: {
+
+                        responsive: true,
+
+                        maintainAspectRatio: false,
+
+                        plugins: {
+
+                            legend: {
+
+                                position: "bottom"
+
+                            }
+
+                        }
+
+                    }
+
+                }
+            );
+
+        }
+
+
+        /* ==========================================
+           EMPLOYEE CHART
+        ========================================== */
+
+        const employeeCanvas =
+            document.getElementById(
+                "employeeChart"
+            );
+
+
+        if (employeeCanvas) {
+
+            new Chart(
+                employeeCanvas,
+                {
+
+                    type: "bar",
+
+                    data: {
+
+                        labels:
+                            data.employeeLabels || [],
+
+                        datasets: [
+
+                            {
+
+                                label:
+                                    "Pieces",
+
+                                data:
+                                    data.employeeValues || [],
+
+                                borderWidth: 1
+
+                            }
+
+                        ]
+
+                    },
+
+                    options: {
+
+                        responsive: true,
+
+                        maintainAspectRatio: false,
+
+                        plugins: {
+
+                            legend: {
+                                display: false
+                            }
+
+                        },
+
+                        scales: {
+
+                            y: {
+
+                                beginAtZero: true,
+
+                                ticks: {
+                                    precision: 0
+                                }
+
+                            }
+
+                        }
+
+                    }
+
+                }
+            );
+
+        }
+
+
+        /* ==========================================
+           SALES TREND
+        ========================================== */
+
+        const salesCanvas =
+            document.getElementById(
+                "salesChart"
+            );
+
+
+        if (salesCanvas) {
+
+            new Chart(
+                salesCanvas,
+                {
+
+                    type: "line",
+
+                    data: {
+
+                        labels:
+                            data.months || [],
+
+                        datasets: [
+
+                            {
+
+                                label:
+                                    "Sales",
+
+                                data:
+                                    data.monthlySales || [],
+
+                                tension: 0.35,
+
+                                fill: true,
+
+                                borderWidth: 2
+
+                            }
+
+                        ]
+
+                    },
+
+                    options: {
+
+                        responsive: true,
+
+                        maintainAspectRatio: false,
+
+                        scales: {
+
+                            y: {
+
+                                beginAtZero: true
+
+                            }
+
+                        }
+
+                    }
+
+                }
+
+            );
+
+        }
+
+    }
+
+);
+
+</script>
+
+
+
+<!-- =====================================================
+     CSS
+====================================================== -->
+
+<style>
+
+
+.performance-card {
+
+    min-height: 140px;
+
+    padding: 24px;
+
+    border-radius: 16px;
+
+    color: white;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    box-shadow:
+        0 5px 18px rgba(0,0,0,.07);
+
+}
+
+
+.performance-card.blue {
+    background: #0d6efd;
+}
+
+
+.performance-card.green {
+    background: #198754;
+}
+
+
+.performance-card.orange {
+    background: #fd7e14;
+}
+
+
+.performance-card.purple {
+    background: #6f42c1;
+}
+
+
+.performance-label {
+
+    font-size: 14px;
+
+    opacity: .9;
+
+    margin-bottom: 7px;
+
+}
+
+
+.performance-value {
+
+    font-size: 25px;
+
+    font-weight: 700;
+
+}
+
+
+.performance-icon {
+
+    font-size: 38px;
+
+    opacity: .75;
+
+}
+
+
+.standard-card {
+
+    background: white;
+
+    border-radius: 16px;
+
+    box-shadow:
+        0 4px 16px rgba(0,0,0,.05);
+
+    overflow: hidden;
+
+}
+
+
+.standard-card-header {
+
+    padding: 18px 20px;
+
+    border-bottom: 1px solid #edf0f2;
+
+}
+
+
+.standard-card-header h5 {
+
+    margin: 0;
+
+    font-weight: 700;
+
+    font-size: 16px;
+
+}
+
+
+.standard-card-header i {
+
+    color: #0d6efd;
+
+}
+
+
+.standard-card-body {
+
+    padding: 20px;
+
+}
+
+
+.summary-row {
+
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: center;
+
+    padding: 13px 0;
+
+    border-bottom: 1px solid #f0f1f3;
+
+}
+
+
+.summary-row:last-child {
+
+    border-bottom: none;
+
+}
+
+
+.total-row {
+
+    font-size: 16px;
+
+    padding-top: 18px;
+
+}
+
+
+.payment-box {
+
+    background: #f8f9fa;
+
+    border: 1px solid #edf0f2;
+
+    border-radius: 12px;
+
+    padding: 18px;
+
+    text-align: center;
+
+    height: 100%;
+
+}
+
+
+.payment-box i {
+
+    display: block;
+
+    font-size: 23px;
+
+    color: #0d6efd;
+
+    margin-bottom: 7px;
+
+}
+
+
+.payment-box span {
+
+    display: block;
+
+    color: #6c757d;
+
+    font-size: 13px;
+
+    margin-bottom: 5px;
+
+}
+
+
+.payment-box strong {
+
+    display: block;
+
+    font-size: 15px;
+
+}
+
+
+.status-box {
+
+    background: #f8f9fa;
+
+    border: 1px solid #edf0f2;
+
+    border-radius: 12px;
+
+    padding: 18px;
+
+    text-align: center;
+
+}
+
+
+.status-box span {
+
+    display: block;
+
+    color: #6c757d;
+
+    font-size: 13px;
+
+    margin-bottom: 5px;
+
+}
+
+
+.status-box strong {
+
+    display: block;
+
+    font-size: 22px;
+
+}
+
+
+.production-total {
+
+    text-align: center;
+
+    background: #f8f9fa;
+
+    border-radius: 12px;
+
+    padding: 20px;
+
+}
+
+
+.production-total strong {
+
+    display: block;
+
+    font-size: 32px;
+
+    font-weight: 700;
+
+    color: #0d6efd;
+
+}
+
+
+.production-total span {
+
+    color: #6c757d;
+
+    font-size: 13px;
+
+}
+
+
+.chart-wrapper {
+
+    position: relative;
+
+    height: 300px;
+
+}
+
+
+.chart-large {
+
+    height: 350px;
+
+}
+
+
+</style>
+
+{% endblock %}

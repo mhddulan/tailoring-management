@@ -6,34 +6,631 @@
 {% block content %}
 
 <div class="page-header-block">
+
     <div>
-        <h2 class="page-header-title">Create Branch</h2>
-        <p class="page-header-sub">Add a new branch location into the tailoring ERP system.</p>
+        <h2 class="page-header-title">
+            <i class="bi bi-building-add me-2"></i>
+            Create Branch
+        </h2>
+
+        <p class="page-header-sub">
+            Add a new branch location into the tailoring ERP system.
+        </p>
     </div>
+
     <div>
-        <a href="{% url 'branch_list' %}" class="btn btn-secondary">
-            <i class="bi bi-arrow-left"></i> Back to Branches
+        <a href="{% url 'branch_list' %}"
+           class="btn btn-outline-secondary">
+
+            <i class="bi bi-arrow-left me-1"></i>
+            Back to Branches
+
         </a>
     </div>
+
 </div>
 
+
 <div class="row justify-content-center">
-    <div class="col-12 col-md-8 col-lg-6">
+
+    <div class="col-12 col-xl-8">
+
         <div class="form-card">
+
+            <!-- =========================
+                 FORM HEADER
+            ========================== -->
+
+            <div class="d-flex align-items-center mb-4">
+
+                <div class="branch-icon me-3">
+
+                    <i class="bi bi-building"></i>
+
+                </div>
+
+                <div>
+
+                    <h5 class="fw-bold mb-1">
+                        Branch Information
+                    </h5>
+
+                    <p class="text-muted mb-0 small">
+                        Enter the branch and manager details below.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <!-- =========================
+                 ERRORS
+            ========================== -->
+
+            {% if form.non_field_errors %}
+
+                <div class="alert alert-danger">
+
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+
+                    {{ form.non_field_errors }}
+
+                </div>
+
+            {% endif %}
+
+
             <form method="post">
+
                 {% csrf_token %}
-                <div class="mb-4">
-                    {{ form.as_p }}
+
+
+                <!-- =========================
+                     BRANCH DETAILS
+                ========================== -->
+
+                <div class="section-title">
+
+                    <i class="bi bi-shop me-2"></i>
+
+                    Branch Details
+
                 </div>
-                <div class="d-flex justify-content-end gap-2">
-                    <a href="{% url 'branch_list' %}" class="btn btn-secondary">Cancel</a>
-                    <button type="submit" class="btn btn-primary">
-                        <i class="bi bi-check-circle-fill me-1"></i> Save Branch
-                    </button>
+
+                <hr class="section-line">
+
+
+                <div class="row g-3">
+
+
+                    <!-- Branch Name -->
+
+                    <div class="col-12">
+
+                        <label
+                            for="{{ form.name.id_for_label }}"
+                            class="form-label">
+
+                            Branch Name
+
+                            {% if form.name.field.required %}
+                                <span class="text-danger">*</span>
+                            {% endif %}
+
+                        </label>
+
+                        {{ form.name }}
+
+                        {% if form.name.errors %}
+
+                            <div class="text-danger small mt-1">
+
+                                {{ form.name.errors }}
+
+                            </div>
+
+                        {% endif %}
+
+                    </div>
+
+
+                    <!-- Address -->
+
+                    <div class="col-12">
+
+                        <label
+                            for="{{ form.address.id_for_label }}"
+                            class="form-label">
+
+                            Branch Address
+
+                            {% if form.address.field.required %}
+                                <span class="text-danger">*</span>
+                            {% endif %}
+
+                        </label>
+
+                        {{ form.address }}
+
+                        {% if form.address.errors %}
+
+                            <div class="text-danger small mt-1">
+
+                                {{ form.address.errors }}
+
+                            </div>
+
+                        {% endif %}
+
+                    </div>
+
+
+                    <!-- Phone -->
+
+                    <div class="col-md-6">
+
+                        <label
+                            for="{{ form.phone.id_for_label }}"
+                            class="form-label">
+
+                            Phone Number
+
+                            {% if form.phone.field.required %}
+                                <span class="text-danger">*</span>
+                            {% endif %}
+
+                        </label>
+
+                        {{ form.phone }}
+
+                        {% if form.phone.errors %}
+
+                            <div class="text-danger small mt-1">
+
+                                {{ form.phone.errors }}
+
+                            </div>
+
+                        {% endif %}
+
+                    </div>
+
+
+                    <!-- Manager Name -->
+
+                    <div class="col-md-6">
+
+                        <label
+                            for="{{ form.manager_name.id_for_label }}"
+                            class="form-label">
+
+                            Manager Name
+
+                            {% if form.manager_name.field.required %}
+                                <span class="text-danger">*</span>
+                            {% endif %}
+
+                        </label>
+
+                        {{ form.manager_name }}
+
+                        {% if form.manager_name.errors %}
+
+                            <div class="text-danger small mt-1">
+
+                                {{ form.manager_name.errors }}
+
+                            </div>
+
+                        {% endif %}
+
+                    </div>
+
                 </div>
+
+
+                <!-- =========================
+                     LOGIN DETAILS
+                ========================== -->
+
+                <div class="section-title mt-5">
+
+                    <i class="bi bi-shield-lock me-2"></i>
+
+                    Manager Login Details
+
+                </div>
+
+                <hr class="section-line">
+
+
+                <div class="alert alert-light border mb-4">
+
+                    <div class="d-flex">
+
+                        <i class="bi bi-info-circle text-primary me-2 mt-1"></i>
+
+                        <div class="small">
+
+                            Create login credentials for the branch manager.
+                            The manager will use these credentials to access
+                            the branch dashboard.
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <div class="row g-3">
+
+
+                    <!-- Username -->
+
+                    <div class="col-md-6">
+
+                        <label
+                            for="{{ form.username.id_for_label }}"
+                            class="form-label">
+
+                            Manager Username
+
+                            <span class="text-danger">*</span>
+
+                        </label>
+
+                        <div class="input-group">
+
+                            <span class="input-group-text">
+
+                                <i class="bi bi-person"></i>
+
+                            </span>
+
+                            {{ form.username }}
+
+                        </div>
+
+                        {% if form.username.errors %}
+
+                            <div class="text-danger small mt-1">
+
+                                {{ form.username.errors }}
+
+                            </div>
+
+                        {% endif %}
+
+                    </div>
+
+
+                    <!-- Password -->
+
+                    <div class="col-md-6">
+
+                        <label
+                            for="{{ form.password.id_for_label }}"
+                            class="form-label">
+
+                            Manager Password
+
+                            <span class="text-danger">*</span>
+
+                        </label>
+
+                        <div class="input-group">
+
+                            <span class="input-group-text">
+
+                                <i class="bi bi-key"></i>
+
+                            </span>
+
+                            {{ form.password }}
+
+                            <button
+                                type="button"
+                                class="btn btn-outline-secondary"
+                                id="togglePassword">
+
+                                <i class="bi bi-eye"
+                                   id="passwordIcon"></i>
+
+                            </button>
+
+                        </div>
+
+                        {% if form.password.errors %}
+
+                            <div class="text-danger small mt-1">
+
+                                {{ form.password.errors }}
+
+                            </div>
+
+                        {% endif %}
+
+                    </div>
+
+                </div>
+
+
+                <!-- =========================
+                     FOOTER
+                ========================== -->
+
+                <div class="form-footer mt-5 pt-4">
+
+                    <div class="d-flex
+                                justify-content-between
+                                align-items-center
+                                flex-wrap
+                                gap-3">
+
+                        <div class="small text-muted">
+
+                            <span class="text-danger">*</span>
+                            Required fields
+
+                        </div>
+
+
+                        <div class="d-flex gap-2">
+
+                            <a href="{% url 'branch_list' %}"
+                               class="btn btn-light border">
+
+                                <i class="bi bi-x-circle me-1"></i>
+
+                                Cancel
+
+                            </a>
+
+
+                            <button type="submit"
+                                    class="btn btn-primary px-4">
+
+                                <i class="bi bi-check-circle-fill me-1"></i>
+
+                                Save Branch
+
+                            </button>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
             </form>
+
         </div>
+
     </div>
+
 </div>
+
+
+<!-- =========================
+     PASSWORD SHOW / HIDE
+========================== -->
+
+<script>
+
+document.addEventListener(
+    "DOMContentLoaded",
+    function () {
+
+        const password =
+            document.getElementById(
+                "{{ form.password.id_for_label }}"
+            );
+
+        const button =
+            document.getElementById(
+                "togglePassword"
+            );
+
+        const icon =
+            document.getElementById(
+                "passwordIcon"
+            );
+
+
+        if (password && button) {
+
+            button.addEventListener(
+                "click",
+                function () {
+
+                    if (
+                        password.type === "password"
+                    ) {
+
+                        password.type = "text";
+
+                        icon.classList.remove(
+                            "bi-eye"
+                        );
+
+                        icon.classList.add(
+                            "bi-eye-slash"
+                        );
+
+                    } else {
+
+                        password.type = "password";
+
+                        icon.classList.remove(
+                            "bi-eye-slash"
+                        );
+
+                        icon.classList.add(
+                            "bi-eye"
+                        );
+
+                    }
+
+                }
+            );
+
+        }
+
+    }
+);
+
+</script>
+
+
+<!-- =========================
+     STANDARD FORM CSS
+========================== -->
+
+<style>
+
+.branch-icon {
+
+    width: 48px;
+    height: 48px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background: #e9f2ff;
+
+    color: #0d6efd;
+
+    border-radius: 12px;
+
+    font-size: 21px;
+
+}
+
+
+.section-title {
+
+    font-size: 15px;
+
+    font-weight: 700;
+
+    color: #212529;
+
+    display: flex;
+
+    align-items: center;
+
+}
+
+
+.section-title i {
+
+    color: #0d6efd;
+
+}
+
+
+.section-line {
+
+    margin-top: 10px;
+
+    margin-bottom: 22px;
+
+    border-color: #e9ecef;
+
+}
+
+
+.form-label {
+
+    font-size: 14px;
+
+    font-weight: 600;
+
+    color: #343a40;
+
+    margin-bottom: 7px;
+
+}
+
+
+.form-control,
+.form-select {
+
+    min-height: 44px;
+
+    border-radius: 8px;
+
+    border: 1px solid #dfe3e8;
+
+    font-size: 14px;
+
+    box-shadow: none;
+
+}
+
+
+textarea.form-control {
+
+    min-height: 100px;
+
+    resize: vertical;
+
+}
+
+
+.form-control:focus,
+.form-select:focus {
+
+    border-color: #86b7fe;
+
+    box-shadow:
+        0 0 0 3px rgba(13,110,253,.08);
+
+}
+
+
+.input-group-text {
+
+    background: #f8f9fa;
+
+    border-color: #dfe3e8;
+
+}
+
+
+.form-footer {
+
+    border-top: 1px solid #e9ecef;
+
+}
+
+
+.alert {
+
+    border-radius: 10px;
+
+}
+
+
+@media (max-width: 767px) {
+
+    .page-header-block {
+
+        gap: 15px;
+
+    }
+
+    .form-card {
+
+        padding: 20px !important;
+
+    }
+
+}
+
+</style>
 
 {% endblock %}

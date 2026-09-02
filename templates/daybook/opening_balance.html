@@ -1,0 +1,183 @@
+{% extends "base.html" %}
+
+{% block title %}Opening Balance | Stitching Pro{% endblock %}
+
+{% block page_title %}Opening Balance{% endblock %}
+
+{% block content %}
+
+<div class="page-header-block">
+
+    <div>
+        <h2 class="page-header-title">
+            Opening Balance
+        </h2>
+
+        <p class="page-header-sub">
+            Set the opening Cash in Hand and Cash in Bank
+            for each branch.
+        </p>
+    </div>
+
+    <div>
+        <a href="{% url 'daybook_list' %}"
+           class="btn btn-secondary">
+            <i class="bi bi-arrow-left me-1"></i>
+            Back to Day Book
+        </a>
+    </div>
+
+</div>
+
+
+<div class="row justify-content-center">
+
+    <div class="col-12 col-md-8 col-lg-6">
+
+        <div class="form-card">
+
+            <div class="d-flex align-items-center mb-4">
+
+                <div class="stat-icon-wrapper stat-icon-primary me-3">
+                    <i class="bi bi-wallet2"></i>
+                </div>
+
+                <div>
+                    <h5 class="fw-bold mb-1">
+                        Branch Opening Balance
+                    </h5>
+
+                    <p class="text-muted mb-0">
+                        Enter the starting financial balances.
+                    </p>
+                </div>
+
+            </div>
+
+
+            {% if messages %}
+
+                {% for message in messages %}
+
+                    <div class="alert alert-{{ message.tags }}">
+                        {{ message }}
+                    </div>
+
+                {% endfor %}
+
+            {% endif %}
+
+
+            {% if form.non_field_errors %}
+
+                <div class="alert alert-danger">
+                    {{ form.non_field_errors }}
+                </div>
+
+            {% endif %}
+
+
+            <form method="POST">
+
+                {% csrf_token %}
+
+                <div class="row g-3">
+
+
+                    <div class="col-12">
+
+                        <label class="form-label fw-semibold">
+                            Branch
+                        </label>
+
+                        {{ form.branch }}
+
+                        {% if form.branch.errors %}
+                            <div class="text-danger small mt-1">
+                                {{ form.branch.errors }}
+                            </div>
+                        {% endif %}
+
+                    </div>
+
+
+                    <div class="col-12">
+
+                        <label class="form-label fw-semibold">
+                            Opening Date
+                        </label>
+
+                        {{ form.opening_date }}
+
+                        {% if form.opening_date.errors %}
+                            <div class="text-danger small mt-1">
+                                {{ form.opening_date.errors }}
+                            </div>
+                        {% endif %}
+
+                    </div>
+
+
+                    <div class="col-12">
+
+                        <label class="form-label fw-semibold">
+                            Opening Cash in Hand (SAR)
+                        </label>
+
+                        {{ form.opening_cash }}
+
+                        {% if form.opening_cash.errors %}
+                            <div class="text-danger small mt-1">
+                                {{ form.opening_cash.errors }}
+                            </div>
+                        {% endif %}
+
+                    </div>
+
+
+                    <div class="col-12">
+
+                        <label class="form-label fw-semibold">
+                            Opening Cash in Bank (SAR)
+                        </label>
+
+                        {{ form.opening_bank }}
+
+                        {% if form.opening_bank.errors %}
+                            <div class="text-danger small mt-1">
+                                {{ form.opening_bank.errors }}
+                            </div>
+                        {% endif %}
+
+                    </div>
+
+                </div>
+
+
+                <div class="d-flex justify-content-end gap-2 mt-4">
+
+                    <a href="{% url 'daybook_list' %}"
+                       class="btn btn-secondary">
+                        Cancel
+                    </a>
+
+                    <button type="submit"
+                            class="btn btn-primary">
+
+                        <i class="bi bi-check-circle-fill me-1"></i>
+
+                        Save Opening Balance
+
+                    </button>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

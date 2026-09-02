@@ -10,6 +10,7 @@ from .models import (
     StockTransfer,
 )
 
+
 # ==================================================
 # PRODUCT CATEGORY FORM
 # ==================================================
@@ -17,7 +18,6 @@ from .models import (
 class ProductCategoryForm(forms.ModelForm):
 
     class Meta:
-
         model = ProductCategory
 
         fields = [
@@ -25,14 +25,12 @@ class ProductCategoryForm(forms.ModelForm):
         ]
 
         widgets = {
-
             "name": forms.TextInput(
                 attrs={
                     "class": "form-control",
                     "placeholder": "Category Name",
                 }
             ),
-
         }
 
 
@@ -42,15 +40,49 @@ class ProductCategoryForm(forms.ModelForm):
 
 class ProductForm(forms.ModelForm):
 
-    class Meta:
+    # Size choices
+    SIZE_CHOICES = [
+        ("XS", "XS"),
+        ("S", "S"),
+        ("M", "M"),
+        ("L", "L"),
+        ("XL", "XL"),
+        ("XXL", "XXL"),
+        ("XXXL", "XXXL"),
+        ("XXXXL", "XXXXL"),
+        ("XXXXXL", "XXXXXL"),
+        ("OTHER", "Other"),
+    ]
 
+    available_sizes = forms.MultipleChoiceField(
+        choices=SIZE_CHOICES,
+        required=False,
+        widget=forms.CheckboxSelectMultiple(
+            attrs={
+                "class": "size-checkbox"
+            }
+        )
+    )
+
+    other_size = forms.CharField(
+        required=False,
+        widget=forms.TextInput(
+            attrs={
+                "class": "form-control",
+                "placeholder": "Enter custom size",
+                "id": "other-size-input",
+            }
+        )
+    )
+
+    class Meta:
         model = Product
 
         fields = [
             "category",
             "name",
             "barcode",
-            "size",
+            "available_sizes",
             "color",
             "purchase_price",
             "active",
@@ -74,21 +106,14 @@ class ProductForm(forms.ModelForm):
             "barcode": forms.TextInput(
                 attrs={
                     "class": "form-control",
-                    "placeholder": "Barcode",
-                }
-            ),
-
-            "size": forms.TextInput(
-                attrs={
-                    "class": "form-control",
-                    "placeholder": "Size",
+                    "placeholder": "Barcode (Optional)",
                 }
             ),
 
             "color": forms.TextInput(
                 attrs={
                     "class": "form-control",
-                    "placeholder": "Color",
+                    "placeholder": "Color (Optional)",
                 }
             ),
 
@@ -96,6 +121,7 @@ class ProductForm(forms.ModelForm):
                 attrs={
                     "class": "form-control",
                     "step": "0.01",
+                    "min": "0",
                 }
             ),
 
@@ -104,8 +130,59 @@ class ProductForm(forms.ModelForm):
                     "class": "form-check-input",
                 }
             ),
-
         }
+
+    def __init__(self, *args, **kwargs):
+
+        super().__init__(*args, **kwargs)
+
+        # Existing JSON list → form initial values
+        if self.instance.pk:
+
+            self.fields["available_sizes"].initial = (
+                self.instance.available_sizes or []
+            )
+
+    def clean(self):
+
+        cleaned_data = super().clean()
+
+        sizes = cleaned_data.get("available_sizes") or []
+        other_size = cleaned_data.get("other_size", "").strip()
+
+        # If Other is selected, require custom size
+        if "OTHER" in sizes and not other_size:
+            self.add_error(
+                "other_size",
+                "Please enter the custom size."
+            )
+
+        # Add custom size to the selected sizes
+        if "OTHER" in sizes and other_size:
+
+            sizes = [
+                size for size in sizes
+                if size != "OTHER"
+            ]
+
+            sizes.append(other_size)
+
+        cleaned_data["available_sizes"] = sizes
+
+        return cleaned_data
+
+    def save(self, commit=True):
+
+        instance = super().save(commit=False)
+
+        instance.available_sizes = (
+            self.cleaned_data.get("available_sizes") or []
+        )
+
+        if commit:
+            instance.save()
+
+        return instance
 
 
 # ==================================================
@@ -115,7 +192,6 @@ class ProductForm(forms.ModelForm):
 class BranchProductForm(forms.ModelForm):
 
     class Meta:
-
         model = BranchProduct
 
         fields = [
@@ -131,17 +207,16 @@ class BranchProductForm(forms.ModelForm):
                     "min": "0",
                 }
             ),
-
         }
 
 
 # ==================================================
 # SALE FORM
 # ==================================================
+
 class SaleForm(forms.ModelForm):
 
     class Meta:
-
         model = Sale
 
         fields = [
@@ -177,11 +252,13 @@ class SaleForm(forms.ModelForm):
                     "class": "form-select"
                 }
             ),
-
         }
+
+
 # ==================================================
 # SALE ITEM FORM
 # ==================================================
+
 class SaleItemForm(forms.ModelForm):
 
     class Meta:
@@ -226,34 +303,28 @@ class SaleItemForm(forms.ModelForm):
             self.fields["rate"].initial = (
                 self.instance.branch_product.selling_price
             )
-    
+
 
 # ==================================================
 # SALE ITEM FORMSET
 # ==================================================
 
 SaleItemFormSet = inlineformset_factory(
-
     Sale,
-
     SaleItem,
-
     form=SaleItemForm,
-
     extra=1,
-
     can_delete=True,
-
 )
 
 
 # ==================================================
 # STOCK TRANSFER FORM
 # ==================================================
+
 class StockTransferForm(forms.ModelForm):
 
     class Meta:
-
         model = StockTransfer
 
         fields = [
@@ -298,5 +369,4 @@ class StockTransferForm(forms.ModelForm):
                     "placeholder": "Optional remarks"
                 }
             ),
-            
         }

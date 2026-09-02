@@ -1,533 +1,1409 @@
 {% extends "base.html" %}
 
 {% block title %}Dashboard | Stitching Pro{% endblock %}
-{% block page_title %}Dashboard Overview{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
 
 {% block content %}
 
-<!-- Top Welcome & Global Actions Banner -->
+<!-- =========================================================
+     PAGE HEADER
+========================================================= -->
+
 <div class="page-header-block">
+
     <div>
-        <h2 class="page-header-title">Welcome back, {{ request.user.username }}!</h2>
-        <p class="page-header-sub">Here is your tailoring business overview and performance summary.</p>
+        <h2 class="page-header-title">
+            Dashboard
+        </h2>
+
+        <p class="page-header-sub">
+            Business overview, sales, payments, orders and accounting.
+        </p>
     </div>
-    <div class="d-flex gap-2">
-        <a href="{% url 'order_create' %}" class="btn btn-primary">
-            <i class="bi bi-plus-lg"></i>
-            <span>New Order</span>
-        </a>
-        <a href="{% url 'customer_create' %}" class="btn btn-secondary">
-            <i class="bi bi-person-plus-fill"></i>
-            <span>Add Customer</span>
-        </a>
-        <a href="{% url 'backup_database' %}" class="btn btn-outline-danger">
-            <i class="bi bi-database-down"></i>
-            <span>Backup</span>
-        </a>
-    </div>
+
 </div>
 
-<!-- ========================================================================== -->
-<!-- KPI STAT CARDS (ROW 1 - STITCHING PRO STYLE) -->
-<!-- ========================================================================== -->
-<div class="row g-3 mb-4">
-    
-    <!-- Total Orders -->
-    <div class="col-12 col-sm-6 col-xl-3">
-        <div class="stat-card">
-            <div>
-                <div class="stat-label">Total Orders</div>
-                <h3 class="stat-value">{{ total_orders }}</h3>
+
+<!-- =========================================================
+     DATE FILTER
+========================================================= -->
+
+<div class="card-custom p-3 mb-4">
+
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+
+        <div>
+
+            <h6 class="fw-bold mb-1">
+                <i class="bi bi-calendar-range me-1 text-primary"></i>
+                Dashboard Period
+            </h6>
+
+            <small class="text-muted">
+                {{ from_date|date:"d-m-Y" }}
+                -
+                {{ to_date|date:"d-m-Y" }}
+            </small>
+
+        </div>
+
+
+        <!-- QUICK FILTERS -->
+
+        <div class="d-flex flex-wrap gap-2">
+
+            <a href="?filter=today"
+               class="btn btn-sm
+               {% if filter_type == 'today' %}
+                   btn-primary
+               {% else %}
+                   btn-outline-primary
+               {% endif %}">
+                Today
+            </a>
+
+
+            <a href="?filter=yesterday"
+               class="btn btn-sm
+               {% if filter_type == 'yesterday' %}
+                   btn-primary
+               {% else %}
+                   btn-outline-primary
+               {% endif %}">
+                Yesterday
+            </a>
+
+
+            <a href="?filter=week"
+               class="btn btn-sm
+               {% if filter_type == 'week' %}
+                   btn-primary
+               {% else %}
+                   btn-outline-primary
+               {% endif %}">
+                This Week
+            </a>
+
+
+            <a href="?filter=month"
+               class="btn btn-sm
+               {% if filter_type == 'month' %}
+                   btn-primary
+               {% else %}
+                   btn-outline-primary
+               {% endif %}">
+                This Month
+            </a>
+
+
+            <button type="button"
+                    id="customFilterButton"
+                    class="btn btn-sm
+                    {% if filter_type == 'custom' %}
+                        btn-primary
+                    {% else %}
+                        btn-outline-primary
+                    {% endif %}">
+                Custom
+            </button>
+
+        </div>
+
+    </div>
+
+
+    <!-- CUSTOM DATE FORM -->
+
+    <div id="customDateBox"
+         class="mt-3
+         {% if filter_type != 'custom' %}
+             d-none
+         {% endif %}">
+
+        <form method="GET">
+
+            <input type="hidden"
+                   name="filter"
+                   value="custom">
+
+
+            <div class="row g-3 align-items-end">
+
+                <div class="col-12 col-md-5">
+
+                    <label class="form-label fw-semibold">
+                        From Date
+                    </label>
+
+                    <input type="date"
+                           name="from_date"
+                           class="form-control"
+                           value="{{ from_date|date:'Y-m-d' }}"
+                           required>
+
+                </div>
+
+
+                <div class="col-12 col-md-5">
+
+                    <label class="form-label fw-semibold">
+                        To Date
+                    </label>
+
+                    <input type="date"
+                           name="to_date"
+                           class="form-control"
+                           value="{{ to_date|date:'Y-m-d' }}"
+                           required>
+
+                </div>
+
+
+                <div class="col-12 col-md-2">
+
+                    <button type="submit"
+                            class="btn btn-primary w-100">
+
+                        <i class="bi bi-funnel-fill me-1"></i>
+                        Apply
+
+                    </button>
+
+                </div>
+
             </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+
+<!-- =========================================================
+     MAIN BUSINESS STATISTICS
+========================================================= -->
+
+<div class="row g-3 mb-4">
+
+    <!-- BRANCHES -->
+
+    <div class="col-12 col-sm-6 col-xl-3">
+
+        <div class="stat-card">
+
+            <div>
+
+                <div class="stat-label">
+                    TOTAL BRANCHES
+                </div>
+
+                <h3 class="stat-value">
+                    {{ total_branches }}
+                </h3>
+
+            </div>
+
             <div class="stat-icon-wrapper stat-icon-primary">
+                <i class="bi bi-building"></i>
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- CUSTOMERS -->
+
+    <div class="col-12 col-sm-6 col-xl-3">
+
+        <div class="stat-card">
+
+            <div>
+
+                <div class="stat-label">
+                    TOTAL CUSTOMERS
+                </div>
+
+                <h3 class="stat-value">
+                    {{ total_customers }}
+                </h3>
+
+            </div>
+
+            <div class="stat-icon-wrapper stat-icon-info">
+                <i class="bi bi-people-fill"></i>
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- ORDERS -->
+
+    <div class="col-12 col-sm-6 col-xl-3">
+
+        <div class="stat-card">
+
+            <div>
+
+                <div class="stat-label">
+                    ORDERS
+                </div>
+
+                <h3 class="stat-value">
+                    {{ total_orders }}
+                </h3>
+
+                <small class="text-muted">
+                    Selected period
+                </small>
+
+            </div>
+
+            <div class="stat-icon-wrapper stat-icon-warning">
                 <i class="bi bi-bag-check-fill"></i>
             </div>
+
         </div>
+
     </div>
 
-    <!-- Pending Orders -->
-    <div class="col-12 col-sm-6 col-xl-3">
-        <div class="stat-card">
-            <div>
-                <div class="stat-label">Pending Orders</div>
-                <h3 class="stat-value">{{ pending_orders }}</h3>
-            </div>
-            <div class="stat-icon-wrapper stat-icon-warning">
-                <i class="bi bi-clock-history"></i>
-            </div>
-        </div>
-    </div>
 
-    <!-- Total Income -->
+    <!-- SALES -->
+
     <div class="col-12 col-sm-6 col-xl-3">
+
         <div class="stat-card">
+
             <div>
-                <div class="stat-label">Total Income</div>
-                <h3 class="stat-value">₹ {{ total_income }}</h3>
+
+                <div class="stat-label">
+                    SALES RECEIVED
+                </div>
+
+                <h3 class="stat-value text-success">
+                    SAR {{ total_sales|floatformat:2 }}
+                </h3>
+
             </div>
+
             <div class="stat-icon-wrapper stat-icon-success">
                 <i class="bi bi-currency-rupee"></i>
             </div>
-        </div>
-    </div>
 
-    <!-- Total Expense -->
-    <div class="col-12 col-sm-6 col-xl-3">
-        <div class="stat-card">
-            <div>
-                <div class="stat-label">Total Expense</div>
-                <h3 class="stat-value">₹ {{ total_expense }}</h3>
-            </div>
-            <div class="stat-icon-wrapper stat-icon-danger">
-                <i class="bi bi-arrow-down-right-circle-fill"></i>
-            </div>
         </div>
+
     </div>
 
 </div>
 
-<!-- ========================================================================== -->
-<!-- KPI STAT CARDS (ROW 2) -->
-<!-- ========================================================================== -->
+
+<!-- =========================================================
+     ACCOUNTING STATISTICS
+========================================================= -->
+
 <div class="row g-3 mb-4">
-    
-    <!-- Total Customers -->
-    <div class="col-12 col-sm-6 col-xl-3">
-        <div class="stat-card">
-            <div>
-                <div class="stat-label">Total Customers</div>
-                <h3 class="stat-value">{{ total_customers }}</h3>
-            </div>
-            <div class="stat-icon-wrapper stat-icon-purple">
-                <i class="bi bi-people-fill"></i>
-            </div>
-        </div>
-    </div>
 
-    <!-- Total Sales -->
-    <div class="col-12 col-sm-6 col-xl-3">
-        <div class="stat-card">
-            <div>
-                <div class="stat-label">Total Sales</div>
-                <h3 class="stat-value">₹ {{ total_sales }}</h3>
-            </div>
-            <div class="stat-icon-wrapper stat-icon-info">
-                <i class="bi bi-cart-check-fill"></i>
-            </div>
-        </div>
-    </div>
+    <!-- INCOME -->
 
-    <!-- Net Profit -->
     <div class="col-12 col-sm-6 col-xl-3">
+
         <div class="stat-card">
+
             <div>
-                <div class="stat-label">Net Profit</div>
-                <h3 class="stat-value">₹ {{ net_profit }}</h3>
+
+                <div class="stat-label">
+                    TOTAL INCOME
+                </div>
+
+                <h3 class="stat-value text-success">
+                    SAR {{ total_income|floatformat:2 }}
+                </h3>
+
             </div>
+
             <div class="stat-icon-wrapper stat-icon-success">
+                <i class="bi bi-arrow-down-left-circle-fill"></i>
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- PURCHASE -->
+
+    <div class="col-12 col-sm-6 col-xl-3">
+
+        <div class="stat-card">
+
+            <div>
+
+                <div class="stat-label">
+                    PURCHASE
+                </div>
+
+                <h3 class="stat-value text-danger">
+                    SAR {{ total_purchase|floatformat:2 }}
+                </h3>
+
+            </div>
+
+            <div class="stat-icon-wrapper stat-icon-danger">
+                <i class="bi bi-cart-dash-fill"></i>
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- EXPENSE -->
+
+    <div class="col-12 col-sm-6 col-xl-3">
+
+        <div class="stat-card">
+
+            <div>
+
+                <div class="stat-label">
+                    OTHER EXPENSE
+                </div>
+
+                <h3 class="stat-value text-danger">
+                    SAR {{ total_expense|floatformat:2 }}
+                </h3>
+
+            </div>
+
+            <div class="stat-icon-wrapper stat-icon-danger">
+                <i class="bi bi-receipt-cutoff"></i>
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- NET PROFIT -->
+
+    <div class="col-12 col-sm-6 col-xl-3">
+
+        <div class="stat-card">
+
+            <div>
+
+                <div class="stat-label">
+                    NET PROFIT
+                </div>
+
+                <h3 class="stat-value
+                    {% if net_profit >= 0 %}
+                        text-success
+                    {% else %}
+                        text-danger
+                    {% endif %}">
+                    SAR {{ net_profit|floatformat:2 }}
+                </h3>
+
+            </div>
+
+            <div class="stat-icon-wrapper stat-icon-primary">
                 <i class="bi bi-graph-up-arrow"></i>
             </div>
-        </div>
-    </div>
 
-    <!-- Advance Collected -->
-    <div class="col-12 col-sm-6 col-xl-3">
-        <div class="stat-card">
-            <div>
-                <div class="stat-label">Advance Collected</div>
-                <h3 class="stat-value">₹ {{ total_advance }}</h3>
-            </div>
-            <div class="stat-icon-wrapper stat-icon-primary">
-                <i class="bi bi-wallet2"></i>
-            </div>
         </div>
+
     </div>
 
 </div>
 
-<!-- ========================================================================== -->
-<!-- DATE FILTER CARD -->
-<!-- ========================================================================== -->
-<div class="form-card mb-4">
-    <form method="GET" class="row g-3 align-items-end">
-        <div class="col-12 col-md-4">
-            <label class="form-label">From Date</label>
-            <input type="date" name="from_date" value="{{ from_date }}" class="form-control">
-        </div>
-        <div class="col-12 col-md-4">
-            <label class="form-label">To Date</label>
-            <input type="date" name="to_date" value="{{ to_date }}" class="form-control">
-        </div>
-        <div class="col-12 col-md-2">
-            <button type="submit" class="btn btn-primary w-100">
-                <i class="bi bi-funnel-fill"></i> Filter
-            </button>
-        </div>
-        <div class="col-12 col-md-2">
-            <a href="{% url 'home' %}" class="btn btn-secondary w-100">
-                <i class="bi bi-arrow-counterclockwise"></i> Today
-            </a>
-        </div>
-    </form>
-</div>
 
-<!-- ========================================================================== -->
-<!-- RECENT ORDERS & PAYMENTS (TWO COLUMN GRID) -->
-<!-- ========================================================================== -->
-<div class="row g-4 mb-4">
-    
-    <!-- Recent Orders Table -->
-    <div class="col-12 col-xl-7">
-        <div class="table-card">
-            <div class="table-card-header">
-                <h5 class="fw-bold mb-0 text-dark">
-                    <i class="bi bi-receipt-cutoff text-primary me-2"></i>Recent Orders
-                </h5>
-                <a href="{% url 'order_list' %}" class="btn btn-sm btn-secondary">View All</a>
-            </div>
-            <div class="table-responsive">
-                <table class="table app-table">
-                    <thead>
-                        <tr>
-                            <th>Customer</th>
-                            <th>Order Date</th>
-                            <th>Delivery Date</th>
-                            <th>Status</th>
-                            <th>Amount</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for order in recent_orders %}
-                        <tr>
-                            <td class="fw-semibold text-dark">{{ order.customer.name }}</td>
-                            <td>{{ order.order_date }}</td>
-                            <td>{{ order.delivery_date }}</td>
-                            <td>
-                                {% if order.status == "Pending" %}
-                                    <span class="badge-status badge-status-pending"><i class="bi bi-clock"></i> Pending</span>
-                                {% elif order.status == "Cutting" %}
-                                    <span class="badge-status badge-status-cutting"><i class="bi bi-scissors"></i> Cutting</span>
-                                {% elif order.status == "Stitching" %}
-                                    <span class="badge-status badge-status-stitching"><i class="bi bi-gear"></i> Stitching</span>
-                                {% elif order.status == "Ready" %}
-                                    <span class="badge-status badge-status-ready"><i class="bi bi-check-circle"></i> Ready</span>
-                                {% elif order.status == "Delivered" %}
-                                    <span class="badge-status badge-status-delivered"><i class="bi bi-box-square"></i> Delivered</span>
-                                {% else %}
-                                    <span class="badge-status badge-status-delivered">{{ order.status }}</span>
-                                {% endif %}
-                            </td>
-                            <td class="fw-bold text-primary">₹ {{ order.amount }}</td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="5" class="text-center py-4 text-muted">No Orders Found</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
+<!-- =========================================================
+     PAYMENT SUMMARY
+========================================================= -->
 
-    <!-- Recent Payments & Today's Summary Column -->
-    <div class="col-12 col-xl-5">
-        
-        <!-- Today Summary Mini Cards -->
-        <div class="row g-2 mb-3">
-            <div class="col-4">
-                <div class="card-custom p-3 text-center bg-primary text-white">
-                    <h4 class="fw-bold mb-1">{{ today_orders }}</h4>
-                    <span class="small opacity-75">Today Orders</span>
+<div class="row g-3 mb-4">
+
+    <!-- CASH -->
+
+    <div class="col-12 col-md-4">
+
+        <div class="card-custom p-3">
+
+            <div class="d-flex justify-content-between align-items-center">
+
+                <div>
+
+                    <div class="text-muted small fw-semibold">
+                        CASH RECEIVED
+                    </div>
+
+                    <h4 class="fw-bold text-success mb-0">
+                        SAR {{ cash|floatformat:2 }}
+                    </h4>
+
                 </div>
-            </div>
-            <div class="col-4">
-                <div class="card-custom p-3 text-center bg-success text-white">
-                    <h4 class="fw-bold mb-1">₹ {{ today_sales }}</h4>
-                    <span class="small opacity-75">Today Sales</span>
+
+                <div class="stat-icon-wrapper stat-icon-success">
+                    <i class="bi bi-cash-stack"></i>
                 </div>
+
             </div>
-            <div class="col-4">
-                <div class="card-custom p-3 text-center bg-danger text-white">
-                    <h4 class="fw-bold mb-1">{{ pending_orders }}</h4>
-                    <span class="small opacity-75">Pending</span>
+
+        </div>
+
+    </div>
+
+
+    <!-- BANK -->
+
+    <div class="col-12 col-md-4">
+
+        <div class="card-custom p-3">
+
+            <div class="d-flex justify-content-between align-items-center">
+
+                <div>
+
+                    <div class="text-muted small fw-semibold">
+                        BANK RECEIVED
+                    </div>
+
+                    <h4 class="fw-bold text-primary mb-0">
+                        SAR {{ bank|floatformat:2 }}
+                    </h4>
+
                 </div>
+
+                <div class="stat-icon-wrapper stat-icon-primary">
+                    <i class="bi bi-bank"></i>
+                </div>
+
             </div>
+
         </div>
 
-        <!-- Recent Payments Card -->
-        <div class="table-card">
-            <div class="table-card-header">
-                <h5 class="fw-bold mb-0 text-dark">
-                    <i class="bi bi-wallet2 text-success me-2"></i>Recent Payments
-                </h5>
+    </div>
+
+
+    <!-- OUTSTANDING -->
+
+    <div class="col-12 col-md-4">
+
+        <div class="card-custom p-3">
+
+            <div class="d-flex justify-content-between align-items-center">
+
+                <div>
+
+                    <div class="text-muted small fw-semibold">
+                        OUTSTANDING BALANCE
+                    </div>
+
+                    <h4 class="fw-bold text-danger mb-0">
+                        SAR {{ outstanding_balance|floatformat:2 }}
+                    </h4>
+
+                </div>
+
+                <div class="stat-icon-wrapper stat-icon-danger">
+                    <i class="bi bi-exclamation-circle-fill"></i>
+                </div>
+
             </div>
-            <div class="table-responsive">
-                <table class="table app-table">
-                    <thead>
-                        <tr>
-                            <th>Order</th>
-                            <th>Mode</th>
-                            <th>Amount</th>
-                            <th>Date</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for payment in recent_payments %}
-                        <tr>
-                            <td class="fw-semibold">#{{ payment.order.id }}</td>
-                            <td><span class="badge bg-light text-dark border">{{ payment.payment_mode }}</span></td>
-                            <td class="fw-bold text-success">₹ {{ payment.amount }}</td>
-                            <td class="text-muted small">{{ payment.payment_date }}</td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="4" class="text-center py-4 text-muted">No Payments Found</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+
         </div>
 
     </div>
 
 </div>
 
-<!-- ========================================================================== -->
-<!-- CHARTS GRID -->
-<!-- ========================================================================== -->
-<div class="row g-4 mb-4">
-    
-    <!-- Profit & Loss Chart -->
-    <div class="col-12 col-lg-6">
-        <div class="card-custom p-4">
-            <h5 class="fw-bold mb-3 text-dark">
-                <i class="bi bi-bar-chart-line-fill text-primary me-2"></i>Profit & Loss Analysis
-            </h5>
-            <div style="height: 280px;">
-                <canvas id="profitChart"></canvas>
-            </div>
-        </div>
-    </div>
 
-    <!-- Payment Mode Chart -->
-    <div class="col-12 col-lg-6">
-        <div class="card-custom p-4">
-            <h5 class="fw-bold mb-3 text-dark">
-                <i class="bi bi-pie-chart-fill text-success me-2"></i>Payment Modes Breakdown
-            </h5>
-            <div style="height: 280px;" class="d-flex justify-content-center">
-                <canvas id="paymentChart"></canvas>
-            </div>
-        </div>
-    </div>
+<!-- =========================================================
+     PAYMENT BREAKDOWN
+========================================================= -->
 
-</div>
-
-<!-- Sales & Monthly Trends Grid -->
-<div class="row g-4 mb-4">
-    
-    <div class="col-12 col-lg-6">
-        <div class="card-custom p-4">
-            <h5 class="fw-bold mb-3 text-dark">
-                <i class="bi bi-bar-chart-steps text-info me-2"></i>Sales & Purchases Summary
-            </h5>
-            <div style="height: 280px;">
-                <canvas id="salesChart"></canvas>
-            </div>
-        </div>
-    </div>
+<div class="row g-3 mb-4">
 
     <div class="col-12 col-lg-6">
-        <div class="card-custom p-4">
-            <h5 class="fw-bold mb-3 text-dark">
-                <i class="bi bi-graph-up text-primary me-2"></i>12 Months Sales Trend
-            </h5>
-            <div style="height: 280px;">
-                <canvas id="monthlySalesChart"></canvas>
-            </div>
-        </div>
-    </div>
 
-</div>
-
-<!-- Branch Performance Grid -->
-<div class="row g-4 mb-4">
-    
-    <div class="col-12 col-lg-6">
-        <div class="card-custom p-4">
-            <h5 class="fw-bold mb-3 text-dark">
-                <i class="bi bi-buildings text-warning me-2"></i>Branch Performance Chart
-            </h5>
-            <div style="height: 280px;">
-                <canvas id="branchChart"></canvas>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-12 col-lg-6">
         <div class="table-card h-100">
+
             <div class="table-card-header">
-                <h5 class="fw-bold mb-0 text-dark">
-                    <i class="bi bi-building-check text-primary me-2"></i>Branch Summary
+
+                <h5 class="fw-bold mb-0">
+                    <i class="bi bi-wallet2 text-primary me-2"></i>
+                    Payment Mode Summary
                 </h5>
+
             </div>
+
+
             <div class="table-responsive">
-                <table class="table app-table">
+
+                <table class="table app-table mb-0">
+
                     <thead>
+
                         <tr>
-                            <th>Branch Name</th>
-                            <th>Orders</th>
-                            <th>Sales</th>
-                            <th>Profit</th>
+                            <th>Payment Mode</th>
+                            <th class="text-end">Amount</th>
                         </tr>
+
                     </thead>
+
                     <tbody>
-                        {% for branch in branch_performance %}
+
                         <tr>
-                            <td class="fw-bold text-dark">{{ branch.name }}</td>
-                            <td><span class="badge bg-secondary-subtle text-secondary">{{ branch.orders }}</span></td>
-                            <td class="fw-semibold">₹ {{ branch.sales }}</td>
-                            <td class="fw-bold text-success">₹ {{ branch.profit }}</td>
+
+                            <td>
+                                <i class="bi bi-cash-stack me-2"></i>
+                                Cash
+                            </td>
+
+                            <td class="text-end fw-bold">
+                                SAR {{ cash|floatformat:2 }}
+                            </td>
+
                         </tr>
-                        {% empty %}
+
+
                         <tr>
-                            <td colspan="4" class="text-center py-4 text-muted">No Branch Data Available</td>
+
+                            <td>
+                                <i class="bi bi-bank me-2"></i>
+                                Bank
+                            </td>
+
+                            <td class="text-end fw-bold">
+                                SAR {{ bank|floatformat:2 }}
+                            </td>
+
                         </tr>
-                        {% endfor %}
+
+
+                        <tr>
+
+                            <td>
+                                <i class="bi bi-phone me-2"></i>
+                                Online
+                            </td>
+
+                            <td class="text-end fw-bold">
+                                SAR {{ online|floatformat:2 }}
+                            </td>
+
+                        </tr>
+
+
+                        <tr>
+
+                            <td>
+                                <i class="bi bi-receipt me-2"></i>
+                                Cheque
+                            </td>
+
+                            <td class="text-end fw-bold">
+                                SAR {{ cheque|floatformat:2 }}
+                            </td>
+
+                        </tr>
+
+
+                        <tr>
+
+                            <td>
+                                <i class="bi bi-credit-card me-2"></i>
+                                POS
+                            </td>
+
+                            <td class="text-end fw-bold">
+                                SAR {{ pos|floatformat:2 }}
+                            </td>
+
+                        </tr>
+
                     </tbody>
+
                 </table>
+
             </div>
+
         </div>
+
+    </div>
+
+
+    <!-- PAYMENT TYPE -->
+
+    <div class="col-12 col-lg-6">
+
+        <div class="table-card h-100">
+
+            <div class="table-card-header">
+
+                <h5 class="fw-bold mb-0">
+                    <i class="bi bi-cash-coin text-success me-2"></i>
+                    Payment Type Summary
+                </h5>
+
+            </div>
+
+
+            <div class="table-responsive">
+
+                <table class="table app-table mb-0">
+
+                    <thead>
+
+                        <tr>
+                            <th>Type</th>
+                            <th class="text-end">Amount</th>
+                        </tr>
+
+                    </thead>
+
+                    <tbody>
+
+                        <tr>
+
+                            <td>
+                                <span class="badge bg-success-subtle text-success">
+                                    Advance
+                                </span>
+                            </td>
+
+                            <td class="text-end fw-bold">
+                                SAR {{ total_advance|floatformat:2 }}
+                            </td>
+
+                        </tr>
+
+
+                        <tr>
+
+                            <td>
+                                <span class="badge bg-primary-subtle text-primary">
+                                    Balance Payment
+                                </span>
+                            </td>
+
+                            <td class="text-end fw-bold">
+                                SAR {{ total_balance_payment|floatformat:2 }}
+                            </td>
+
+                        </tr>
+
+
+                        <tr>
+
+                            <td class="fw-bold">
+                                Total Received
+                            </td>
+
+                            <td class="text-end fw-bold text-success">
+                                SAR {{ total_received|floatformat:2 }}
+                            </td>
+
+                        </tr>
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
     </div>
 
 </div>
 
-{% endblock %}
 
-{% block extra_js %}
+<!-- =========================================================
+     ORDER STATUS
+========================================================= -->
+
+<div class="table-card mb-4">
+
+    <div class="table-card-header">
+
+        <h5 class="fw-bold mb-0">
+            <i class="bi bi-list-check text-primary me-2"></i>
+            Order Status
+        </h5>
+
+    </div>
+
+
+    <div class="table-responsive">
+
+        <table class="table app-table mb-0">
+
+            <thead>
+
+                <tr>
+                    <th>Status</th>
+                    <th class="text-end">Orders</th>
+                </tr>
+
+            </thead>
+
+
+            <tbody>
+
+                <tr>
+                    <td>
+                        <span class="badge bg-warning-subtle text-warning">
+                            Pending
+                        </span>
+                    </td>
+
+                    <td class="text-end fw-bold">
+                        {{ pending_orders }}
+                    </td>
+                </tr>
+
+
+                <tr>
+                    <td>
+                        <span class="badge bg-info-subtle text-info">
+                            Cutting
+                        </span>
+                    </td>
+
+                    <td class="text-end fw-bold">
+                        {{ cutting_orders }}
+                    </td>
+                </tr>
+
+
+                <tr>
+                    <td>
+                        <span class="badge bg-primary-subtle text-primary">
+                            Stitching
+                        </span>
+                    </td>
+
+                    <td class="text-end fw-bold">
+                        {{ stitching_orders }}
+                    </td>
+                </tr>
+
+
+                <tr>
+                    <td>
+                        <span class="badge bg-secondary-subtle text-secondary">
+                            Ready
+                        </span>
+                    </td>
+
+                    <td class="text-end fw-bold">
+                        {{ ready_orders }}
+                    </td>
+                </tr>
+
+
+                <tr>
+                    <td>
+                        <span class="badge bg-dark-subtle text-dark">
+                            Delivery
+                        </span>
+                    </td>
+
+                    <td class="text-end fw-bold">
+                        {{ delivery_orders }}
+                    </td>
+                </tr>
+
+
+                <tr>
+                    <td>
+                        <span class="badge bg-success-subtle text-success">
+                            Delivered
+                        </span>
+                    </td>
+
+                    <td class="text-end fw-bold">
+                        {{ delivered_orders }}
+                    </td>
+                </tr>
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>
+
+
+<!-- =========================================================
+     CHART + BRANCH PERFORMANCE
+========================================================= -->
+
+<div class="row g-3 mb-4">
+
+    <!-- SALES CHART -->
+
+    <div class="col-12 col-lg-6">
+
+        <div class="card-custom p-3 h-100">
+
+            <div class="d-flex justify-content-between align-items-center mb-3">
+
+                <div>
+
+                    <h5 class="fw-bold mb-1">
+                        Sales Trend
+                    </h5>
+
+                    <small class="text-muted">
+                        Selected period
+                    </small>
+
+                </div>
+
+                <i class="bi bi-bar-chart-line-fill text-primary fs-4"></i>
+
+            </div>
+
+
+            <div style="height:300px;">
+
+                <canvas id="salesChart"></canvas>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- BRANCH PERFORMANCE -->
+
+    <div class="col-12 col-lg-6">
+
+        <div class="table-card h-100">
+
+            <div class="table-card-header">
+
+                <h5 class="fw-bold mb-0">
+                    <i class="bi bi-building text-primary me-2"></i>
+                    Branch Performance
+                </h5>
+
+            </div>
+
+
+            <div class="table-responsive">
+
+                <table class="table app-table mb-0">
+
+                    <thead>
+
+                        <tr>
+
+                            <th>Branch</th>
+
+                            <th class="text-end">
+                                Orders
+                            </th>
+
+                            <th class="text-end">
+                                Sales
+                            </th>
+
+                            <th class="text-end">
+                                Profit
+                            </th>
+
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody>
+
+                        {% for branch in branch_performance %}
+
+                        <tr>
+
+                            <td class="fw-semibold">
+                                {{ branch.name }}
+                            </td>
+
+                            <td class="text-end">
+                                {{ branch.orders }}
+                            </td>
+
+                            <td class="text-end fw-bold">
+                                SAR {{ branch.sales|floatformat:2 }}
+                            </td>
+
+                            <td class="text-end fw-bold
+                                {% if branch.profit >= 0 %}
+                                    text-success
+                                {% else %}
+                                    text-danger
+                                {% endif %}">
+
+                                SAR {{ branch.profit|floatformat:2 }}
+
+                            </td>
+
+                        </tr>
+
+                        {% empty %}
+
+                        <tr>
+
+                            <td colspan="4"
+                                class="text-center text-muted py-4">
+
+                                No branch data available.
+
+                            </td>
+
+                        </tr>
+
+                        {% endfor %}
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- =========================================================
+     RECENT ORDERS
+========================================================= -->
+
+<div class="table-card mb-4">
+
+    <div class="table-card-header">
+
+        <h5 class="fw-bold mb-0">
+            <i class="bi bi-bag-check-fill text-primary me-2"></i>
+            Recent Orders
+        </h5>
+
+    </div>
+
+
+    <div class="table-responsive">
+
+        <table class="table app-table mb-0">
+
+            <thead>
+
+                <tr>
+
+                    <th>Order</th>
+                    <th>Customer</th>
+                    <th>Date</th>
+                    <th>Status</th>
+                    <th class="text-end">Amount</th>
+
+                </tr>
+
+            </thead>
+
+
+            <tbody>
+
+                {% for order in recent_orders %}
+
+                <tr>
+
+                    <td class="fw-semibold">
+                        #{{ order.id }}
+                    </td>
+
+
+                    <td>
+                        {{ order.customer.name }}
+                    </td>
+
+
+                    <td>
+                        {{ order.order_date|date:"d-m-Y" }}
+                    </td>
+
+
+                    <td>
+
+                        <span class="badge bg-light text-dark border">
+                            {{ order.status }}
+                        </span>
+
+                    </td>
+
+
+                    <td class="text-end fw-bold">
+                        SAR {{ order.total_amount|default:"0.00" }}
+                    </td>
+
+                </tr>
+
+                {% empty %}
+
+                <tr>
+
+                    <td colspan="5"
+                        class="text-center text-muted py-4">
+
+                        No orders found for this period.
+
+                    </td>
+
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>
+
+
+<!-- =========================================================
+     RECENT PAYMENTS
+========================================================= -->
+
+<div class="table-card mb-4">
+
+    <div class="table-card-header">
+
+        <h5 class="fw-bold mb-0">
+            <i class="bi bi-credit-card-fill text-success me-2"></i>
+            Recent Payments
+        </h5>
+
+    </div>
+
+
+    <div class="table-responsive">
+
+        <table class="table app-table mb-0">
+
+            <thead>
+
+                <tr>
+
+                    <th>Payment</th>
+                    <th>Customer</th>
+                    <th>Date</th>
+                    <th>Mode</th>
+                    <th>Type</th>
+                    <th class="text-end">Amount</th>
+
+                </tr>
+
+            </thead>
+
+
+            <tbody>
+
+                {% for payment in recent_payments %}
+
+                <tr>
+
+                    <td class="fw-semibold">
+                        #{{ payment.id }}
+                    </td>
+
+
+                    <td>
+                        {{ payment.order.customer.name }}
+                    </td>
+
+
+                    <td>
+                        {{ payment.payment_date|date:"d-m-Y" }}
+                    </td>
+
+
+                    <td>
+
+                        <span class="badge bg-light text-dark border">
+                            {{ payment.payment_mode }}
+                        </span>
+
+                    </td>
+
+
+                    <td>
+
+                        <span class="badge
+                            {% if payment.payment_type == 'Advance' %}
+                                bg-success-subtle text-success
+                            {% else %}
+                                bg-primary-subtle text-primary
+                            {% endif %}">
+
+                            {{ payment.payment_type }}
+
+                        </span>
+
+                    </td>
+
+
+                    <td class="text-end fw-bold text-success">
+
+                        SAR {{ payment.amount|floatformat:2 }}
+
+                    </td>
+
+                </tr>
+
+                {% empty %}
+
+                <tr>
+
+                    <td colspan="6"
+                        class="text-center text-muted py-4">
+
+                        No payments found for this period.
+
+                    </td>
+
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>
+
+
+<!-- =========================================================
+     PERIOD INFORMATION
+========================================================= -->
+
+<div class="card-custom p-3 mb-4">
+
+    <div class="d-flex flex-wrap justify-content-between gap-3">
+
+        <div>
+
+            <span class="text-muted small d-block">
+                SELECTED PERIOD
+            </span>
+
+            <strong>
+                {{ from_date|date:"d-m-Y" }}
+                →
+                {{ to_date|date:"d-m-Y" }}
+            </strong>
+
+        </div>
+
+
+        <div>
+
+            <span class="text-muted small d-block">
+                TOTAL BILLED
+            </span>
+
+            <strong>
+                SAR {{ total_billed|floatformat:2 }}
+            </strong>
+
+        </div>
+
+
+        <div>
+
+            <span class="text-muted small d-block">
+                TOTAL RECEIVED
+            </span>
+
+            <strong class="text-success">
+                SAR {{ total_received|floatformat:2 }}
+            </strong>
+
+        </div>
+
+
+        <div>
+
+            <span class="text-muted small d-block">
+                OUTSTANDING
+            </span>
+
+            <strong class="text-danger">
+                SAR {{ outstanding_balance|floatformat:2 }}
+            </strong>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- =========================================================
+     CHART.JS
+========================================================= -->
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+
 <script>
-window.addEventListener("load", function() {
 
-    // Profit & Loss Chart
-    const profitCtx = document.getElementById("profitChart");
-    if (profitCtx) {
-        new Chart(profitCtx, {
-            type: "bar",
-            data: {
-                labels: ["Income", "Expense", "Net Profit"],
-                datasets: [{
-                    data: [{{ total_income }}, {{ total_expense }}, {{ net_profit }}],
-                    backgroundColor: ["#10B981", "#EF4444", "#2563EB"],
-                    borderRadius: 8
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
-                scales: { y: { beginAtZero: true } }
-            }
-        });
+document.addEventListener(
+    "DOMContentLoaded",
+    function () {
+
+        /* ================================================
+           CUSTOM DATE BUTTON
+        ================================================= */
+
+        const customButton =
+            document.getElementById(
+                "customFilterButton"
+            );
+
+        const customBox =
+            document.getElementById(
+                "customDateBox"
+            );
+
+
+        if (customButton && customBox) {
+
+            customButton.addEventListener(
+                "click",
+                function () {
+
+                    customBox.classList.toggle(
+                        "d-none"
+                    );
+
+                }
+            );
+
+        }
+
+
+        /* ================================================
+           SALES CHART
+        ================================================= */
+
+        const chartElement =
+            document.getElementById(
+                "salesChart"
+            );
+
+
+        if (chartElement) {
+
+            const labels =
+                {{ months|safe }};
+
+            const salesData =
+                {{ sales|safe }};
+
+
+            new Chart(
+                chartElement,
+                {
+
+                    type: "line",
+
+                    data: {
+
+                        labels: labels,
+
+                        datasets: [
+
+                            {
+
+                                label: "Sales",
+
+                                data: salesData,
+
+                                tension: 0.3,
+
+                                fill: true,
+
+                            }
+
+                        ]
+
+                    },
+
+                    options: {
+
+                        responsive: true,
+
+                        maintainAspectRatio: false,
+
+                        plugins: {
+
+                            legend: {
+
+                                display: true
+
+                            }
+
+                        },
+
+                        scales: {
+
+                            y: {
+
+                                beginAtZero: true,
+
+                                ticks: {
+
+                                    callback:
+                                        function(value) {
+
+                                            return "SAR " +
+                                                Number(value)
+                                                .toLocaleString(
+                                                    "en-IN"
+                                                );
+
+                                        }
+
+                                }
+
+                            }
+
+                        }
+
+                    }
+
+                }
+            );
+
+        }
+
     }
 
-    // Payment Mode Chart
-    const paymentCtx = document.getElementById("paymentChart");
-    if (paymentCtx) {
-        new Chart(paymentCtx, {
-            type: "doughnut",
-            data: {
-                labels: ["Cash", "Bank", "Online", "Cheque", "POS"],
-                datasets: [{
-                    data: [{{ cash }}, {{ bank }}, {{ online }}, {{ cheque }}, {{ pos }}],
-                    backgroundColor: ["#10B981", "#2563EB", "#F59E0B", "#EF4444", "#8B5CF6"]
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { position: 'right' } }
-            }
-        });
-    }
+);
 
-    // Sales Summary Chart
-    const salesCtx = document.getElementById("salesChart");
-    if (salesCtx) {
-        new Chart(salesCtx, {
-            type: "bar",
-            data: {
-                labels: ["Sales", "Purchase", "Advance"],
-                datasets: [{
-                    data: [{{ total_sales }}, {{ total_purchase }}, {{ total_advance }}],
-                    backgroundColor: ["#06B6D4", "#F97316", "#8B5CF6"],
-                    borderRadius: 8
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
-                scales: { y: { beginAtZero: true } }
-            }
-        });
-    }
-
-    // Monthly Sales Trend Line Chart
-    const monthlyCtx = document.getElementById("monthlySalesChart");
-    if (monthlyCtx) {
-        const monthLabels = [{% for month in months %}"{{ month }}",{% endfor %}];
-        const monthlySales = [{% for amount in sales %}{{ amount }},{% endfor %}];
-
-        new Chart(monthlyCtx, {
-            type: "line",
-            data: {
-                labels: monthLabels,
-                datasets: [{
-                    label: "Monthly Sales",
-                    data: monthlySales,
-                    borderColor: "#2563EB",
-                    backgroundColor: "rgba(37, 99, 235, 0.1)",
-                    fill: true,
-                    tension: 0.35,
-                    pointRadius: 4,
-                    pointBackgroundColor: "#2563EB"
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
-                scales: { y: { beginAtZero: true } }
-            }
-        });
-    }
-
-    // Branch Performance Bar Chart
-    const branchCtx = document.getElementById("branchChart");
-    if (branchCtx) {
-        new Chart(branchCtx, {
-            type: "bar",
-            data: {
-                labels: [{% for branch in branch_performance %}"{{ branch.name }}",{% endfor %}],
-                datasets: [{
-                    label: "Sales",
-                    data: [{% for branch in branch_performance %}{{ branch.sales }},{% endfor %}],
-                    backgroundColor: ["#2563EB", "#10B981", "#F59E0B", "#EF4444", "#8B5CF6", "#06B6D4"],
-                    borderRadius: 8
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
-                scales: { y: { beginAtZero: true } }
-            }
-        });
-    }
-
-});
 </script>
+
+
 {% endblock %}

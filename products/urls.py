@@ -1,24 +1,18 @@
 from django.urls import path
 from . import views
 
+
 urlpatterns = [
 
-    # Category
+    # ==================================================
+    # CATEGORY
+    # ==================================================
+
     path(
         "categories/",
         views.category_list,
         name="category_list"
     ),
-    path(
-    "categories/edit/<int:id>/",
-    views.category_edit,
-    name="category_edit"
-),
-path(
-    "categories/delete/<int:id>/",
-    views.category_delete,
-    name="category_delete"
-),
 
     path(
         "categories/add/",
@@ -26,7 +20,23 @@ path(
         name="category_create"
     ),
 
-    # Products
+    path(
+        "categories/edit/<int:id>/",
+        views.category_edit,
+        name="category_edit"
+    ),
+
+    path(
+        "categories/delete/<int:id>/",
+        views.category_delete,
+        name="category_delete"
+    ),
+
+
+    # ==================================================
+    # PRODUCTS
+    # ==================================================
+
     path(
         "",
         views.product_list,
@@ -40,10 +50,10 @@ path(
     ),
 
     path(
-    "edit/<int:id>/",
-    views.product_edit,
-    name="product_edit"
-),
+        "edit/<int:id>/",
+        views.product_edit,
+        name="product_edit"
+    ),
 
     path(
         "delete/<int:id>/",
@@ -51,7 +61,10 @@ path(
         name="product_delete"
     ),
 
-    # Sales
+
+    # ==================================================
+    # SALES
+    # ==================================================
 
     path(
         "sales/",
@@ -70,41 +83,60 @@ path(
         views.sale_report,
         name="sale_report"
     ),
-path(
-    "stock-transfer/",
-    views.stock_transfer_list,
-    name="stock_transfer_list"
-),
-path(
-    "branch-stock/<int:id>/price/",
-    views.update_price,
-    name="update_price"
-),
 
-path(
-    "stock-transfer/add/",
-    views.stock_transfer_create,
-    name="stock_transfer_create"
-),
-path(
-    "branch-stock/",
-    views.branch_stock,
-    name="branch_stock"
-),
 
-path(
-    "branch-stock/<int:id>/price/",
-    views.update_price,
-    name="update_price"
-),
-path(
-    "stock-report/",
-    views.stock_report,
-    name="stock_report"
-),
-path(
-    "search-product/",
-    views.search_product,
-    name="search_product"
-),
+    # ==================================================
+    # STOCK TRANSFER
+    # ==================================================
+
+    path(
+        "stock-transfer/",
+        views.stock_transfer_list,
+        name="stock_transfer_list"
+    ),
+
+    path(
+        "stock-transfer/add/",
+        views.stock_transfer_create,
+        name="stock_transfer_create"
+    ),
+
+
+    # ==================================================
+    # BRANCH STOCK
+    # ==================================================
+
+    path(
+        "branch-stock/",
+        views.branch_stock,
+        name="branch_stock"
+    ),
+
+    path(
+        "branch-stock/<int:id>/price/",
+        views.update_price,
+        name="update_price"
+    ),
+
+
+    # ==================================================
+    # STOCK REPORT
+    # ==================================================
+
+    path(
+        "stock-report/",
+        views.stock_report,
+        name="stock_report"
+    ),
+
+
+    # ==================================================
+    # PRODUCT SEARCH / AJAX
+    # ==================================================
+
+    path(
+        "search-product/",
+        views.search_product,
+        name="search_product"
+    ),
 ]

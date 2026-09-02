@@ -35,7 +35,7 @@
         <div class="stat-card">
             <div>
                 <div class="stat-label">Total Revenue</div>
-                <h3 class="stat-value text-success">₹ {{ total_revenue }}</h3>
+                <h3 class="stat-value text-success">SAR {{ total_revenue }}</h3>
             </div>
             <div class="stat-icon-wrapper stat-icon-success">
                 <i class="bi bi-currency-rupee"></i>
@@ -47,7 +47,7 @@
         <div class="stat-card">
             <div>
                 <div class="stat-label">Average Sale Value</div>
-                <h3 class="stat-value text-info">₹ {{ average_sale }}</h3>
+                <h3 class="stat-value text-info">SAR {{ average_sale }}</h3>
             </div>
             <div class="stat-icon-wrapper stat-icon-info">
                 <i class="bi bi-graph-up-arrow"></i>
@@ -131,7 +131,7 @@
                             <i class="bi bi-wallet2 me-1"></i>{{ sale.payment_mode }}
                         </span>
                     </td>
-                    <td class="text-end fw-bold text-success fs-6">₹ {{ sale.total }}</td>
+                    <td class="text-end fw-bold text-success fs-6">SAR {{ sale.total }}</td>
                 </tr>
                 {% empty %}
                 <tr>
@@ -143,7 +143,7 @@
             <tfoot>
                 <tr class="table-light">
                     <th colspan="5" class="text-end text-dark fs-6">Total Sales Revenue:</th>
-                    <th class="text-end text-success fs-5 fw-bold">₹ {{ total_revenue }}</th>
+                    <th class="text-end text-success fs-5 fw-bold">SAR {{ total_revenue }}</th>
                 </tr>
             </tfoot>
             {% endif %}

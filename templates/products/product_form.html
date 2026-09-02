@@ -1,15 +1,24 @@
 {% extends "base.html" %}
 
-{% block title %}{% if product %}Edit Product{% else %}Add Ready-Made Product{% endif %} | Stitching Pro{% endblock %}
+{% block title %}
+    {% if product %}Edit Product{% else %}Add Ready-Made Product{% endif %} | Stitching Pro
+{% endblock %}
+
 {% block page_title %}Product Management{% endblock %}
 
 {% block content %}
 
 <div class="page-header-block">
     <div>
-        <h2 class="page-header-title">{% if product %}Edit Product{% else %}Add Ready-Made Product{% endif %}</h2>
-        <p class="page-header-sub">Configure ready-made product details, barcode, sizes, purchase price, and active status.</p>
+        <h2 class="page-header-title">
+            {% if product %}Edit Product{% else %}Add Ready-Made Product{% endif %}
+        </h2>
+
+        <p class="page-header-sub">
+            Add product details, available sizes, barcode, price and status.
+        </p>
     </div>
+
     <div>
         <a href="{% url 'product_list' %}" class="btn btn-secondary">
             <i class="bi bi-arrow-left"></i> Back to Products
@@ -17,71 +26,358 @@
     </div>
 </div>
 
+
 <div class="row justify-content-center">
+
     <div class="col-12 col-md-10 col-lg-8">
+
         <div class="form-card">
+
             <form method="POST">
+
                 {% csrf_token %}
 
                 {% if form.non_field_errors %}
-                <div class="alert alert-danger alert-custom mb-3">
-                    {{ form.non_field_errors }}
-                </div>
+                    <div class="alert alert-danger alert-custom mb-3">
+                        {{ form.non_field_errors }}
+                    </div>
                 {% endif %}
 
+
+                <!-- BASIC DETAILS -->
+
+                <h5 class="fw-bold mb-3">
+                    <i class="bi bi-box-seam me-1"></i>
+                    Product Details
+                </h5>
+
                 <div class="row g-3">
+
+                    <!-- CATEGORY -->
+
                     <div class="col-md-6">
-                        <label class="form-label">Category</label>
+
+                        <label class="form-label">
+                            Category
+                        </label>
+
                         {{ form.category }}
-                        {% if form.category.errors %}<div class="text-danger small mt-1">{{ form.category.errors }}</div>{% endif %}
+
+                        {% if form.category.errors %}
+                            <div class="text-danger small mt-1">
+                                {{ form.category.errors }}
+                            </div>
+                        {% endif %}
+
                     </div>
 
+
+                    <!-- PRODUCT NAME -->
+
                     <div class="col-md-6">
-                        <label class="form-label">Product Name</label>
+
+                        <label class="form-label">
+                            Product Name
+                        </label>
+
                         {{ form.name }}
-                        {% if form.name.errors %}<div class="text-danger small mt-1">{{ form.name.errors }}</div>{% endif %}
+
+                        {% if form.name.errors %}
+                            <div class="text-danger small mt-1">
+                                {{ form.name.errors }}
+                            </div>
+                        {% endif %}
+
                     </div>
 
+
+                    <!-- BARCODE -->
+
                     <div class="col-md-6">
-                        <label class="form-label">Barcode</label>
+
+                        <label class="form-label">
+                            Barcode
+                            <span class="text-muted">(Optional)</span>
+                        </label>
+
                         {{ form.barcode }}
-                        <small class="text-muted d-block mt-1">Enter or scan product barcode</small>
-                        {% if form.barcode.errors %}<div class="text-danger small mt-1">{{ form.barcode.errors }}</div>{% endif %}
+
+                        <small class="text-muted d-block mt-1">
+                            Enter or scan product barcode.
+                        </small>
+
+                        {% if form.barcode.errors %}
+                            <div class="text-danger small mt-1">
+                                {{ form.barcode.errors }}
+                            </div>
+                        {% endif %}
+
                     </div>
 
-                    <div class="col-md-3">
-                        <label class="form-label">Size</label>
-                        {{ form.size }}
-                    </div>
 
-                    <div class="col-md-3">
-                        <label class="form-label">Color</label>
-                        {{ form.color }}
-                    </div>
+                    <!-- COLOR -->
 
                     <div class="col-md-6">
-                        <label class="form-label">Purchase Price (₹)</label>
-                        {{ form.purchase_price }}
-                        <small class="text-muted d-block mt-1">Wholesale / purchase cost price</small>
+
+                        <label class="form-label">
+                            Color
+                            <span class="text-muted">(Optional)</span>
+                        </label>
+
+                        {{ form.color }}
+
+                        {% if form.color.errors %}
+                            <div class="text-danger small mt-1">
+                                {{ form.color.errors }}
+                            </div>
+                        {% endif %}
+
                     </div>
 
-                    <div class="col-md-6 d-flex align-items-center pt-3">
-                        <div class="form-check form-switch">
-                            {{ form.active }}
-                            <label class="form-check-label fw-semibold text-dark ms-2">Product Active</label>
-                        </div>
-                    </div>
                 </div>
+
+
+                <!-- SIZE SECTION -->
+
+                <hr class="my-4">
+
+                <h5 class="fw-bold mb-2">
+                    <i class="bi bi-rulers me-1"></i>
+                    Available Sizes
+                </h5>
+
+                <p class="text-muted small mb-3">
+                    Select all sizes available for this product.
+                </p>
+
+
+                <div class="size-selection-box">
+
+                    <div class="row g-2">
+
+                        {% for checkbox in form.available_sizes %}
+
+                            <div class="col-6 col-sm-4 col-md-3">
+
+                                <label class="size-option">
+
+                                    {{ checkbox.tag }}
+
+                                    <span>
+                                        {{ checkbox.choice_label }}
+                                    </span>
+
+                                </label>
+
+                            </div>
+
+                        {% endfor %}
+
+                    </div>
+
+                </div>
+
+
+                {% if form.available_sizes.errors %}
+                    <div class="text-danger small mt-2">
+                        {{ form.available_sizes.errors }}
+                    </div>
+                {% endif %}
+
+
+                <!-- OTHER SIZE -->
+
+                <div id="other-size-container"
+                     class="mt-3"
+                     style="display: none;">
+
+                    <label class="form-label">
+                        Other Size
+                    </label>
+
+                    {{ form.other_size }}
+
+                    <small class="text-muted d-block mt-1">
+                        Enter a custom size if it is not listed above.
+                    </small>
+
+                    {% if form.other_size.errors %}
+                        <div class="text-danger small mt-1">
+                            {{ form.other_size.errors }}
+                        </div>
+                    {% endif %}
+
+                </div>
+
+
+                <!-- PRICE -->
+
+                <hr class="my-4">
+
+                <h5 class="fw-bold mb-3">
+                    <i class="bi bi-currency-rupee me-1"></i>
+                    Pricing
+                </h5>
+
+                <div class="row g-3">
+
+                    <div class="col-md-6">
+
+                        <label class="form-label">
+                            Purchase Price (SAR)
+                        </label>
+
+                        {{ form.purchase_price }}
+
+                        <small class="text-muted d-block mt-1">
+                            Wholesale / purchase cost price.
+                        </small>
+
+                        {% if form.purchase_price.errors %}
+                            <div class="text-danger small mt-1">
+                                {{ form.purchase_price.errors }}
+                            </div>
+                        {% endif %}
+
+                    </div>
+
+
+                    <!-- ACTIVE -->
+
+                    <div class="col-md-6 d-flex align-items-center">
+
+                        <div class="form-check form-switch">
+
+                            {{ form.active }}
+
+                            <label class="form-check-label fw-semibold text-dark ms-2">
+                                Product Active
+                            </label>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- BUTTONS -->
 
                 <div class="d-flex justify-content-end gap-2 mt-4">
-                    <a href="{% url 'product_list' %}" class="btn btn-secondary">Cancel</a>
-                    <button type="submit" class="btn btn-primary">
-                        <i class="bi bi-check-circle-fill me-1"></i> {% if product %}Update Product{% else %}Save Product{% endif %}
+
+                    <a href="{% url 'product_list' %}"
+                       class="btn btn-secondary">
+
+                        Cancel
+
+                    </a>
+
+                    <button type="submit"
+                            class="btn btn-primary">
+
+                        <i class="bi bi-check-circle-fill me-1"></i>
+
+                        {% if product %}
+                            Update Product
+                        {% else %}
+                            Save Product
+                        {% endif %}
+
                     </button>
+
                 </div>
+
             </form>
+
         </div>
+
     </div>
+
 </div>
+
+
+<!-- SIZE SCRIPT -->
+
+<script>
+
+document.addEventListener("DOMContentLoaded", function () {
+
+    const otherCheckbox = document.querySelector(
+        'input[value="OTHER"]'
+    );
+
+    const otherContainer = document.getElementById(
+        "other-size-container"
+    );
+
+    function toggleOtherSize() {
+
+        if (!otherCheckbox) {
+            return;
+        }
+
+        if (otherCheckbox.checked) {
+
+            otherContainer.style.display = "block";
+
+        } else {
+
+            otherContainer.style.display = "none";
+
+        }
+
+    }
+
+    if (otherCheckbox) {
+
+        otherCheckbox.addEventListener(
+            "change",
+            toggleOtherSize
+        );
+
+        toggleOtherSize();
+
+    }
+
+});
+
+</script>
+
+
+<style>
+
+.size-selection-box {
+    border: 1px solid #dee2e6;
+    border-radius: 12px;
+    padding: 15px;
+    background: #f8f9fa;
+}
+
+.size-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 10px 12px;
+    background: #ffffff;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.size-option:hover {
+    border-color: #0d6efd;
+    background: #f0f6ff;
+}
+
+.size-option input {
+    margin: 0;
+}
+
+.size-option span {
+    font-weight: 500;
+}
+
+</style>
 
 {% endblock %}

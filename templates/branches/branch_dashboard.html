@@ -1,767 +1,2361 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
 
-{% block title %}Branch Dashboard{% endblock %}
+
+{% block title %}
+    Branch Dashboard | Stitching Pro
+{% endblock %}
+
+
+{% block page_title %}
+    Branch Dashboard
+{% endblock %}
+
 
 {% block content %}
-<style>
 
-/* =====================================================
-   BRANCH DASHBOARD – local styles
-   ===================================================== */
-
-/* Performance summary pill */
-.performance-summary {
-    background: #0d6efd;
-    color: white;
-    border-radius: 15px;
-    padding: 20px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.performance-summary h2 {
-    font-size: 32px;
-    font-weight: 800;
-}
-
-.performance-summary i {
-    font-size: 45px;
-    opacity: .3;
-}
-
-.performance-summary.green {
-    background: #198754;
-}
-
-
-/* HEADER */
-.dashboard-header {
-    background: white;
-    padding: 25px;
-    border-radius: 18px;
-    box-shadow: 0 5px 20px rgba(0,0,0,.06);
-}
-
-
-/* SECTION TITLE */
-.section-title {
-    font-weight: 700;
-    color: #343a40;
-    margin-bottom: 20px;
-}
-
-
-/* DASHBOARD CARD */
-.dashboard-card {
-    border-radius: 18px;
-    padding: 22px;
-    min-height: 145px;
-    color: white;
-    box-shadow: 0 8px 20px rgba(0,0,0,.08);
-    transition: transform .2s ease, box-shadow .2s ease;
-}
-
-.dashboard-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 12px 25px rgba(0,0,0,.12);
-}
-
-.card-content {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.dashboard-card p {
-    margin: 0 0 8px;
-    opacity: .9;
-    font-size: 15px;
-}
-
-.dashboard-card h2 {
-    font-size: 28px;
-    font-weight: 700;
-    margin: 0;
-}
-
-.card-icon {
-    font-size: 40px;
-    opacity: .85;
-}
-
-
-/* CARD COLOURS */
-.card-blue   { background: linear-gradient(135deg, #0d6efd, #3d8bfd); }
-.card-green  { background: linear-gradient(135deg, #198754, #32a36f); }
-.card-orange { background: linear-gradient(135deg, #fd7e14, #ff9f43); }
-.card-red    { background: linear-gradient(135deg, #dc3545, #e85d6a); }
-.card-purple { background: linear-gradient(135deg, #6f42c1, #8c68d8); }
-
-
-/* PROFIT CARD */
-.profit-card {
-    height: 100%;
-    min-height: 200px;
-    border-radius: 18px;
-    padding: 30px;
-    color: white;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background: linear-gradient(135deg, #087f5b, #20c997);
-    box-shadow: 0 8px 20px rgba(0,0,0,.08);
-}
-
-.profit-card p  { font-size: 17px; opacity: .9; }
-.profit-card h1 { font-weight: 800; margin: 0; }
-.profit-card > i { font-size: 70px; opacity: .25; }
-
-
-/* CHART CONTAINERS */
-.chart-container {
-    position: relative;
-    width: 100%;
-}
-
-
-/* Prevent Bootstrap cards from hiding canvas overflow incorrectly */
-.card { overflow: visible; }
-
-
-/* Keep canvases from blowing past their parent */
-canvas { max-width: 100%; }
-
-
-/* MOBILE */
-@media (max-width: 768px) {
-    .dashboard-header  { padding: 20px; }
-    .dashboard-card    { min-height: 125px; }
-    .dashboard-card h2 { font-size: 24px; }
-    .card-icon         { font-size: 32px; }
-}
-
-</style>
 
 <div class="container-fluid">
 
-    <!-- ================================================= -->
-    <!-- HEADER                                            -->
-    <!-- ================================================= -->
 
-    <div class="dashboard-header mb-4">
+<!-- =========================================================
+     HEADER
+========================================================= -->
+
+<div class="dashboard-header mb-4">
+
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+
         <div>
+
             <h2 class="fw-bold mb-1">
-                <i class="bi bi-shop"></i>
-                {{ request.user.branch }} Dashboard
+                <i class="bi bi-building me-2"></i>
+
+                {{ branch.name }}
+
             </h2>
+
             <p class="text-muted mb-0">
-                Welcome back, {{ request.user.username }}
+
+                Branch business overview and performance
+
             </p>
+
         </div>
+
+
+        <div class="text-end">
+
+            <div class="small text-muted">
+                Selected Period
+            </div>
+
+            <strong>
+
+                {{ from_date|date:"d-m-Y" }}
+
+                →
+
+                {{ to_date|date:"d-m-Y" }}
+
+            </strong>
+
+        </div>
+
     </div>
 
+</div>
 
-    <!-- ================================================= -->
-    <!-- DATE FILTER                                        -->
-    <!-- ================================================= -->
 
-    <div class="card border-0 shadow-sm rounded-4 mb-4">
-        <div class="card-body">
+
+<!-- =========================================================
+     DATE FILTER
+========================================================= -->
+
+<div class="card border-0 shadow-sm rounded-4 mb-4">
+
+    <div class="card-body">
+
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+
+
+            <div>
+
+                <h5 class="fw-bold mb-1">
+
+                    <i class="bi bi-calendar-range text-primary me-2"></i>
+
+                    Dashboard Period
+
+                </h5>
+
+                <small class="text-muted">
+
+                    Select the period for your branch statistics.
+
+                </small>
+
+            </div>
+
+
+            <div class="d-flex flex-wrap gap-2">
+
+                <a href="?filter=today"
+                   class="btn btn-sm
+                   {% if filter_type == 'today' %}
+                       btn-primary
+                   {% else %}
+                       btn-outline-primary
+                   {% endif %}">
+
+                    Today
+
+                </a>
+
+
+                <a href="?filter=yesterday"
+                   class="btn btn-sm
+                   {% if filter_type == 'yesterday' %}
+                       btn-primary
+                   {% else %}
+                       btn-outline-primary
+                   {% endif %}">
+
+                    Yesterday
+
+                </a>
+
+
+                <a href="?filter=week"
+                   class="btn btn-sm
+                   {% if filter_type == 'week' %}
+                       btn-primary
+                   {% else %}
+                       btn-outline-primary
+                   {% endif %}">
+
+                    This Week
+
+                </a>
+
+
+                <a href="?filter=month"
+                   class="btn btn-sm
+                   {% if filter_type == 'month' %}
+                       btn-primary
+                   {% else %}
+                       btn-outline-primary
+                   {% endif %}">
+
+                    This Month
+
+                </a>
+
+
+                <button type="button"
+                        id="customFilterButton"
+                        class="btn btn-sm
+                        {% if filter_type == 'custom' %}
+                            btn-primary
+                        {% else %}
+                            btn-outline-primary
+                        {% endif %}">
+
+                    Custom
+
+                </button>
+
+            </div>
+
+        </div>
+
+
+        <!-- =================================================
+             CUSTOM DATE FORM
+        ================================================== -->
+
+        <div id="customDateBox"
+             class="mt-4
+             {% if filter_type != 'custom' %}
+                 d-none
+             {% endif %}">
+
             <form method="GET">
+
+                <input type="hidden"
+                       name="filter"
+                       value="custom">
+
+
                 <div class="row g-3 align-items-end">
 
-                    <!-- From Date -->
-                    <div class="col-md-4">
-                        <label class="form-label fw-semibold">From Date</label>
-                        <input
-                            type="date"
-                            name="from_date"
-                            value="{{ from_date }}"
-                            class="form-control">
+
+                    <div class="col-md-5">
+
+                        <label class="form-label fw-semibold">
+
+                            From Date
+
+                        </label>
+
+                        <input type="date"
+                               name="from_date"
+                               class="form-control"
+                               value="{{ from_date|date:'Y-m-d' }}"
+                               required>
+
                     </div>
 
-                    <!-- To Date -->
-                    <div class="col-md-4">
-                        <label class="form-label fw-semibold">To Date</label>
-                        <input
-                            type="date"
-                            name="to_date"
-                            value="{{ to_date }}"
-                            class="form-control">
+
+                    <div class="col-md-5">
+
+                        <label class="form-label fw-semibold">
+
+                            To Date
+
+                        </label>
+
+                        <input type="date"
+                               name="to_date"
+                               class="form-control"
+                               value="{{ to_date|date:'Y-m-d' }}"
+                               required>
+
                     </div>
 
-                    <!-- Buttons -->
-                    <div class="col-md-4">
-                        <div class="d-flex gap-2">
-                            <button type="submit" class="btn btn-primary flex-fill">
-                                <i class="bi bi-funnel"></i>
-                                Apply Filter
-                            </button>
-                            <a href="{% url 'branch_dashboard' %}" class="btn btn-light border">
-                                <i class="bi bi-arrow-clockwise"></i>
-                            </a>
-                        </div>
+
+                    <div class="col-md-2">
+
+                        <button type="submit"
+                                class="btn btn-primary w-100">
+
+                            <i class="bi bi-funnel-fill me-1"></i>
+
+                            Apply
+
+                        </button>
+
                     </div>
 
                 </div>
+
             </form>
+
         </div>
+
+    </div>
+
+</div>
+
+
+
+<!-- =========================================================
+     MAIN STATISTICS
+========================================================= -->
+
+<div class="row g-4 mb-4">
+
+
+    <!-- CUSTOMERS -->
+
+    <div class="col-12 col-sm-6 col-xl-3">
+
+        <div class="dashboard-card card-blue">
+
+            <div class="card-content">
+
+                <div>
+
+                    <p>Customers</p>
+
+                    <h2>
+                        {{ customers }}
+                    </h2>
+
+                </div>
+
+                <div class="card-icon">
+
+                    <i class="bi bi-people-fill"></i>
+
+                </div>
+
+            </div>
+
+        </div>
+
     </div>
 
 
-    <!-- ================================================= -->
-    <!-- OVERVIEW                                          -->
-    <!-- ================================================= -->
+    <!-- ORDERS -->
 
-    <h5 class="section-title">
-        <i class="bi bi-speedometer2"></i>
-        Overview
-    </h5>
+    <div class="col-12 col-sm-6 col-xl-3">
 
-    <div class="row g-4 mb-4">
+        <div class="dashboard-card card-orange">
 
-        <!-- Customers -->
-        <div class="col-xl-3 col-md-6">
-            <div class="dashboard-card card-blue">
-                <div class="card-content">
-                    <div>
-                        <p>Customers</p>
-                        <h2>{{ customers }}</h2>
-                    </div>
-                    <div class="card-icon">
-                        <i class="bi bi-people-fill"></i>
-                    </div>
+            <div class="card-content">
+
+                <div>
+
+                    <p>Orders</p>
+
+                    <h2>
+                        {{ orders }}
+                    </h2>
+
                 </div>
+
+                <div class="card-icon">
+
+                    <i class="bi bi-bag-check-fill"></i>
+
+                </div>
+
             </div>
+
         </div>
 
-        <!-- Orders -->
-        <div class="col-xl-3 col-md-6">
-            <div class="dashboard-card card-green">
-                <div class="card-content">
-                    <div>
-                        <p>Orders</p>
-                        <h2>{{ orders }}</h2>
-                    </div>
-                    <div class="card-icon">
-                        <i class="bi bi-bag-check-fill"></i>
-                    </div>
+    </div>
+
+
+    <!-- TOTAL SALES -->
+
+    <div class="col-12 col-sm-6 col-xl-3">
+
+        <div class="dashboard-card card-green">
+
+            <div class="card-content">
+
+                <div>
+
+                    <p>Sales Income</p>
+
+                    <h2>
+
+                        SAR {{ total_sales|floatformat:2 }}
+
+                    </h2>
+
                 </div>
+
+                <div class="card-icon">
+
+                    <i class="bi bi-currency-rupee"></i>
+
+                </div>
+
             </div>
+
         </div>
 
-        <!-- Pending -->
-        <div class="col-xl-3 col-md-6">
-            <div class="dashboard-card card-orange">
-                <div class="card-content">
-                    <div>
-                        <p>Pending Orders</p>
-                        <h2>{{ pending }}</h2>
-                    </div>
-                    <div class="card-icon">
+    </div>
+
+
+    <!-- COLLECTION -->
+
+    <div class="col-12 col-sm-6 col-xl-3">
+
+        <div class="dashboard-card card-purple">
+
+            <div class="card-content">
+
+                <div>
+
+                    <p>Total Collection</p>
+
+                    <h2>
+
+                        SAR {{ collection|floatformat:2 }}
+
+                    </h2>
+
+                </div>
+
+                <div class="card-icon">
+
+                    <i class="bi bi-wallet-fill"></i>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+
+<!-- =========================================================
+     FINANCIAL STATISTICS
+========================================================= -->
+
+<div class="row g-4 mb-4">
+
+
+    <!-- INCOME -->
+
+    <div class="col-12 col-md-6 col-xl-3">
+
+        <div class="dashboard-card card-green">
+
+            <div class="card-content">
+
+                <div>
+
+                    <p>Total Income</p>
+
+                    <h2>
+
+                        SAR {{ total_income|floatformat:2 }}
+
+                    </h2>
+
+                </div>
+
+                <div class="card-icon">
+
+                    <i class="bi bi-arrow-down-circle-fill"></i>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- PURCHASE -->
+
+    <div class="col-12 col-md-6 col-xl-3">
+
+        <div class="dashboard-card card-orange">
+
+            <div class="card-content">
+
+                <div>
+
+                    <p>Purchase</p>
+
+                    <h2>
+
+                        SAR {{ total_purchase|floatformat:2 }}
+
+                    </h2>
+
+                </div>
+
+                <div class="card-icon">
+
+                    <i class="bi bi-cart-dash-fill"></i>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- EXPENSE -->
+
+    <div class="col-12 col-md-6 col-xl-3">
+
+        <div class="dashboard-card card-red">
+
+            <div class="card-content">
+
+                <div>
+
+                    <p>Other Expense</p>
+
+                    <h2>
+
+                        SAR {{ total_expense|floatformat:2 }}
+
+                    </h2>
+
+                </div>
+
+                <div class="card-icon">
+
+                    <i class="bi bi-receipt-cutoff"></i>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- PROFIT -->
+
+    <div class="col-12 col-md-6 col-xl-3">
+
+        <div class="dashboard-card card-blue">
+
+            <div class="card-content">
+
+                <div>
+
+                    <p>Net Profit</p>
+
+                    <h2>
+
+                        SAR {{ net_profit|floatformat:2 }}
+
+                    </h2>
+
+                </div>
+
+                <div class="card-icon">
+
+                    <i class="bi bi-graph-up-arrow"></i>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+
+<!-- =========================================================
+     ORDER STATUS
+========================================================= -->
+
+<div class="card border-0 shadow-sm rounded-4 mb-4">
+
+    <div class="card-body">
+
+        <h5 class="fw-bold mb-4">
+
+            <i class="bi bi-list-check me-2"></i>
+
+            Order Status
+
+        </h5>
+
+
+        <div class="row g-3">
+
+
+            <div class="col-6 col-md-4 col-xl-2">
+
+                <div class="text-center p-3 bg-light rounded-4">
+
+                    <div class="text-warning fs-3">
+
                         <i class="bi bi-hourglass-split"></i>
+
                     </div>
+
+                    <h4 class="fw-bold mb-1">
+
+                        {{ pending }}
+
+                    </h4>
+
+                    <small class="text-muted">
+
+                        Pending
+
+                    </small>
+
                 </div>
+
             </div>
-        </div>
-
-        <!-- Delivered -->
-        <div class="col-xl-3 col-md-6">
-            <div class="dashboard-card card-red">
-                <div class="card-content">
-                    <div>
-                        <p>Delivered</p>
-                        <h2>{{ delivered }}</h2>
-                    </div>
-                    <div class="card-icon">
-                        <i class="bi bi-check-circle-fill"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-    </div>
 
 
-    <!-- ================================================= -->
-    <!-- FINANCIAL SUMMARY                                 -->
-    <!-- ================================================= -->
+            <div class="col-6 col-md-4 col-xl-2">
 
-    <h5 class="section-title mt-5">
-        <i class="bi bi-cash-stack"></i>
-        Financial Summary
-    </h5>
+                <div class="text-center p-3 bg-light rounded-4">
 
-    <div class="row g-4 mb-4">
+                    <div class="text-info fs-3">
 
-        <!-- Collection -->
-        <div class="col-xl-3 col-md-6">
-            <div class="dashboard-card card-green">
-                <div class="card-content">
-                    <div>
-                        <p>Total Collection</p>
-                        <h2>₹ {{ collection|floatformat:2 }}</h2>
-                    </div>
-                    <div class="card-icon">
-                        <i class="bi bi-currency-rupee"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Sales -->
-        <div class="col-xl-3 col-md-6">
-            <div class="dashboard-card card-blue">
-                <div class="card-content">
-                    <div>
-                        <p>Ready-Made Sales</p>
-                        <h2>₹ {{ total_sales|floatformat:2 }}</h2>
-                    </div>
-                    <div class="card-icon">
-                        <i class="bi bi-cart-check-fill"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Purchase -->
-        <div class="col-xl-3 col-md-6">
-            <div class="dashboard-card card-purple">
-                <div class="card-content">
-                    <div>
-                        <p>Total Purchase</p>
-                        <h2>₹ {{ total_purchase|floatformat:2 }}</h2>
-                    </div>
-                    <div class="card-icon">
-                        <i class="bi bi-box-seam-fill"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Expense -->
-        <div class="col-xl-3 col-md-6">
-            <div class="dashboard-card card-red">
-                <div class="card-content">
-                    <div>
-                        <p>Total Expense</p>
-                        <h2>₹ {{ total_expense|floatformat:2 }}</h2>
-                    </div>
-                    <div class="card-icon">
-                        <i class="bi bi-wallet2"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-    </div>
-    <!-- /Financial Summary row -->
-
-
-    <!-- ================================================= -->
-    <!-- EMPLOYEE PERFORMANCE                              -->
-    <!-- ================================================= -->
-
-    <h5 class="section-title mt-5">
-        <i class="bi bi-scissors"></i>
-        Employee Performance
-    </h5>
-
-    <div class="row g-4 mb-4">
-
-        <!-- LEFT: SUMMARY -->
-        <div class="col-xl-4">
-            <div class="card border-0 shadow-sm rounded-4 h-100">
-                <div class="card-body">
-
-                    <div class="d-flex justify-content-between align-items-center mb-4">
-                        <div>
-                            <h5 class="fw-bold mb-1">
-                                <i class="bi bi-scissors"></i>
-                                Stitching Performance
-                            </h5>
-                            <small class="text-muted">Employee production</small>
-                        </div>
-                    </div>
-
-                    <!-- Production Date Filter -->
-                    <form method="GET" class="mb-4">
-                        <label class="form-label fw-semibold">Production Date</label>
-                        <div class="input-group">
-                            <input
-                                type="date"
-                                name="performance_date"
-                                value="{{ performance_date }}"
-                                class="form-control">
-                            <button class="btn btn-primary">
-                                <i class="bi bi-search"></i>
-                            </button>
-                        </div>
-                    </form>
-
-                    <!-- Total Pieces -->
-                    <div class="performance-summary mb-3">
-                        <div>
-                            <small>Total Stitched</small>
-                            <h2 class="mb-0">{{ total_stitched_today }}</h2>
-                            <small>pieces</small>
-                        </div>
                         <i class="bi bi-scissors"></i>
+
                     </div>
 
-                    <!-- Active Employees -->
-                    <div class="performance-summary green">
-                        <div>
-                            <small>Active Employees</small>
-                            <h2 class="mb-0">{{ active_employee_count }}</h2>
-                        </div>
-                        <i class="bi bi-people-fill"></i>
-                    </div>
+                    <h4 class="fw-bold mb-1">
+
+                        {{ cutting }}
+
+                    </h4>
+
+                    <small class="text-muted">
+
+                        Cutting
+
+                    </small>
 
                 </div>
-            </div>
-        </div>
 
-        <!-- RIGHT: CHART -->
-        <div class="col-xl-8">
-            <div class="card border-0 shadow-sm rounded-4 h-100">
-                <div class="card-body">
-                    <h5 class="fw-bold mb-3">
-                        <i class="bi bi-bar-chart-fill"></i>
-                        Employee-wise Production
-                    </h5>
-                    <div class="chart-container" style="height: 320px;">
-                        <canvas id="employeePerformanceChart"></canvas>
-                    </div>
-                </div>
             </div>
+
+
+            <div class="col-6 col-md-4 col-xl-2">
+
+                <div class="text-center p-3 bg-light rounded-4">
+
+                    <div class="text-primary fs-3">
+
+                        <i class="bi bi-gear-fill"></i>
+
+                    </div>
+
+                    <h4 class="fw-bold mb-1">
+
+                        {{ stitching }}
+
+                    </h4>
+
+                    <small class="text-muted">
+
+                        Stitching
+
+                    </small>
+
+                </div>
+
+            </div>
+
+
+            <div class="col-6 col-md-4 col-xl-2">
+
+                <div class="text-center p-3 bg-light rounded-4">
+
+                    <div class="text-secondary fs-3">
+
+                        <i class="bi bi-check2-square"></i>
+
+                    </div>
+
+                    <h4 class="fw-bold mb-1">
+
+                        {{ ready }}
+
+                    </h4>
+
+                    <small class="text-muted">
+
+                        Ready
+
+                    </small>
+
+                </div>
+
+            </div>
+
+
+            <div class="col-6 col-md-4 col-xl-2">
+
+                <div class="text-center p-3 bg-light rounded-4">
+
+                    <div class="text-dark fs-3">
+
+                        <i class="bi bi-truck"></i>
+
+                    </div>
+
+                    <h4 class="fw-bold mb-1">
+
+                        {{ delivery }}
+
+                    </h4>
+
+                    <small class="text-muted">
+
+                        Delivery
+
+                    </small>
+
+                </div>
+
+            </div>
+
+
+            <div class="col-6 col-md-4 col-xl-2">
+
+                <div class="text-center p-3 bg-light rounded-4">
+
+                    <div class="text-success fs-3">
+
+                        <i class="bi bi-check-circle-fill"></i>
+
+                    </div>
+
+                    <h4 class="fw-bold mb-1">
+
+                        {{ delivered }}
+
+                    </h4>
+
+                    <small class="text-muted">
+
+                        Delivered
+
+                    </small>
+
+                </div>
+
+            </div>
+
         </div>
 
     </div>
-    <!-- /Employee Performance row -->
+
+</div>
 
 
-    <!-- ================================================= -->
-    <!-- EMPLOYEE PERFORMANCE TABLE                        -->
-    <!-- ================================================= -->
 
-    <div class="card border-0 shadow-sm rounded-4 mb-4">
+<!-- =========================================================
+     PAYMENT SUMMARY
+========================================================= -->
 
-        <div class="card-header bg-primary text-white py-3">
-            <h5 class="mb-0">
-                <i class="bi bi-people-fill"></i>
-                Employee Performance
-            </h5>
+<div class="row g-4 mb-4">
+
+
+    <div class="col-lg-6">
+
+        <div class="card border-0 shadow-sm rounded-4 h-100">
+
+            <div class="card-body">
+
+                <h5 class="fw-bold mb-4">
+
+                    <i class="bi bi-wallet2 me-2"></i>
+
+                    Payment Modes
+
+                </h5>
+
+
+                <div class="table-responsive">
+
+                    <table class="table align-middle">
+
+                        <tbody>
+
+                            <tr>
+
+                                <td>
+                                    <i class="bi bi-cash-stack me-2 text-success"></i>
+                                    Cash
+                                </td>
+
+                                <td class="text-end fw-bold">
+
+                                    SAR {{ cash|floatformat:2 }}
+
+                                </td>
+
+                            </tr>
+
+
+                            <tr>
+
+                                <td>
+                                    <i class="bi bi-bank me-2 text-primary"></i>
+                                    Bank
+                                </td>
+
+                                <td class="text-end fw-bold">
+
+                                    SAR {{ bank|floatformat:2 }}
+
+                                </td>
+
+                            </tr>
+
+
+                            <tr>
+
+                                <td>
+                                    <i class="bi bi-phone me-2"></i>
+                                    Online
+                                </td>
+
+                                <td class="text-end fw-bold">
+
+                                    SAR {{ online|floatformat:2 }}
+
+                                </td>
+
+                            </tr>
+
+
+                            <tr>
+
+                                <td>
+                                    <i class="bi bi-receipt me-2"></i>
+                                    Cheque
+                                </td>
+
+                                <td class="text-end fw-bold">
+
+                                    SAR {{ cheque|floatformat:2 }}
+
+                                </td>
+
+                            </tr>
+
+
+                            <tr>
+
+                                <td>
+                                    <i class="bi bi-credit-card me-2"></i>
+                                    POS
+                                </td>
+
+                                <td class="text-end fw-bold">
+
+                                    SAR {{ pos|floatformat:2 }}
+
+                                </td>
+
+                            </tr>
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
         </div>
+
+    </div>
+
+
+
+    <div class="col-lg-6">
+
+        <div class="card border-0 shadow-sm rounded-4 h-100">
+
+            <div class="card-body">
+
+                <h5 class="fw-bold mb-4">
+
+                    <i class="bi bi-cash-coin me-2"></i>
+
+                    Payment Summary
+
+                </h5>
+
+
+                <div class="row g-3">
+
+
+                    <div class="col-6">
+
+                        <div class="p-3 bg-light rounded-4">
+
+                            <small class="text-muted">
+                                Advance
+                            </small>
+
+                            <h5 class="fw-bold text-success mb-0">
+
+                                SAR {{ total_advance|floatformat:2 }}
+
+                            </h5>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="col-6">
+
+                        <div class="p-3 bg-light rounded-4">
+
+                            <small class="text-muted">
+                                Balance Payment
+                            </small>
+
+                            <h5 class="fw-bold text-primary mb-0">
+
+                                SAR {{ total_balance_payment|floatformat:2 }}
+
+                            </h5>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="col-12">
+
+                        <div class="p-3 bg-success-subtle rounded-4">
+
+                            <small class="text-muted">
+                                Total Received
+                            </small>
+
+                            <h4 class="fw-bold text-success mb-0">
+
+                                SAR {{ total_received|floatformat:2 }}
+
+                            </h4>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="col-6">
+
+                        <div class="p-3 bg-light rounded-4">
+
+                            <small class="text-muted">
+                                Total Billed
+                            </small>
+
+                            <h5 class="fw-bold mb-0">
+
+                                SAR {{ total_billed|floatformat:2 }}
+
+                            </h5>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="col-6">
+
+                        <div class="p-3 bg-danger-subtle rounded-4">
+
+                            <small class="text-muted">
+                                Outstanding
+                            </small>
+
+                            <h5 class="fw-bold text-danger mb-0">
+
+                                SAR {{ outstanding_balance|floatformat:2 }}
+
+                            </h5>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+
+<!-- =========================================================
+     EMPLOYEE PERFORMANCE
+========================================================= -->
+
+<div class="row g-4 mb-4">
+
+
+    <div class="col-xl-4">
+
+        <div class="card border-0 shadow-sm rounded-4 h-100">
+
+            <div class="card-body">
+
+                <h5 class="fw-bold mb-1">
+
+                    <i class="bi bi-scissors me-2"></i>
+
+                    Stitching Performance
+
+                </h5>
+
+
+                <small class="text-muted">
+
+                    Employee production for selected period
+
+                </small>
+
+
+                <div class="mt-4 text-center">
+
+                    <div class="display-5 fw-bold text-primary">
+
+                        {{ total_pieces }}
+
+                    </div>
+
+                    <div class="text-muted">
+
+                        Total Pieces Stitched
+
+                    </div>
+
+                </div>
+
+
+                <div class="table-responsive mt-4">
+
+                    <table class="table table-sm align-middle">
+
+                        <thead>
+
+                            <tr>
+
+                                <th>
+                                    Employee
+                                </th>
+
+                                <th class="text-end">
+                                    Pieces
+                                </th>
+
+                            </tr>
+
+                        </thead>
+
+
+                        <tbody>
+
+                            {% for employee in performance_employees %}
+
+                            <tr>
+
+                                <td>
+
+                                    {{ employee.name }}
+
+                                </td>
+
+                                <td class="text-end fw-bold">
+
+                                    {{ employee.total_pieces|default:0 }}
+
+                                </td>
+
+                            </tr>
+
+                            {% empty %}
+
+                            <tr>
+
+                                <td colspan="2"
+                                    class="text-center text-muted py-3">
+
+                                    No production records.
+
+                                </td>
+
+                            </tr>
+
+                            {% endfor %}
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+
+    <div class="col-xl-8">
+
+        <div class="card border-0 shadow-sm rounded-4 h-100">
+
+            <div class="card-body">
+
+                <h5 class="fw-bold mb-3">
+
+                    <i class="bi bi-bar-chart-fill me-2"></i>
+
+                    Employee Performance
+
+                </h5>
+
+
+                <div style="height:320px;">
+
+                    <canvas id="employeePerformanceChart"></canvas>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+
+<!-- =========================================================
+     FINANCIAL CHARTS
+========================================================= -->
+
+<div class="row g-4 mb-4">
+
+
+    <!-- PROFIT / LOSS -->
+
+    <div class="col-lg-6">
+
+        <div class="card border-0 shadow-sm rounded-4">
+
+            <div class="card-body">
+
+                <h5 class="fw-bold mb-3">
+
+                    <i class="bi bi-graph-up-arrow me-2"></i>
+
+                    Financial Overview
+
+                </h5>
+
+
+                <div style="height:280px;">
+
+                    <canvas id="financialChart"></canvas>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- PAYMENT DISTRIBUTION -->
+
+    <div class="col-lg-6">
+
+        <div class="card border-0 shadow-sm rounded-4">
+
+            <div class="card-body">
+
+                <h5 class="fw-bold mb-3">
+
+                    <i class="bi bi-pie-chart-fill me-2"></i>
+
+                    Financial Distribution
+
+                </h5>
+
+
+                <div style="height:280px;">
+
+                    <canvas id="pieChart"></canvas>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+
+<!-- =========================================================
+     SALES & EXPENSES
+========================================================= -->
+
+<div class="row g-4 mb-4">
+
+
+    <div class="col-lg-6">
+
+        <div class="card border-0 shadow-sm rounded-4">
+
+            <div class="card-body">
+
+                <h5 class="fw-bold mb-3">
+
+                    <i class="bi bi-bar-chart-line me-2"></i>
+
+                    Sales & Expenses
+
+                </h5>
+
+
+                <div style="height:280px;">
+
+                    <canvas id="salesExpenseChart"></canvas>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+
+    <div class="col-lg-6">
+
+        <div class="card border-0 shadow-sm rounded-4">
+
+            <div class="card-body">
+
+                <h5 class="fw-bold mb-3">
+
+                    <i class="bi bi-wallet-fill me-2"></i>
+
+                    Payment Collection
+
+                </h5>
+
+
+                <div style="height:280px;">
+
+                    <canvas id="paymentChart"></canvas>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+
+<!-- =========================================================
+     SALES TREND
+========================================================= -->
+
+<div class="card border-0 shadow-sm rounded-4 mb-4">
+
+    <div class="card-body">
+
+        <h5 class="fw-bold mb-3">
+
+            <i class="bi bi-graph-up me-2"></i>
+
+            Sales Trend
+
+        </h5>
+
+
+        <div style="height:300px;">
+
+            <canvas id="monthlySalesChart"></canvas>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+
+<!-- =========================================================
+     RECENT ORDERS
+========================================================= -->
+
+<div class="card border-0 shadow-sm rounded-4 mb-4">
+
+    <div class="card-body">
+
+        <h5 class="fw-bold mb-3">
+
+            <i class="bi bi-bag-check-fill me-2"></i>
+
+            Recent Orders
+
+        </h5>
+
 
         <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
 
-                <thead class="table-light">
+            <table class="table align-middle">
+
+                <thead>
+
                     <tr>
-                        <th>#</th>
-                        {% if request.user.role == "Admin" %}
-                            <th>Branch</th>
-                        {% endif %}
-                        <th>Employee</th>
-                        <th>Designation</th>
-                        <th>Pieces Stitched</th>
+
+                        <th>
+                            Order
+                        </th>
+
+                        <th>
+                            Customer
+                        </th>
+
+                        <th>
+                            Date
+                        </th>
+
+                        <th>
+                            Status
+                        </th>
+
+                        <th class="text-end">
+                            Amount
+                        </th>
+
                     </tr>
+
                 </thead>
 
+
                 <tbody>
-                    {% for employee in performance_employees %}
+
+                    {% for order in recent_orders %}
+
                     <tr>
-                        <td>{{ forloop.counter }}</td>
 
-                        {% if request.user.role == "Admin" %}
-                        <td>{{ employee.branch.name }}</td>
-                        {% endif %}
+                        <td class="fw-bold">
 
-                        <td class="fw-semibold">{{ employee.name }}</td>
-                        <td>{{ employee.designation }}</td>
+                            #{{ order.id }}
+
+                        </td>
+
+
                         <td>
-                            {% if employee.total_pieces > 0 %}
-                                <span class="badge bg-success fs-6">
-                                    {{ employee.total_pieces }} pieces
-                                </span>
-                            {% else %}
-                                <span class="badge bg-secondary">0 pieces</span>
-                            {% endif %}
+
+                            {{ order.customer.name }}
+
                         </td>
+
+
+                        <td>
+
+                            {{ order.order_date|date:"d-m-Y" }}
+
+                        </td>
+
+
+                        <td>
+
+                            <span class="badge bg-light text-dark border">
+
+                                {{ order.status }}
+
+                            </span>
+
+                        </td>
+
+
+                        <td class="text-end fw-bold">
+
+                            SAR {{ order.total_amount|floatformat:2 }}
+
+                        </td>
+
                     </tr>
+
                     {% empty %}
+
                     <tr>
-                        <td colspan="5" class="text-center py-4">
-                            No active employees found.
+
+                        <td colspan="5"
+                            class="text-center text-muted py-4">
+
+                            No orders found.
+
                         </td>
+
                     </tr>
+
                     {% endfor %}
+
                 </tbody>
 
             </table>
+
         </div>
 
     </div>
-    <!-- /Employee Table -->
-
-
-    <!-- ================================================= -->
-    <!-- PROFIT / FINANCIAL OVERVIEW                       -->
-    <!-- ================================================= -->
-
-    <div class="row g-4 mb-4">
-
-        <div class="col-lg-4">
-            <div class="profit-card">
-                <div>
-                    <p class="mb-1">Net Profit</p>
-                    <h1>₹ {{ net_profit|floatformat:2 }}</h1>
-                </div>
-                <i class="bi bi-graph-up-arrow"></i>
-            </div>
-        </div>
-
-        <div class="col-lg-8">
-            <div class="card border-0 shadow-sm rounded-4 h-100">
-                <div class="card-body">
-                    <h5 class="fw-bold mb-3">
-                        <i class="bi bi-bar-chart"></i>
-                        Financial Overview
-                    </h5>
-                    <div class="chart-container" style="height: 200px;">
-                        <canvas id="financialChart"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-    </div>
-    <!-- /Profit row -->
-
-
-    <!-- ================================================= -->
-    <!-- FINANCIAL CHARTS                                  -->
-    <!-- ================================================= -->
-
-    <div class="row g-4 mb-5">
-
-        <!-- PIE CHART -->
-        <div class="col-lg-5">
-            <div class="card border-0 shadow-sm rounded-4">
-                <div class="card-body">
-                    <h5 class="fw-bold mb-3">
-                        <i class="bi bi-pie-chart-fill"></i>
-                        Financial Distribution
-                    </h5>
-                    <div class="chart-container" style="height: 280px;">
-                        <canvas id="pieChart"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- SALES / EXPENSE -->
-        <div class="col-lg-7">
-            <div class="card border-0 shadow-sm rounded-4">
-                <div class="card-body">
-                    <h5 class="fw-bold mb-3">
-                        <i class="bi bi-graph-up"></i>
-                        Sales &amp; Expenses
-                    </h5>
-                    <div class="chart-container" style="height: 280px;">
-                        <canvas id="salesExpenseChart"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-    </div>
-    <!-- /Financial Charts row -->
 
 </div>
-<!-- /container-fluid -->
 
 
-<!-- ================================================= -->
-<!-- CHART.JS – loaded once                            -->
-<!-- ================================================= -->
 
-<!-- JSON data for charts (safe to parse in JS) -->
-<script id="branch-data" type="application/json">
+<!-- =========================================================
+     RECENT PAYMENTS
+========================================================= -->
+
+<div class="card border-0 shadow-sm rounded-4 mb-4">
+
+    <div class="card-body">
+
+        <h5 class="fw-bold mb-3">
+
+            <i class="bi bi-credit-card-fill me-2"></i>
+
+            Recent Payments
+
+        </h5>
+
+
+        <div class="table-responsive">
+
+            <table class="table align-middle">
+
+                <thead>
+
+                    <tr>
+
+                        <th>
+                            Payment
+                        </th>
+
+                        <th>
+                            Customer
+                        </th>
+
+                        <th>
+                            Date
+                        </th>
+
+                        <th>
+                            Mode
+                        </th>
+
+                        <th>
+                            Type
+                        </th>
+
+                        <th class="text-end">
+                            Amount
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+
+                <tbody>
+
+                    {% for payment in recent_payments %}
+
+                    <tr>
+
+                        <td class="fw-bold">
+
+                            #{{ payment.id }}
+
+                        </td>
+
+
+                        <td>
+
+                            {{ payment.order.customer.name }}
+
+                        </td>
+
+
+                        <td>
+
+                            {{ payment.payment_date|date:"d-m-Y" }}
+
+                        </td>
+
+
+                        <td>
+
+                            <span class="badge bg-light text-dark border">
+
+                                {{ payment.payment_mode }}
+
+                            </span>
+
+                        </td>
+
+
+                        <td>
+
+                            <span class="badge
+                            {% if payment.payment_type == 'Advance' %}
+                                bg-success-subtle text-success
+                            {% else %}
+                                bg-primary-subtle text-primary
+                            {% endif %}">
+
+                                {{ payment.payment_type }}
+
+                            </span>
+
+                        </td>
+
+
+                        <td class="text-end fw-bold text-success">
+
+                            SAR {{ payment.amount|floatformat:2 }}
+
+                        </td>
+
+                    </tr>
+
+                    {% empty %}
+
+                    <tr>
+
+                        <td colspan="6"
+                            class="text-center text-muted py-4">
+
+                            No payments found.
+
+                        </td>
+
+                    </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+</div>
+
+
+<!-- =========================================================
+     CHART DATA
+========================================================= -->
+
+<script id="branch-data"
+        type="application/json">
+
 {
     "sales": {{ total_sales|default:0 }},
     "purchase": {{ total_purchase|default:0 }},
     "expense": {{ total_expense|default:0 }},
+    "income": {{ total_income|default:0 }},
     "collection": {{ collection|default:0 }},
+
+    "cash": {{ cash|default:0 }},
+    "bank": {{ bank|default:0 }},
+    "online": {{ online|default:0 }},
+    "cheque": {{ cheque|default:0 }},
+    "pos": {{ pos|default:0 }},
+
+    "profit": {{ net_profit|default:0 }},
+
     "empLabels": [
+
         {% for employee in performance_employees %}
-            "{{ employee.name|escapejs }}"{% if not forloop.last %},{% endif %}
+
+            "{{ employee.name|escapejs }}"
+
+            {% if not forloop.last %},{% endif %}
+
         {% endfor %}
+
     ],
+
     "empValues": [
+
         {% for employee in performance_employees %}
-            {{ employee.total_pieces|default:0 }}{% if not forloop.last %},{% endif %}
+
+            {{ employee.total_pieces|default:0 }}
+
+            {% if not forloop.last %},{% endif %}
+
         {% endfor %}
+
+    ],
+
+    "months": [
+
+        {% for month in months %}
+
+            "{{ month|escapejs }}"
+
+            {% if not forloop.last %},{% endif %}
+
+        {% endfor %}
+
+    ],
+
+    "monthlySales": [
+
+        {% for amount in sales %}
+
+            {{ amount }}
+
+            {% if not forloop.last %},{% endif %}
+
+        {% endfor %}
+
     ]
+
 }
+
 </script>
+
+
+<!-- =========================================================
+     CHART.JS
+========================================================= -->
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
+
 <script>
-document.addEventListener("DOMContentLoaded", function () {
 
-    /* ------------------------------------------------- */
-    /* VALUES FROM DJANGO (JSON block for safe parsing)   */
-    /* ------------------------------------------------- */
+document.addEventListener(
+    "DOMContentLoaded",
+    function () {
 
-    const branchDataElem = document.getElementById('branch-data');
-    let branchData = null;
-    if (branchDataElem) {
-        try {
-            branchData = JSON.parse(branchDataElem.textContent);
-        } catch (e) {
-            console.error('Failed to parse branch data JSON:', e);
-            branchData = null;
+
+        /* ================================================
+           CUSTOM DATE FILTER
+        ================================================= */
+
+        const customButton =
+            document.getElementById(
+                "customFilterButton"
+            );
+
+
+        const customBox =
+            document.getElementById(
+                "customDateBox"
+            );
+
+
+        if (
+            customButton &&
+            customBox
+        ) {
+
+            customButton.addEventListener(
+                "click",
+                function () {
+
+                    customBox.classList.toggle(
+                        "d-none"
+                    );
+
+                }
+            );
+
         }
-    }
-
-    const sales      = branchData && !isNaN(Number(branchData.sales)) ? Number(branchData.sales) : 0;
-    const purchase   = branchData && !isNaN(Number(branchData.purchase)) ? Number(branchData.purchase) : 0;
-    const expense    = branchData && !isNaN(Number(branchData.expense)) ? Number(branchData.expense) : 0;
-    const collection = branchData && !isNaN(Number(branchData.collection)) ? Number(branchData.collection) : 0;
-
-    const empLabels = (branchData && Array.isArray(branchData.empLabels)) ? branchData.empLabels : [];
-    const empValues = (branchData && Array.isArray(branchData.empValues)) ? branchData.empValues.map(v => Number(v) || 0) : [];
 
 
-    /* ------------------------------------------------- */
-    /* EMPLOYEE PERFORMANCE CHART                        */
-    /* ------------------------------------------------- */
+        /* ================================================
+           READ DATA
+        ================================================= */
 
-    const empCanvas = document.getElementById("employeePerformanceChart");
+        const dataElement =
+            document.getElementById(
+                "branch-data"
+            );
 
-    if (empCanvas) {
-        new Chart(empCanvas, {
-            type: "bar",
-            data: {
-                labels: empLabels,
-                datasets: [{
-                    label: "Pieces Stitched",
-                    data: empValues,
-                    backgroundColor: "rgba(13, 110, 253, 0.75)",
-                    borderColor: "#0d6efd",
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: { precision: 0 }
+
+        let data = {};
+
+
+        if (dataElement) {
+
+            try {
+
+                data = JSON.parse(
+                    dataElement.textContent
+                );
+
+            } catch (error) {
+
+                console.error(
+                    "Dashboard data error:",
+                    error
+                );
+
+            }
+
+        }
+
+
+        const sales =
+            Number(data.sales) || 0;
+
+
+        const purchase =
+            Number(data.purchase) || 0;
+
+
+        const expense =
+            Number(data.expense) || 0;
+
+
+        const income =
+            Number(data.income) || 0;
+
+
+        const collection =
+            Number(data.collection) || 0;
+
+
+        const cash =
+            Number(data.cash) || 0;
+
+
+        const bank =
+            Number(data.bank) || 0;
+
+
+        const online =
+            Number(data.online) || 0;
+
+
+        const cheque =
+            Number(data.cheque) || 0;
+
+
+        const pos =
+            Number(data.pos) || 0;
+
+
+        const profit =
+            Number(data.profit) || 0;
+
+
+        /* ================================================
+           EMPLOYEE PERFORMANCE
+        ================================================= */
+
+        const employeeCanvas =
+            document.getElementById(
+                "employeePerformanceChart"
+            );
+
+
+        if (employeeCanvas) {
+
+            new Chart(
+                employeeCanvas,
+                {
+
+                    type: "bar",
+
+                    data: {
+
+                        labels:
+                            data.empLabels || [],
+
+                        datasets: [
+
+                            {
+
+                                label:
+                                    "Pieces Stitched",
+
+                                data:
+                                    data.empValues || [],
+
+                                borderWidth: 1
+
+                            }
+
+                        ]
+
+                    },
+
+                    options: {
+
+                        responsive: true,
+
+                        maintainAspectRatio: false,
+
+                        plugins: {
+
+                            legend: {
+                                display: false
+                            }
+
+                        },
+
+                        scales: {
+
+                            y: {
+
+                                beginAtZero: true,
+
+                                ticks: {
+                                    precision: 0
+                                }
+
+                            }
+
+                        }
+
                     }
+
                 }
-            }
-        });
+            );
+
+        }
+
+
+        /* ================================================
+           FINANCIAL OVERVIEW
+        ================================================= */
+
+        const financialCanvas =
+            document.getElementById(
+                "financialChart"
+            );
+
+
+        if (financialCanvas) {
+
+            new Chart(
+                financialCanvas,
+                {
+
+                    type: "bar",
+
+                    data: {
+
+                        labels: [
+                            "Income",
+                            "Purchase",
+                            "Expense",
+                            "Net Profit"
+                        ],
+
+                        datasets: [
+
+                            {
+
+                                label:
+                                    "Amount (SAR)",
+
+                                data: [
+                                    income,
+                                    purchase,
+                                    expense,
+                                    profit
+                                ],
+
+                                borderWidth: 1
+
+                            }
+
+                        ]
+
+                    },
+
+                    options: {
+
+                        responsive: true,
+
+                        maintainAspectRatio: false,
+
+                        plugins: {
+
+                            legend: {
+                                display: false
+                            }
+
+                        },
+
+                        scales: {
+
+                            y: {
+                                beginAtZero: true
+                            }
+
+                        }
+
+                    }
+
+                }
+            );
+
+        }
+
+
+        /* ================================================
+           FINANCIAL DISTRIBUTION
+        ================================================= */
+
+        const pieCanvas =
+            document.getElementById(
+                "pieChart"
+            );
+
+
+        if (pieCanvas) {
+
+            new Chart(
+                pieCanvas,
+                {
+
+                    type: "doughnut",
+
+                    data: {
+
+                        labels: [
+                            "Sales",
+                            "Purchase",
+                            "Expense"
+                        ],
+
+                        datasets: [
+
+                            {
+
+                                data: [
+                                    sales,
+                                    purchase,
+                                    expense
+                                ],
+
+                                borderWidth: 2
+
+                            }
+
+                        ]
+
+                    },
+
+                    options: {
+
+                        responsive: true,
+
+                        maintainAspectRatio: false,
+
+                        plugins: {
+
+                            legend: {
+
+                                position:
+                                    "bottom"
+
+                            }
+
+                        }
+
+                    }
+
+                }
+            );
+
+        }
+
+
+        /* ================================================
+           SALES VS EXPENSE
+        ================================================= */
+
+        const salesExpenseCanvas =
+            document.getElementById(
+                "salesExpenseChart"
+            );
+
+
+        if (salesExpenseCanvas) {
+
+            new Chart(
+                salesExpenseCanvas,
+                {
+
+                    type: "bar",
+
+                    data: {
+
+                        labels: [
+                            "Sales",
+                            "Expenses"
+                        ],
+
+                        datasets: [
+
+                            {
+
+                                label:
+                                    "Amount (SAR)",
+
+                                data: [
+                                    sales,
+                                    purchase + expense
+                                ],
+
+                                borderWidth: 1
+
+                            }
+
+                        ]
+
+                    },
+
+                    options: {
+
+                        responsive: true,
+
+                        maintainAspectRatio: false,
+
+                        plugins: {
+
+                            legend: {
+                                display: false
+                            }
+
+                        },
+
+                        scales: {
+
+                            y: {
+                                beginAtZero: true
+                            }
+
+                        }
+
+                    }
+
+                }
+            );
+
+        }
+
+
+        /* ================================================
+           PAYMENT MODE
+        ================================================= */
+
+        const paymentCanvas =
+            document.getElementById(
+                "paymentChart"
+            );
+
+
+        if (paymentCanvas) {
+
+            new Chart(
+                paymentCanvas,
+                {
+
+                    type: "doughnut",
+
+                    data: {
+
+                        labels: [
+                            "Cash",
+                            "Bank",
+                            "Online",
+                            "Cheque",
+                            "POS"
+                        ],
+
+                        datasets: [
+
+                            {
+
+                                data: [
+                                    cash,
+                                    bank,
+                                    online,
+                                    cheque,
+                                    pos
+                                ],
+
+                                borderWidth: 2
+
+                            }
+
+                        ]
+
+                    },
+
+                    options: {
+
+                        responsive: true,
+
+                        maintainAspectRatio: false,
+
+                        plugins: {
+
+                            legend: {
+
+                                position:
+                                    "bottom"
+
+                            }
+
+                        }
+
+                    }
+
+                }
+            );
+
+        }
+
+
+        /* ================================================
+           MONTHLY SALES
+        ================================================= */
+
+        const monthlyCanvas =
+            document.getElementById(
+                "monthlySalesChart"
+            );
+
+
+        if (monthlyCanvas) {
+
+            new Chart(
+                monthlyCanvas,
+                {
+
+                    type: "line",
+
+                    data: {
+
+                        labels:
+                            data.months || [],
+
+                        datasets: [
+
+                            {
+
+                                label:
+                                    "Sales",
+
+                                data:
+                                    data.monthlySales || [],
+
+                                fill: true,
+
+                                tension: 0.35,
+
+                                borderWidth: 2
+
+                            }
+
+                        ]
+
+                    },
+
+                    options: {
+
+                        responsive: true,
+
+                        maintainAspectRatio: false,
+
+                        scales: {
+
+                            y: {
+
+                                beginAtZero: true
+
+                            }
+
+                        }
+
+                    }
+
+                }
+
+            );
+
+        }
+
     }
 
+);
 
-    /* ------------------------------------------------- */
-    /* PIE CHART                                         */
-    /* ------------------------------------------------- */
-
-    const pieCanvas = document.getElementById("pieChart");
-
-    if (pieCanvas) {
-        new Chart(pieCanvas, {
-            type: "doughnut",
-            data: {
-                labels: ["Sales", "Purchase", "Expense"],
-                datasets: [{
-                    data: [sales, purchase, expense],
-                    borderWidth: 2
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { position: "bottom" }
-                }
-            }
-        });
-    }
-
-
-    /* ------------------------------------------------- */
-    /* FINANCIAL OVERVIEW BAR CHART                      */
-    /* ------------------------------------------------- */
-
-    const financialCanvas = document.getElementById("financialChart");
-
-    if (financialCanvas) {
-        new Chart(financialCanvas, {
-            type: "bar",
-            data: {
-                labels: ["Collection", "Sales", "Purchase", "Expense"],
-                datasets: [{
-                    label: "Amount (₹)",
-                    data: [collection, sales, purchase, expense],
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false }
-                },
-                scales: {
-                    y: { beginAtZero: true }
-                }
-            }
-        });
-    }
-
-
-    /* ------------------------------------------------- */
-    /* SALES VS EXPENSE CHART                            */
-    /* ------------------------------------------------- */
-
-    const salesExpenseCanvas = document.getElementById("salesExpenseChart");
-
-    if (salesExpenseCanvas) {
-        new Chart(salesExpenseCanvas, {
-            type: "bar",
-            data: {
-                labels: ["Sales", "Expenses"],
-                datasets: [{
-                    label: "Amount (₹)",
-                    data: [sales, expense],
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false }
-                },
-                scales: {
-                    y: { beginAtZero: true }
-                }
-            }
-        });
-    }
-
-});
 </script>
+
+
+
+<!-- =========================================================
+     DASHBOARD CSS
+========================================================= -->
+
+<style>
+
+.dashboard-header {
+
+    background: white;
+
+    padding: 25px;
+
+    border-radius: 18px;
+
+    box-shadow:
+        0 5px 20px rgba(0,0,0,.06);
+
+}
+
+
+.dashboard-card {
+
+    border-radius: 18px;
+
+    padding: 22px;
+
+    min-height: 145px;
+
+    color: white;
+
+    box-shadow:
+        0 8px 20px rgba(0,0,0,.08);
+
+    transition:
+        transform .2s ease,
+        box-shadow .2s ease;
+
+}
+
+
+.dashboard-card:hover {
+
+    transform: translateY(-4px);
+
+    box-shadow:
+        0 12px 25px rgba(0,0,0,.12);
+
+}
+
+
+.card-content {
+
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: center;
+
+}
+
+
+.dashboard-card p {
+
+    margin: 0 0 8px;
+
+    opacity: .9;
+
+    font-size: 15px;
+
+}
+
+
+.dashboard-card h2 {
+
+    font-size: 26px;
+
+    font-weight: 700;
+
+    margin: 0;
+
+}
+
+
+.card-icon {
+
+    font-size: 40px;
+
+    opacity: .85;
+
+}
+
+
+.card-blue {
+
+    background:
+        linear-gradient(
+            135deg,
+            #0d6efd,
+            #3d8bfd
+        );
+
+}
+
+
+.card-green {
+
+    background:
+        linear-gradient(
+            135deg,
+            #198754,
+            #32a36f
+        );
+
+}
+
+
+.card-orange {
+
+    background:
+        linear-gradient(
+            135deg,
+            #fd7e14,
+            #ff9f43
+        );
+
+}
+
+
+.card-purple {
+
+    background:
+        linear-gradient(
+            135deg,
+            #6f42c1,
+            #8b5cf6
+        );
+
+}
+
+
+.card-red {
+
+    background:
+        linear-gradient(
+            135deg,
+            #dc3545,
+            #ef4444
+        );
+
+}
+
+
+.chart-container {
+
+    position: relative;
+
+    width: 100%;
+
+}
+
+
+</style>
+
 
 {% endblock %}
