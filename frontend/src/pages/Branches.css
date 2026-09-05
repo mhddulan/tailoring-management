@@ -1,0 +1,179 @@
+/* =========================================================
+   BRANCHES PAGE
+========================================================= */
+
+.branches-page {
+    width: 100%;
+}
+
+
+/* =========================================================
+   BRANCH ROW
+========================================================= */
+
+.branch-row {
+    transition:
+        background-color 0.15s ease,
+        box-shadow 0.15s ease;
+}
+
+.branch-row:hover {
+    background-color: #f8f9fa;
+}
+
+
+/* =========================================================
+   BRANCH LINK
+========================================================= */
+
+.branch-name-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    text-decoration: none;
+
+    color: #212529;
+
+    background: transparent;
+    border: 0;
+
+    padding: 0;
+
+    text-align: left;
+
+    cursor: pointer;
+}
+
+.branch-name-link:hover {
+    color: #0d6efd;
+}
+
+
+.branch-name {
+    font-weight: 600;
+    font-size: 15px;
+}
+
+
+.branch-icon-small {
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 10px;
+
+    background: #eaf2ff;
+    color: #0d6efd;
+
+    font-size: 18px;
+
+    transition:
+        background-color 0.15s ease,
+        transform 0.15s ease;
+}
+
+
+.branch-name-link:hover .branch-icon-small {
+    background: #0d6efd;
+    color: white;
+
+    transform: translateY(-1px);
+}
+
+
+/* =========================================================
+   BADGES
+========================================================= */
+
+.branches-page .badge {
+    font-weight: 500;
+}
+
+
+/* =========================================================
+   PERFORMANCE BUTTON
+========================================================= */
+
+.branch-row .btn-primary {
+    border-radius: 8px;
+    font-weight: 500;
+
+    transition:
+        transform 0.15s ease,
+        box-shadow 0.15s ease;
+}
+
+.branch-row .btn-primary:hover {
+    transform: translateY(-1px);
+}
+
+
+/* =========================================================
+   EMPTY STATE
+========================================================= */
+
+.empty-state {
+    padding: 20px;
+}
+
+
+.empty-icon {
+    width: 60px;
+    height: 60px;
+
+    margin: 0 auto 15px;
+
+    border-radius: 14px;
+
+    background: #f1f3f5;
+    color: #6c757d;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    font-size: 26px;
+}
+
+
+/* =========================================================
+   FOOTER
+========================================================= */
+
+.branch-table-footer {
+    border-top: 1px solid #e9ecef;
+
+    padding: 14px 18px;
+
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    gap: 15px;
+
+    flex-wrap: wrap;
+}
+
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 767px) {
+
+    .branch-table-footer {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+
+    .branch-row .btn-primary {
+        width: 100%;
+    }
+
+}

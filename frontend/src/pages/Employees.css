@@ -1,0 +1,52 @@
+.employee-page {
+    width: 100%;
+}
+
+.employee-page .card {
+    border-radius: 16px;
+}
+
+.employee-page .table {
+    margin-bottom: 0;
+}
+
+.employee-page .table th {
+    white-space: nowrap;
+    font-weight: 600;
+}
+
+.employee-page .table td {
+    vertical-align: middle;
+}
+
+.employee-page .btn {
+    border-radius: 8px;
+}
+
+.employee-page .form-control,
+.employee-page .form-select {
+    border-radius: 8px;
+}
+
+.employee-page .badge {
+    padding: 7px 10px;
+    border-radius: 8px;
+}
+
+@media (max-width: 768px) {
+
+    .employee-page .page-header {
+        flex-direction: column;
+        align-items: flex-start !important;
+        gap: 15px;
+    }
+
+    .employee-page .header-actions {
+        width: 100%;
+    }
+
+    .employee-page .header-actions .btn {
+        width: 100%;
+    }
+
+}

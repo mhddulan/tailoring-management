@@ -1,0 +1,633 @@
+/* =========================================================
+   STITCHING PRO - MAIN LAYOUT
+   ========================================================= */
+
+* {
+    box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+    margin: 0;
+    padding: 0;
+    min-height: 100%;
+}
+
+body {
+    font-family: Arial, Helvetica, sans-serif;
+    background: #f5f7fb;
+}
+
+.app-wrapper {
+    min-height: 100vh;
+    width: 100%;
+    background: #f5f7fb;
+    display: flex;
+}
+
+/* =========================================================
+   SIDEBAR
+   ========================================================= */
+
+.app-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+
+    width: 317px;
+
+    background: #10192d;
+    color: #ffffff;
+
+    display: flex;
+    flex-direction: column;
+
+    z-index: 1000;
+    overflow: hidden;
+
+    transition: transform 0.25s ease;
+}
+
+/* =========================================================
+   BRAND
+   ========================================================= */
+
+.sidebar-header {
+    height: 95px;
+
+    display: flex;
+    align-items: center;
+
+    padding: 0 40px;
+
+    gap: 15px;
+
+    flex-shrink: 0;
+}
+
+.brand-icon-box {
+    width: 50px;
+    height: 50px;
+
+    border-radius: 14px;
+
+    background: linear-gradient(
+        135deg,
+        #2674f5,
+        #1261ed
+    );
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    font-size: 27px;
+
+    flex-shrink: 0;
+
+    box-shadow:
+        0 8px 20px rgba(37, 99, 235, 0.35);
+}
+
+.brand-title {
+    margin: 0;
+
+    font-size: 20px;
+    font-weight: 700;
+
+    line-height: 1.1;
+
+    color: #ffffff;
+}
+
+.brand-subtitle {
+    display: block;
+
+    margin-top: 5px;
+
+    font-size: 13px;
+    font-weight: 600;
+
+    letter-spacing: 0.7px;
+
+    color: #71809b;
+
+    text-transform: uppercase;
+}
+
+/* =========================================================
+   MENU
+   ========================================================= */
+
+.sidebar-menu-wrapper {
+    flex: 1;
+
+    overflow-y: auto;
+
+    padding:
+        10px 29px 20px 40px;
+}
+
+.sidebar-menu-wrapper::-webkit-scrollbar {
+    width: 5px;
+}
+
+.sidebar-menu-wrapper::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.sidebar-menu-wrapper::-webkit-scrollbar-thumb {
+    background: #263450;
+    border-radius: 10px;
+}
+
+/* =========================================================
+   SECTION TITLE
+   ========================================================= */
+
+.menu-section-title {
+    margin:
+        20px 0 9px;
+
+    color: #64728d;
+
+    font-size: 11px;
+    font-weight: 700;
+
+    letter-spacing: 0.8px;
+
+    text-transform: uppercase;
+}
+
+.menu-section-title:first-child {
+    margin-top: 8px;
+}
+
+/* =========================================================
+   NAVIGATION
+   ========================================================= */
+
+.sidebar-nav-link {
+    width: 100%;
+
+    min-height: 48px;
+
+    border: 0;
+
+    border-radius: 11px;
+
+    background: transparent;
+
+    color: #9aa8c0;
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 14px;
+
+    padding:
+        0 15px;
+
+    margin-bottom: 5px;
+
+    cursor: pointer;
+
+    font-family: inherit;
+
+    font-size: 15px;
+
+    font-weight: 600;
+
+    text-align: left;
+
+    transition:
+        background 0.2s ease,
+        color 0.2s ease,
+        transform 0.2s ease;
+}
+
+.sidebar-nav-link i {
+    width: 22px;
+
+    text-align: center;
+
+    font-size: 18px;
+
+    flex-shrink: 0;
+}
+
+.sidebar-nav-link:hover {
+    background:
+        rgba(255, 255, 255, 0.055);
+
+    color: #ffffff;
+}
+
+.sidebar-nav-link.active {
+    background:
+        linear-gradient(
+            135deg,
+            #2868ed,
+            #2563eb
+        );
+
+    color: #ffffff;
+
+    box-shadow:
+        0 8px 18px
+        rgba(37, 99, 235, 0.25);
+}
+
+.sidebar-nav-link.active i {
+    color: #ffffff;
+}
+
+/* =========================================================
+   SIDEBAR FOOTER
+   ========================================================= */
+
+.sidebar-footer {
+    padding:
+        12px 29px 18px 40px;
+
+    flex-shrink: 0;
+
+    border-top:
+        1px solid
+        rgba(255, 255, 255, 0.06);
+}
+
+.logout-link {
+    color: #ff4d5e;
+}
+
+.logout-link:hover {
+    color: #ff6b78;
+
+    background:
+        rgba(220, 53, 69, 0.08);
+}
+
+/* =========================================================
+   MAIN
+   ========================================================= */
+
+.app-main {
+    min-width: 0;
+
+    width: calc(100% - 317px);
+
+    margin-left: 317px;
+
+    min-height: 100vh;
+
+    display: flex;
+    flex-direction: column;
+}
+
+/* =========================================================
+   HEADER
+   ========================================================= */
+
+.app-header {
+    height: 80px;
+
+    background: #ffffff;
+
+    border-bottom:
+        1px solid #e8edf4;
+
+    box-shadow:
+        0 2px 7px
+        rgba(15, 23, 42, 0.04);
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    padding: 0 30px;
+
+    flex-shrink: 0;
+
+    position: sticky;
+
+    top: 0;
+
+    z-index: 900;
+}
+
+.header-left {
+    display: flex;
+
+    align-items: center;
+
+    gap: 15px;
+}
+
+.page-title-wrapper h5 {
+    margin: 0;
+
+    color: #20252d;
+
+    font-size: 21px;
+
+    font-weight: 700;
+}
+
+/* =========================================================
+   USER PROFILE
+   ========================================================= */
+
+.header-right {
+    display: flex;
+
+    align-items: center;
+}
+
+.user-profile-badge {
+    display: flex;
+
+    align-items: center;
+
+    gap: 11px;
+
+    padding:
+        7px 14px 7px 8px;
+
+    border:
+        1px solid #e4e9f0;
+
+    border-radius: 30px;
+
+    background: #ffffff;
+}
+
+.user-avatar-circle {
+    width: 40px;
+    height: 40px;
+
+    border-radius: 50%;
+
+    background: #2670ed;
+
+    color: #ffffff;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    font-size: 17px;
+
+    font-weight: 700;
+}
+
+.header-user-info {
+    line-height: 1.2;
+}
+
+.header-username {
+    color: #20252d;
+
+    font-size: 14px;
+
+    font-weight: 700;
+}
+
+.header-role {
+    display: inline-block;
+
+    margin-top: 3px;
+
+    padding:
+        2px 9px;
+
+    border-radius: 20px;
+
+    background: #e9f1ff;
+
+    color: #1261ed;
+
+    font-size: 11px;
+
+    font-weight: 700;
+}
+
+/* =========================================================
+   CONTENT
+   ========================================================= */
+
+.app-content {
+    flex: 1;
+
+    padding:
+        28px 40px 35px;
+
+    min-width: 0;
+}
+
+/* =========================================================
+   SIDEBAR TOGGLE
+   ========================================================= */
+
+.sidebar-toggle {
+    display: none;
+
+    width: 40px;
+    height: 40px;
+
+    border: 0;
+
+    border-radius: 9px;
+
+    background: #f1f4f8;
+
+    color: #20252d;
+
+    cursor: pointer;
+
+    font-size: 22px;
+
+    align-items: center;
+    justify-content: center;
+}
+
+/* =========================================================
+   MOBILE BACKDROP
+   ========================================================= */
+
+.sidebar-backdrop {
+    display: none;
+}
+
+/* =========================================================
+   TABLET
+   ========================================================= */
+
+@media (max-width: 1199px) {
+
+    .app-sidebar {
+        width: 270px;
+    }
+
+    .app-main {
+        width: calc(100% - 270px);
+
+        margin-left: 270px;
+    }
+
+    .sidebar-header {
+        padding:
+            0 28px;
+    }
+
+    .sidebar-menu-wrapper {
+        padding:
+            10px 20px 20px 28px;
+    }
+
+    .sidebar-footer {
+        padding:
+            12px 20px 18px 28px;
+    }
+
+    .app-content {
+        padding:
+            24px 28px 30px;
+    }
+}
+
+/* =========================================================
+   MOBILE
+   ========================================================= */
+
+@media (max-width: 991px) {
+
+    .app-sidebar {
+        width: 280px;
+
+        transform:
+            translateX(-100%);
+
+        box-shadow:
+            10px 0 30px
+            rgba(0, 0, 0, 0.18);
+    }
+
+    .app-sidebar.show {
+        transform:
+            translateX(0);
+    }
+
+    .app-main {
+        width: 100%;
+
+        margin-left: 0;
+    }
+
+    .sidebar-toggle {
+        display: flex;
+    }
+
+    .sidebar-backdrop {
+        display: block;
+
+        position: fixed;
+
+        inset: 0;
+
+        background:
+            rgba(0, 0, 0, 0.45);
+
+        z-index: 950;
+
+        opacity: 0;
+
+        pointer-events: none;
+
+        transition:
+            opacity 0.2s ease;
+    }
+
+    .sidebar-backdrop.show {
+        opacity: 1;
+
+        pointer-events: auto;
+    }
+
+    .app-header {
+        padding:
+            0 20px;
+    }
+
+    .app-content {
+        padding:
+            20px;
+    }
+}
+
+/* =========================================================
+   SMALL MOBILE
+   ========================================================= */
+
+@media (max-width: 575px) {
+
+    .app-header {
+        height: 68px;
+
+        padding:
+            0 14px;
+    }
+
+    .page-title-wrapper h5 {
+        font-size: 17px;
+    }
+
+    .header-user-info {
+        display: none;
+    }
+
+    .user-profile-badge {
+        padding: 4px;
+
+        border: 0;
+    }
+
+    .user-avatar-circle {
+        width: 38px;
+        height: 38px;
+    }
+
+    .app-content {
+        padding: 15px;
+    }
+}
+
+/* =========================================================
+   PRINT
+   ========================================================= */
+
+@media print {
+
+    .app-sidebar,
+    .app-header,
+    .sidebar-backdrop,
+    .no-print {
+        display: none !important;
+    }
+
+    .app-main {
+        width: 100% !important;
+
+        margin-left: 0 !important;
+    }
+
+    .app-content {
+        padding: 0 !important;
+    }
+}

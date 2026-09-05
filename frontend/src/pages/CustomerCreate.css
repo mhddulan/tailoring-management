@@ -1,0 +1,151 @@
+.customer-create-page {
+    padding-bottom: 40px;
+}
+
+
+/* =========================================================
+   FORM CARD
+========================================================= */
+
+.customer-form-card {
+    background: #ffffff;
+    border-radius: 14px;
+    border: 1px solid #e5e7eb;
+    margin-bottom: 22px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+}
+
+.customer-form-card-header {
+    padding: 16px 20px;
+    background: #f8fafc;
+    border-bottom: 1px solid #e5e7eb;
+
+    font-size: 16px;
+    font-weight: 700;
+    color: #111827;
+
+    display: flex;
+    align-items: center;
+    gap: 9px;
+}
+
+.customer-form-card-header i {
+    color: #2563eb;
+    font-size: 18px;
+}
+
+.customer-form-card-body {
+    padding: 22px;
+}
+
+
+/* =========================================================
+   LABELS
+========================================================= */
+
+.customer-form-label {
+    display: block;
+    margin-bottom: 7px;
+
+    font-size: 14px;
+    font-weight: 600;
+    color: #374151;
+}
+
+
+/* =========================================================
+   INPUTS
+========================================================= */
+
+.customer-create-page .form-control,
+.customer-create-page .form-select {
+    min-height: 42px;
+
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+
+    font-size: 14px;
+    color: #111827;
+
+    box-shadow: none;
+}
+
+.customer-create-page textarea.form-control {
+    min-height: auto;
+    resize: vertical;
+}
+
+.customer-create-page .form-control:focus,
+.customer-create-page .form-select:focus {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+
+/* =========================================================
+   ACTIONS
+========================================================= */
+
+.customer-form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+
+    padding: 18px 0 10px;
+}
+
+.customer-form-actions .btn {
+    min-width: 130px;
+}
+
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 768px) {
+
+    .customer-form-card-body {
+        padding: 17px;
+    }
+
+    .customer-form-actions {
+        flex-direction: column-reverse;
+    }
+
+    .customer-form-actions .btn {
+        width: 100%;
+    }
+
+}
+
+@media (max-width: 576px) {
+
+    .customer-create-page .page-header-block {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .customer-create-page .page-header-block .btn {
+        width: 100%;
+    }
+
+}
+.customer-edit-loading {
+    min-height: 400px;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+    gap: 15px;
+
+    color: #6b7280;
+}
+
+.customer-edit-loading p {
+    margin: 0;
+    font-size: 14px;
+}
