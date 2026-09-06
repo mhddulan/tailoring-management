@@ -56,6 +56,13 @@ class Alteration(models.Model):
     notes = models.TextField(
         blank=True
     )
+    assigned_employee = models.ForeignKey(
+    "employees.Employee",
+    on_delete=models.SET_NULL,
+    null=True,
+    blank=True,
+    related_name="alterations",
+    )
 
     # ============================================================
     # ADVANCE PAYMENT

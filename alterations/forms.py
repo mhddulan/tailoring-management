@@ -21,6 +21,7 @@ class AlterationForm(forms.ModelForm):
             "item_name",
             "custom_size",
             "notes",
+            "assigned_employee",
             "advance_amount",
             "advance_payment_mode",
         ]

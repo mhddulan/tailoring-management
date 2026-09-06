@@ -283,7 +283,29 @@
                         {% endif %}
 
                     </div>
+                      <!-- ASSIGNED EMPLOYEE -->
 
+<div class="col-md-6">
+
+    <label class="form-label fw-semibold">
+        Assigned Employee
+    </label>
+
+    {{ form.assigned_employee }}
+
+    <div class="form-text">
+        Optional. Select the employee responsible for this alteration.
+    </div>
+
+    {% if form.assigned_employee.errors %}
+
+        <div class="text-danger small mt-1">
+            {{ form.assigned_employee.errors }}
+        </div>
+
+    {% endif %}
+
+</div>
 
                     <!-- CUSTOM SIZE -->
 
