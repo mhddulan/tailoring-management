@@ -4,7 +4,7 @@ import {
     Route,
     Navigate,
 } from "react-router-dom";
-
+import ForgotPassword from "./pages/ForgotPassword";
 import Dashboard from "./pages/Dashboard";
 import Login from "./pages/Login";
 
@@ -181,7 +181,13 @@ function App() {
                     }
                 />
 
-
+                <Route
+                    path="/forgot-password"
+                    element={
+                        <ForgotPassword />
+                    }
+                />
+  
                 {/* =====================================================
                     DASHBOARD
                 ===================================================== */}
