@@ -1,321 +1,177 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../services/api";
-import "./Login.css";
 
 function Login() {
-
     const navigate = useNavigate();
 
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
-
-    const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
-
+    const [loading, setLoading] = useState(false);
 
     const handleSubmit = async (e) => {
-
         e.preventDefault();
 
         setError("");
         setLoading(true);
 
         try {
-
             const response = await api.post("login/", {
-                username: username.trim(),
-                password: password,
+                username,
+                password,
             });
 
+            if (response.data.token) {
+                localStorage.setItem("token", response.data.token);
 
-            /*
-            =========================================================
-            SAVE TOKEN
-            =========================================================
-            */
+                if (response.data.user) {
+                    localStorage.setItem(
+                        "user",
+                        JSON.stringify(response.data.user)
+                    );
+                }
 
-            const token = response.data.token;
-
-            if (!token) {
-                throw new Error("Login token was not returned by server.");
-            }
-
-            localStorage.setItem("token", token);
-
-
-            /*
-            =========================================================
-            SAVE USER INFORMATION
-            =========================================================
-            */
-
-            if (response.data.user) {
-
-                localStorage.setItem(
-                    "user",
-                    JSON.stringify(response.data.user)
-                );
-
-            }
-
-
-            /*
-            =========================================================
-            REDIRECT
-            =========================================================
-            */
-
-            const user = response.data.user;
-
-            if (
-                user?.role === "Branch" ||
-                user?.role === "Branch Manager"
-            ) {
-
-                navigate("/dashboard", {
-                    replace: true,
-                });
-
+                navigate("/dashboard", { replace: true });
             } else {
-
-                navigate("/dashboard", {
-                    replace: true,
-                });
-
+                setError("Login token was not returned.");
             }
 
         } catch (err) {
+            console.error(err);
 
-            console.error("Login error:", err);
-
-            if (err.response) {
-
-                const data = err.response.data;
-
-                setError(
-                    data.error ||
-                    data.detail ||
-                    "Invalid username or password."
-                );
-
-            } else {
-
-                setError(
-                    "Unable to connect to the server. Please try again."
-                );
-
-            }
+            setError(
+                err.response?.data?.error ||
+                err.response?.data?.detail ||
+                "Invalid username or password."
+            );
 
         } finally {
-
             setLoading(false);
-
         }
-
     };
 
-
     return (
+        <div style={{
+            minHeight: "100vh",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            background: "#0F172A"
+        }}>
 
-        <div className="login-page">
+            <div style={{
+                width: "100%",
+                maxWidth: "440px",
+                background: "white",
+                padding: "40px",
+                borderRadius: "16px"
+            }}>
 
-            <div className="login-card">
+                <h2 style={{
+                    textAlign: "center",
+                    marginBottom: "10px"
+                }}>
+                    ✂ Stitching Pro
+                </h2>
 
-
-                {/* =====================================================
-                    BRAND
-                ===================================================== */}
-
-                <div className="login-brand">
-
-                    <div className="login-brand-icon">
-
-                        <i className="bi bi-scissors"></i>
-
-                    </div>
-
-                    <div>
-
-                        <h2 className="login-brand-title">
-                            Stitching Pro
-                        </h2>
-
-                        <span
-                            className="badge bg-primary-subtle text-primary fw-semibold"
-                            style={{
-                                fontSize: "0.75rem",
-                            }}
-                        >
-                            TAILORING ERP
-                        </span>
-
-                    </div>
-
-                </div>
-
-
-                {/* =====================================================
-                    SUBTITLE
-                ===================================================== */}
-
-                <p className="login-subtitle">
-
-                    Sign in to manage orders, branch performance,
-                    and financial reports
-
+                <p style={{
+                    textAlign: "center",
+                    color: "#64748B",
+                    marginBottom: "30px"
+                }}>
+                    Tailoring Management ERP
                 </p>
 
-
-                {/* =====================================================
-                    ERROR
-                ===================================================== */}
-
                 {error && (
-
-                    <div className="alert alert-danger mb-4">
-
-                        <i className="bi bi-exclamation-circle-fill me-2"></i>
-
+                    <div style={{
+                        background: "#fee2e2",
+                        color: "#991b1b",
+                        padding: "12px",
+                        borderRadius: "8px",
+                        marginBottom: "20px"
+                    }}>
                         {error}
-
                     </div>
-
                 )}
-
-
-                {/* =====================================================
-                    LOGIN FORM
-                ===================================================== */}
 
                 <form onSubmit={handleSubmit}>
 
+                    <div style={{ marginBottom: "20px" }}>
+                        <label>Username</label>
 
-                    {/* USERNAME */}
-
-                    <div className="mb-3">
-
-                        <label className="form-label fw-semibold text-dark mb-1">
-
-                            Username
-
-                        </label>
-
-                        <div className="input-group">
-
-                            <span className="input-group-text bg-light border-end-0">
-
-                                <i className="bi bi-person text-muted"></i>
-
-                            </span>
-
-                            <input
-                                type="text"
-                                className="form-control border-start-0"
-                                placeholder="Enter your username"
-                                value={username}
-                                onChange={(e) =>
-                                    setUsername(e.target.value)
-                                }
-                                required
-                                autoFocus
-                            />
-
-                        </div>
-
+                        <input
+                            type="text"
+                            value={username}
+                            onChange={(e) =>
+                                setUsername(e.target.value)
+                            }
+                            placeholder="Enter username"
+                            required
+                            autoFocus
+                            style={{
+                                width: "100%",
+                                padding: "12px",
+                                marginTop: "6px",
+                                border: "1px solid #ddd",
+                                borderRadius: "8px"
+                            }}
+                        />
                     </div>
 
+                    <div style={{ marginBottom: "20px" }}>
+                        <label>Password</label>
 
-                    {/* PASSWORD */}
-
-                    <div className="mb-4">
-
-                        <label className="form-label fw-semibold text-dark mb-1">
-
-                            Password
-
-                        </label>
-
-                        <div className="input-group">
-
-                            <span className="input-group-text bg-light border-end-0">
-
-                                <i className="bi bi-lock text-muted"></i>
-
-                            </span>
-
-                            <input
-                                type="password"
-                                className="form-control border-start-0"
-                                placeholder="Enter your password"
-                                value={password}
-                                onChange={(e) =>
-                                    setPassword(e.target.value)
-                                }
-                                required
-                            />
-
-                        </div>
-
+                        <input
+                            type="password"
+                            value={password}
+                            onChange={(e) =>
+                                setPassword(e.target.value)
+                            }
+                            placeholder="Enter password"
+                            required
+                            style={{
+                                width: "100%",
+                                padding: "12px",
+                                marginTop: "6px",
+                                border: "1px solid #ddd",
+                                borderRadius: "8px"
+                            }}
+                        />
                     </div>
-
-
-                    {/* LOGIN BUTTON */}
 
                     <button
                         type="submit"
-                        className="btn btn-login d-flex align-items-center justify-content-center gap-2"
                         disabled={loading}
+                        style={{
+                            width: "100%",
+                            padding: "13px",
+                            border: "none",
+                            borderRadius: "8px",
+                            background: "#2563EB",
+                            color: "white",
+                            fontWeight: "600",
+                            cursor: "pointer"
+                        }}
                     >
-
-                        {loading ? (
-
-                            <>
-                                <span
-                                    className="spinner-border spinner-border-sm"
-                                    role="status"
-                                ></span>
-
-                                <span>
-                                    Signing In...
-                                </span>
-                            </>
-
-                        ) : (
-
-                            <>
-                                <span>
-                                    Sign In
-                                </span>
-
-                                <i className="bi bi-arrow-right"></i>
-                            </>
-
-                        )}
-
+                        {loading ? "Signing In..." : "Sign In →"}
                     </button>
 
                 </form>
 
-
-                {/* =====================================================
-                    FOOTER
-                ===================================================== */}
-
-                <div className="login-footer">
-
-                    &copy; 2026 Stitching Pro &bull;
-                    Tailoring Management ERP
-
-                </div>
+                <p style={{
+                    textAlign: "center",
+                    marginTop: "25px",
+                    color: "#94A3B8",
+                    fontSize: "13px"
+                }}>
+                    © 2026 Stitching Pro • Tailoring Management ERP
+                </p>
 
             </div>
 
         </div>
-
     );
-
 }
-
 
 export default Login;
