@@ -288,7 +288,7 @@ function App() {
                 ===================================================== */}
 
                 <Route
-                    path="/products"
+                    path="/Products"
                     element={
                         <ProtectedLayout>
                             <Products />
@@ -297,7 +297,7 @@ function App() {
                 />
 
                 <Route
-                    path="/products/create"
+                    path="/Products/create"
                     element={
                         <ProtectedLayout>
                             <ProductCreate />
@@ -306,7 +306,7 @@ function App() {
                 />
 
                 <Route
-                    path="/products/:id/edit"
+                    path="/Products/:id/edit"
                     element={
                         <ProtectedLayout>
                             <ProductEdit />
