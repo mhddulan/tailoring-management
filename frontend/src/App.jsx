@@ -27,9 +27,9 @@ import OrderPayment from "./pages/OrderPayment";
 import OrderStatus from "./pages/OrderStatus";
 import OrderDelivery from "./pages/OrderDelivery";
 
-import Products from "./pages/products/Products";
-import ProductCreate from "./pages/products/ProductCreate";
-import ProductEdit from "./pages/products/ProductEdit";
+import Products from "./pages/Products/Products";
+import ProductCreate from "./pages/Products/ProductCreate";
+import ProductEdit from "./pages/Products/ProductEdit";
 
 import StockTransfer from "./pages/inventory/StockTransfer";
 import BranchStock from "./pages/inventory/BranchStock";
