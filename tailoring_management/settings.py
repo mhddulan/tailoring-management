@@ -100,9 +100,8 @@ INSTALLED_APPS = [
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
-        "rest_framework.authentication.TokenAuthentication",
+        "api.authentication.CookieTokenAuthentication",
     ],
-
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.IsAuthenticated",
     ],
@@ -144,6 +143,7 @@ CORS_ALLOWED_ORIGINS = [
 
     # Vercel frontend
     "https://tailoring-management-gsdqh4z1l-dulan2.vercel.app",
+    "https://tailoring-management-gsdqh4z1l-dulan2.vercel.app"
 ]
 CORS_ALLOW_CREDENTIALS = True
 
