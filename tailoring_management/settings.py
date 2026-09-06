@@ -141,10 +141,13 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
 
-    # Vercel frontend
+    # Production Vercel frontend
+    "https://tailoring-management.vercel.app",
+
+    # Old Vercel URL
     "https://tailoring-management-gsdqh4z1l-dulan2.vercel.app",
-    "https://tailoring-management-gsdqh4z1l-dulan2.vercel.app"
 ]
+
 CORS_ALLOW_CREDENTIALS = True
 
 
