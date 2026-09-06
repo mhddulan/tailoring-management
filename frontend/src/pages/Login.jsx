@@ -19,62 +19,84 @@ function Login() {
         try {
             const response = await api.post("login/", {
                 username: username.trim(),
-                password,
+                password: password,
             });
 
-            if (response.data.success) {
-                // Store only user information.
-                // Authentication token is stored in an HTTP-only cookie
-                // by Django and is NOT stored in localStorage.
+            console.log("Login response:", response.data);
+
+            if (response.data.success && response.data.token) {
+
+                // Save authentication token
+                localStorage.setItem(
+                    "token",
+                    response.data.token
+                );
+
+                // Save user information
                 localStorage.setItem(
                     "user",
                     JSON.stringify(response.data.user)
                 );
 
-                if (response.data.user.dashboard === "admin") {
-                    navigate("/dashboard");
-                } else if (
+                // Redirect based on dashboard
+                if (
                     response.data.user.dashboard === "branch"
                 ) {
                     navigate("/branch-dashboard");
                 } else {
                     navigate("/dashboard");
                 }
+
             } else {
+
                 setError(
                     response.data.message ||
-                        "Invalid username or password."
+                    "Invalid username or password."
                 );
             }
+
         } catch (error) {
+
             console.error("Login error:", error);
 
             if (error.response) {
+
                 setError(
                     error.response.data?.message ||
-                        error.response.data?.error ||
-                        "Invalid username or password."
+                    error.response.data?.error ||
+                    "Invalid username or password."
                 );
+
             } else {
+
                 setError(
                     "Unable to connect to the server. Please try again."
                 );
             }
+
         } finally {
+
             setLoading(false);
         }
     };
 
     return (
         <div className="container-fluid min-vh-100 d-flex align-items-center justify-content-center bg-light">
+
             <div
                 className="card shadow-lg border-0 rounded-4"
-                style={{ width: "100%", maxWidth: "430px" }}
+                style={{
+                    width: "100%",
+                    maxWidth: "430px",
+                }}
             >
+
                 <div className="card-body p-4 p-md-5">
 
-                    {/* Logo / Header */}
+                    {/* Header */}
+
                     <div className="text-center mb-4">
+
                         <div
                             className="bg-dark text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
                             style={{
@@ -93,9 +115,12 @@ function Login() {
                         <p className="text-muted mb-0">
                             Sign in to your account
                         </p>
+
                     </div>
 
+
                     {/* Error */}
+
                     {error && (
                         <div
                             className="alert alert-danger"
@@ -106,11 +131,15 @@ function Login() {
                         </div>
                     )}
 
+
                     {/* Login Form */}
+
                     <form onSubmit={handleSubmit}>
 
                         {/* Username */}
+
                         <div className="mb-3">
+
                             <label
                                 htmlFor="username"
                                 className="form-label fw-semibold"
@@ -119,6 +148,7 @@ function Login() {
                             </label>
 
                             <div className="input-group">
+
                                 <span className="input-group-text">
                                     <i className="bi bi-person"></i>
                                 </span>
@@ -135,11 +165,16 @@ function Login() {
                                     required
                                     autoComplete="username"
                                 />
+
                             </div>
+
                         </div>
 
+
                         {/* Password */}
+
                         <div className="mb-3">
+
                             <label
                                 htmlFor="password"
                                 className="form-label fw-semibold"
@@ -148,6 +183,7 @@ function Login() {
                             </label>
 
                             <div className="input-group">
+
                                 <span className="input-group-text">
                                     <i className="bi bi-lock"></i>
                                 </span>
@@ -164,25 +200,34 @@ function Login() {
                                     required
                                     autoComplete="current-password"
                                 />
+
                             </div>
+
                         </div>
 
+
                         {/* Forgot Password */}
+
                         <div className="text-end mb-4">
+
                             <Link
                                 to="/forgot-password"
                                 className="text-decoration-none"
                             >
                                 Forgot Password?
                             </Link>
+
                         </div>
 
+
                         {/* Login Button */}
+
                         <button
                             type="submit"
                             className="btn btn-dark w-100 py-2 fw-semibold"
                             disabled={loading}
                         >
+
                             {loading ? (
                                 <>
                                     <span
@@ -190,6 +235,7 @@ function Login() {
                                         role="status"
                                         aria-hidden="true"
                                     ></span>
+
                                     Signing in...
                                 </>
                             ) : (
@@ -198,18 +244,26 @@ function Login() {
                                     Login
                                 </>
                             )}
+
                         </button>
+
                     </form>
 
+
                     {/* Footer */}
+
                     <div className="text-center mt-4">
+
                         <small className="text-muted">
                             Tailoring Management System
                         </small>
+
                     </div>
 
                 </div>
+
             </div>
+
         </div>
     );
 }

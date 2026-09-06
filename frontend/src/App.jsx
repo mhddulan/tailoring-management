@@ -1,9 +1,14 @@
+import { useEffect, useState } from "react";
+
 import {
     BrowserRouter,
     Routes,
     Route,
     Navigate,
 } from "react-router-dom";
+
+import api from "./services/api";
+
 import ForgotPassword from "./pages/ForgotPassword";
 import Dashboard from "./pages/Dashboard";
 import Login from "./pages/Login";
@@ -30,8 +35,6 @@ import OrderDelivery from "./pages/OrderDelivery";
 /*
 =========================================================
 PRODUCTS
-IMPORTANT:
-Folder name is "Products" with capital P
 =========================================================
 */
 
@@ -125,13 +128,136 @@ import Layout from "./components/Layout/Layout";
 
 /* =========================================================
    PROTECTED LAYOUT
+
+   Authentication is checked using the HTTP-only cookie.
+
+   We DO NOT use:
+       localStorage.getItem("token")
+
+   Django verifies the cookie through:
+       GET /api/me/
 ========================================================= */
 
 function ProtectedLayout({ children }) {
 
-    const token = localStorage.getItem("token");
+    const [checking, setChecking] = useState(true);
+    const [authenticated, setAuthenticated] = useState(false);
 
-    if (!token) {
+    useEffect(() => {
+
+        let mounted = true;
+
+        const checkAuthentication = async () => {
+
+            try {
+
+                const response = await api.get("me/");
+
+                if (
+                    mounted &&
+                    response.data &&
+                    response.data.success
+                ) {
+
+                    setAuthenticated(true);
+
+                    /*
+                    Store only user information.
+
+                    The authentication token itself is NOT
+                    stored in localStorage.
+                    */
+
+                    if (response.data.user) {
+
+                        localStorage.setItem(
+                            "user",
+                            JSON.stringify(
+                                response.data.user
+                            )
+                        );
+                    }
+                }
+
+                else if (mounted) {
+
+                    setAuthenticated(false);
+                }
+
+            } catch (error) {
+
+                console.error(
+                    "Authentication check failed:",
+                    error
+                );
+
+                if (mounted) {
+                    setAuthenticated(false);
+                }
+
+            } finally {
+
+                if (mounted) {
+                    setChecking(false);
+                }
+            }
+        };
+
+        checkAuthentication();
+
+        return () => {
+            mounted = false;
+        };
+
+    }, []);
+
+
+    /*
+    ---------------------------------------------------------
+    CHECKING AUTHENTICATION
+    ---------------------------------------------------------
+    */
+
+    if (checking) {
+
+        return (
+            <div
+                className="d-flex justify-content-center align-items-center"
+                style={{
+                    minHeight: "100vh",
+                }}
+            >
+
+                <div className="text-center">
+
+                    <div
+                        className="spinner-border"
+                        role="status"
+                    >
+                        <span className="visually-hidden">
+                            Loading...
+                        </span>
+                    </div>
+
+                    <p className="mt-3 text-muted">
+                        Checking authentication...
+                    </p>
+
+                </div>
+
+            </div>
+        );
+    }
+
+
+    /*
+    ---------------------------------------------------------
+    NOT AUTHENTICATED
+    ---------------------------------------------------------
+    */
+
+    if (!authenticated) {
+
         return (
             <Navigate
                 to="/login"
@@ -139,6 +265,13 @@ function ProtectedLayout({ children }) {
             />
         );
     }
+
+
+    /*
+    ---------------------------------------------------------
+    AUTHENTICATED
+    ---------------------------------------------------------
+    */
 
     return (
         <Layout>
@@ -187,7 +320,8 @@ function App() {
                         <ForgotPassword />
                     }
                 />
-  
+
+
                 {/* =====================================================
                     DASHBOARD
                 ===================================================== */}
@@ -510,8 +644,6 @@ function App() {
                         </ProtectedLayout>
                     }
                 />
-
-                {/* Production Edit */}
 
                 <Route
                     path="/production/:id/edit"

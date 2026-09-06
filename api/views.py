@@ -6,7 +6,6 @@ from django.db.models import Q, Sum
 from django.db.models.functions import TruncMonth
 from django.http import JsonResponse
 from django.utils import timezone
-
 from rest_framework import serializers, status, viewsets
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -136,6 +135,29 @@ def api_test(request):
     return JsonResponse({
         "success": True,
         "message": "Tailoring Management API is working",
+    })
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def current_user(request):
+    user = request.user
+
+    if user.is_superuser:
+        dashboard = "admin"
+    elif user.role == "Admin":
+        dashboard = "admin"
+    elif user.role == "Branch":
+        dashboard = "branch"
+    else:
+        dashboard = None
+
+    return Response({
+        "success": True,
+        "user": {
+            "id": user.id,
+            "username": user.username,
+            "role": user.role,
+            "dashboard": dashboard,
+        },
     })
 from django.http import JsonResponse
 

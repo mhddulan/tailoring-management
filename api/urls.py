@@ -30,7 +30,7 @@ from .views import (
     StockTransferViewSet,
 )
 from accounts.password_reset_views import forgot_password
-
+from .views import current_user
 from daybook.views import (
     daybook_excel,
     daybook_pdf,
@@ -314,4 +314,5 @@ path(
         "",
         include(router.urls)
     ),
+    path("me/", current_user, name="current_user"),
 ]

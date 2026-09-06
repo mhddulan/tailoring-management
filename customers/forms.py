@@ -1,6 +1,6 @@
 from django import forms
 from .models import Customer, Measurement
-
+from branches.models import Branch
 class CustomerForm(forms.ModelForm):
 
     class Meta:

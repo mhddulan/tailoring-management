@@ -7,7 +7,7 @@ from django.shortcuts import (
     redirect,
     render,
 )
-
+from django.db.models import Q
 from .forms import AlterationForm
 from .models import Alteration
 from daybook.models import DayBook
