@@ -45,6 +45,7 @@ ALLOWED_HOSTS = [
 
 CSRF_TRUSTED_ORIGINS = [
     "https://tailoring-management-cvah.onrender.com",
+    "https://tailoring-management.vercel.app",
 ]
 
 
@@ -144,6 +145,7 @@ CORS_ALLOWED_ORIGINS = [
     # Vercel frontend
     "https://tailoring-management-gsdqh4z1l-dulan2.vercel.app",
 ]
+CORS_ALLOW_CREDENTIALS = True
 
 
 # ============================================================

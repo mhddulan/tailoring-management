@@ -91,7 +91,7 @@ def api_login(request):
             status=status.HTTP_401_UNAUTHORIZED,
         )
 
-    # Treat Django superusers as Admin
+    # Superuser → Admin
     if user.is_superuser and user.role not in ("Admin", "Branch"):
         user.role = "Admin"
         user.save(update_fields=["role"])
@@ -111,9 +111,8 @@ def api_login(request):
             status=status.HTTP_403_FORBIDDEN,
         )
 
-    return Response({
+    response = Response({
         "success": True,
-        "token": token.key,
         "user": {
             "id": user.id,
             "username": user.username,
@@ -121,6 +120,17 @@ def api_login(request):
             "dashboard": dashboard,
         },
     })
+
+    response.set_cookie(
+        key="auth_token",
+        value=token.key,
+        httponly=True,
+        secure=True,
+        samesite="None",
+        max_age=60 * 60 * 24 * 7,
+    )
+
+    return response
 
 def api_test(request):
     return JsonResponse({
