@@ -137,14 +137,18 @@ MIDDLEWARE = [
 # CORS
 # ============================================================
 
+# ============================================================
+# CORS
+# ============================================================
+
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
 
-    # Production Vercel frontend
+    # Production Vercel
     "https://tailoring-management.vercel.app",
 
-    # Old Vercel URL
+    # Old Vercel deployment
     "https://tailoring-management-gsdqh4z1l-dulan2.vercel.app",
 ]
 
