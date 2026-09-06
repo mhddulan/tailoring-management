@@ -29,6 +29,7 @@ from .views import (
     BranchProductViewSet,
     StockTransferViewSet,
 )
+from accounts.password_reset_views import forgot_password
 
 from daybook.views import (
     daybook_excel,
@@ -249,7 +250,11 @@ urlpatterns = [
         api_login,
         name="api_login"
     ),
-
+path(
+    "forgot-password/",
+    forgot_password,
+    name="api_forgot_password"
+),
 
     # --------------------------------------------------------
     # DASHBOARD
