@@ -27,36 +27,98 @@ import OrderPayment from "./pages/OrderPayment";
 import OrderStatus from "./pages/OrderStatus";
 import OrderDelivery from "./pages/OrderDelivery";
 
+/*
+=========================================================
+PRODUCTS
+IMPORTANT:
+Folder name is "Products" with capital P
+=========================================================
+*/
+
 import Products from "./pages/Products/Products";
 import ProductCreate from "./pages/Products/ProductCreate";
 import ProductEdit from "./pages/Products/ProductEdit";
 
+/*
+=========================================================
+INVENTORY
+=========================================================
+*/
+
 import StockTransfer from "./pages/inventory/StockTransfer";
 import BranchStock from "./pages/inventory/BranchStock";
 
+/*
+=========================================================
+REPORTS
+=========================================================
+*/
+
 import SalesReport from "./pages/reports/SalesReport";
 import StockReport from "./pages/reports/StockReport";
+
+/*
+=========================================================
+CATEGORIES
+=========================================================
+*/
 
 import Categories from "./pages/categories/Categories";
 import CategoryCreate from "./pages/categories/CategoryCreate";
 import CategoryEdit from "./pages/categories/CategoryEdit";
 
+/*
+=========================================================
+SALES / POS
+=========================================================
+*/
+
 import Sales from "./pages/sales/Sales";
 import SaleCreate from "./pages/sales/SaleCreate";
+
+/*
+=========================================================
+EMPLOYEES
+=========================================================
+*/
 
 import Employees from "./pages/Employees";
 import EmployeeCreate from "./pages/EmployeeCreate";
 import EmployeeEdit from "./pages/EmployeeEdit";
 import EmployeePerformance from "./pages/EmployeePerformance";
 
+/*
+=========================================================
+PRODUCTION
+=========================================================
+*/
+
 import Production from "./pages/Production";
 import ProductionCreate from "./pages/ProductionCreate";
 
+/*
+=========================================================
+DAYBOOK
+=========================================================
+*/
+
 import DayBook from "./pages/DayBook";
+
+/*
+=========================================================
+ALTERATIONS
+=========================================================
+*/
 
 import Alterations from "./pages/Alterations";
 import AlterationCreate from "./pages/AlterationCreate";
 import AlterationEdit from "./pages/AlterationEdit";
+
+/*
+=========================================================
+LAYOUT
+=========================================================
+*/
 
 import Layout from "./components/Layout/Layout";
 
@@ -66,10 +128,16 @@ import Layout from "./components/Layout/Layout";
 ========================================================= */
 
 function ProtectedLayout({ children }) {
+
     const token = localStorage.getItem("token");
 
     if (!token) {
-        return <Navigate to="/login" replace />;
+        return (
+            <Navigate
+                to="/login"
+                replace
+            />
+        );
     }
 
     return (
@@ -85,7 +153,9 @@ function ProtectedLayout({ children }) {
 ========================================================= */
 
 function App() {
+
     return (
+
         <BrowserRouter>
 
             <Routes>
@@ -106,7 +176,9 @@ function App() {
 
                 <Route
                     path="/login"
-                    element={<Login />}
+                    element={
+                        <Login />
+                    }
                 />
 
 
@@ -288,7 +360,7 @@ function App() {
                 ===================================================== */}
 
                 <Route
-                    path="/Products"
+                    path="/products"
                     element={
                         <ProtectedLayout>
                             <Products />
@@ -297,7 +369,7 @@ function App() {
                 />
 
                 <Route
-                    path="/Products/create"
+                    path="/products/create"
                     element={
                         <ProtectedLayout>
                             <ProductCreate />
@@ -306,7 +378,7 @@ function App() {
                 />
 
                 <Route
-                    path="/Products/:id/edit"
+                    path="/products/:id/edit"
                     element={
                         <ProtectedLayout>
                             <ProductEdit />
@@ -433,6 +505,17 @@ function App() {
                     }
                 />
 
+                {/* Production Edit */}
+
+                <Route
+                    path="/production/:id/edit"
+                    element={
+                        <ProtectedLayout>
+                            <ProductionCreate />
+                        </ProtectedLayout>
+                    }
+                />
+
 
                 {/* =====================================================
                     DAYBOOK
@@ -511,18 +594,19 @@ function App() {
                     path="/reports"
                     element={
                         <ProtectedLayout>
+
                             <div
                                 style={{
                                     padding: "30px",
                                 }}
                             >
+
                                 <h2>
                                     Reports
                                 </h2>
 
                                 <p>
-                                    Reports module
-                                    is available.
+                                    Reports module is available.
                                 </p>
 
                                 <div
@@ -530,6 +614,7 @@ function App() {
                                         marginTop: "20px",
                                     }}
                                 >
+
                                     <a
                                         href="/sales-report"
                                         style={{
@@ -544,8 +629,11 @@ function App() {
                                     >
                                         Stock Report
                                     </a>
+
                                 </div>
+
                             </div>
+
                         </ProtectedLayout>
                     }
                 />
@@ -577,21 +665,24 @@ function App() {
                     path="*"
                     element={
                         <ProtectedLayout>
+
                             <div
                                 style={{
                                     padding: "30px",
                                 }}
                             >
+
                                 <h3>
                                     Page Coming Soon
                                 </h3>
 
                                 <p>
-                                    This module will be
-                                    connected to the
-                                    Django API next.
+                                    This module will be connected
+                                    to the Django API next.
                                 </p>
+
                             </div>
+
                         </ProtectedLayout>
                     }
                 />
@@ -601,5 +692,6 @@ function App() {
         </BrowserRouter>
     );
 }
+
 
 export default App;
