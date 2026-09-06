@@ -36,142 +36,244 @@ function Login() {
             } else {
                 setError("Login token was not returned.");
             }
-
         } catch (err) {
-            console.error(err);
-
             setError(
                 err.response?.data?.error ||
                 err.response?.data?.detail ||
                 "Invalid username or password."
             );
-
         } finally {
             setLoading(false);
         }
     };
 
     return (
-        <div style={{
-            minHeight: "100vh",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            background: "#0F172A"
-        }}>
+        <div style={styles.page}>
+            <div style={styles.card}>
 
-            <div style={{
-                width: "100%",
-                maxWidth: "440px",
-                background: "white",
-                padding: "40px",
-                borderRadius: "16px"
-            }}>
+                <div style={styles.logo}>
+                    <i className="bi bi-scissors"></i>
+                </div>
 
-                <h2 style={{
-                    textAlign: "center",
-                    marginBottom: "10px"
-                }}>
-                    ✂ Stitching Pro
-                </h2>
+                <h1 style={styles.title}>
+                    Tailoring Management
+                </h1>
 
-                <p style={{
-                    textAlign: "center",
-                    color: "#64748B",
-                    marginBottom: "30px"
-                }}>
-                    Tailoring Management ERP
+                <p style={styles.subtitle}>
+                    Sign in to your account
                 </p>
 
                 {error && (
-                    <div style={{
-                        background: "#fee2e2",
-                        color: "#991b1b",
-                        padding: "12px",
-                        borderRadius: "8px",
-                        marginBottom: "20px"
-                    }}>
-                        {error}
+                    <div style={styles.error}>
+                        <i className="bi bi-exclamation-circle"></i>
+                        <span>{error}</span>
                     </div>
                 )}
 
                 <form onSubmit={handleSubmit}>
 
-                    <div style={{ marginBottom: "20px" }}>
-                        <label>Username</label>
+                    <div style={styles.field}>
+                        <label style={styles.label}>
+                            Username
+                        </label>
 
-                        <input
-                            type="text"
-                            value={username}
-                            onChange={(e) =>
-                                setUsername(e.target.value)
-                            }
-                            placeholder="Enter username"
-                            required
-                            autoFocus
-                            style={{
-                                width: "100%",
-                                padding: "12px",
-                                marginTop: "6px",
-                                border: "1px solid #ddd",
-                                borderRadius: "8px"
-                            }}
-                        />
+                        <div style={styles.inputWrapper}>
+                            <i
+                                className="bi bi-person"
+                                style={styles.inputIcon}
+                            ></i>
+
+                            <input
+                                type="text"
+                                placeholder="Enter username"
+                                value={username}
+                                onChange={(e) =>
+                                    setUsername(e.target.value)
+                                }
+                                required
+                                style={styles.input}
+                            />
+                        </div>
                     </div>
 
-                    <div style={{ marginBottom: "20px" }}>
-                        <label>Password</label>
+                    <div style={styles.field}>
+                        <label style={styles.label}>
+                            Password
+                        </label>
 
-                        <input
-                            type="password"
-                            value={password}
-                            onChange={(e) =>
-                                setPassword(e.target.value)
-                            }
-                            placeholder="Enter password"
-                            required
-                            style={{
-                                width: "100%",
-                                padding: "12px",
-                                marginTop: "6px",
-                                border: "1px solid #ddd",
-                                borderRadius: "8px"
-                            }}
-                        />
+                        <div style={styles.inputWrapper}>
+                            <i
+                                className="bi bi-lock"
+                                style={styles.inputIcon}
+                            ></i>
+
+                            <input
+                                type="password"
+                                placeholder="Enter password"
+                                value={password}
+                                onChange={(e) =>
+                                    setPassword(e.target.value)
+                                }
+                                required
+                                style={styles.input}
+                            />
+                        </div>
                     </div>
 
                     <button
                         type="submit"
                         disabled={loading}
                         style={{
-                            width: "100%",
-                            padding: "13px",
-                            border: "none",
-                            borderRadius: "8px",
-                            background: "#2563EB",
-                            color: "white",
-                            fontWeight: "600",
-                            cursor: "pointer"
+                            ...styles.button,
+                            opacity: loading ? 0.7 : 1,
                         }}
                     >
-                        {loading ? "Signing In..." : "Sign In →"}
+                        {loading ? (
+                            <>
+                                <span
+                                    className="spinner-border spinner-border-sm me-2"
+                                    role="status"
+                                ></span>
+                                Signing in...
+                            </>
+                        ) : (
+                            <>
+                                <i className="bi bi-box-arrow-in-right me-2"></i>
+                                Login
+                            </>
+                        )}
                     </button>
 
                 </form>
 
-                <p style={{
-                    textAlign: "center",
-                    marginTop: "25px",
-                    color: "#94A3B8",
-                    fontSize: "13px"
-                }}>
-                    © 2026 Stitching Pro • Tailoring Management ERP
-                </p>
+                <div style={styles.footer}>
+                    Tailoring Management System
+                </div>
 
             </div>
-
         </div>
     );
 }
+
+const styles = {
+    page: {
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        background:
+            "linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%)",
+        padding: "20px",
+        fontFamily:
+            "Inter, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif",
+    },
+
+    card: {
+        width: "100%",
+        maxWidth: "430px",
+        background: "#ffffff",
+        borderRadius: "20px",
+        padding: "40px",
+        boxShadow: "0 25px 60px rgba(0,0,0,0.30)",
+    },
+
+    logo: {
+        width: "64px",
+        height: "64px",
+        margin: "0 auto 18px",
+        borderRadius: "16px",
+        background: "#0f172a",
+        color: "#ffffff",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontSize: "28px",
+    },
+
+    title: {
+        textAlign: "center",
+        margin: "0",
+        color: "#0f172a",
+        fontSize: "28px",
+        fontWeight: "700",
+    },
+
+    subtitle: {
+        textAlign: "center",
+        marginTop: "8px",
+        marginBottom: "30px",
+        color: "#64748b",
+        fontSize: "15px",
+    },
+
+    field: {
+        marginBottom: "20px",
+    },
+
+    label: {
+        display: "block",
+        marginBottom: "8px",
+        color: "#334155",
+        fontWeight: "600",
+        fontSize: "14px",
+    },
+
+    inputWrapper: {
+        position: "relative",
+    },
+
+    inputIcon: {
+        position: "absolute",
+        left: "15px",
+        top: "50%",
+        transform: "translateY(-50%)",
+        color: "#64748b",
+        fontSize: "17px",
+    },
+
+    input: {
+        width: "100%",
+        height: "50px",
+        border: "1px solid #cbd5e1",
+        borderRadius: "10px",
+        padding: "0 15px 0 45px",
+        fontSize: "15px",
+        outline: "none",
+        boxSizing: "border-box",
+    },
+
+    button: {
+        width: "100%",
+        height: "50px",
+        border: "none",
+        borderRadius: "10px",
+        background: "#0f172a",
+        color: "#ffffff",
+        fontSize: "16px",
+        fontWeight: "600",
+        cursor: "pointer",
+        marginTop: "8px",
+    },
+
+    error: {
+        display: "flex",
+        alignItems: "center",
+        gap: "10px",
+        background: "#fef2f2",
+        color: "#dc2626",
+        border: "1px solid #fecaca",
+        padding: "12px",
+        borderRadius: "10px",
+        marginBottom: "20px",
+        fontSize: "14px",
+    },
+
+    footer: {
+        textAlign: "center",
+        marginTop: "28px",
+        color: "#94a3b8",
+        fontSize: "13px",
+    },
+};
 
 export default Login;
