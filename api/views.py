@@ -95,12 +95,16 @@ def api_login(request):
         user.role = "Admin"
         user.save(update_fields=["role"])
 
+    # Create / get DRF token
     token, created = Token.objects.get_or_create(user=user)
 
+    # Determine dashboard
     if user.role == "Admin" or user.is_superuser:
         dashboard = "admin"
+
     elif user.role == "Branch":
         dashboard = "branch"
+
     else:
         return Response(
             {
@@ -110,34 +114,20 @@ def api_login(request):
             status=status.HTTP_403_FORBIDDEN,
         )
 
-    response = Response({
-        "success": True,
-        "user": {
-            "id": user.id,
-            "username": user.username,
-            "role": user.role,
-            "dashboard": dashboard,
+    return Response(
+        {
+            "success": True,
+            "token": token.key,
+            "user": {
+                "id": user.id,
+                "username": user.username,
+                "role": user.role,
+                "dashboard": dashboard,
+            },
         },
-    })
-
-    response.set_cookie(
-        key="auth_token",
-        value=token.key,
-        httponly=True,
-        secure=True,
-        samesite="None",
-        max_age=60 * 60 * 24 * 7,
+        status=status.HTTP_200_OK,
     )
 
-    return response
-
-def api_test(request):
-    return JsonResponse({
-        "success": True,
-        "message": "Tailoring Management API is working",
-    })
-@api_view(["GET"])
-@permission_classes([IsAuthenticated])
 def current_user(request):
     user = request.user
 
