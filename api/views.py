@@ -393,30 +393,13 @@ def order_product_price(request):
 
 def dashboard_data(request):
 
-    # =====================================================
-# =====================================================
-# ADMIN ONLY
-# =====================================================
-
-    user_role = str(
-        getattr(request.user, "role", "")
-    ).strip()
+    user = request.user
+    user_role = str(getattr(user, "role", "")).strip().lower()
 
     is_admin = (
-        request.user.is_superuser
-        or user_role.lower() == "admin"
+        user.is_superuser
+        or user_role == "admin"
     )
-
-    if not is_admin:
-        return Response(
-            {
-                "success": False,
-                "message": "Admin access required.",
-                "user": request.user.username,
-                "role": user_role,
-            },
-            status=403
-        )
 
     # =====================================================
     # DATE FILTER
@@ -514,12 +497,25 @@ def dashboard_data(request):
     )
 
     # =====================================================
-    # BASIC COUNTS
+    # BRANCH FILTERING
     # =====================================================
 
-    total_branches = Branch.objects.count()
-
-    total_customers = Customer.objects.count()
+    if not is_admin:
+        if not user.branch_id:
+            payments = payments.none()
+            orders = orders.none()
+            daybooks = daybooks.none()
+            total_branches = 0
+            total_customers = 0
+        else:
+            payments = payments.filter(order__customer__branch_id=user.branch_id)
+            orders = orders.filter(customer__branch_id=user.branch_id)
+            daybooks = daybooks.filter(branch_id=user.branch_id)
+            total_branches = 1
+            total_customers = Customer.objects.filter(branch_id=user.branch_id).count()
+    else:
+        total_branches = Branch.objects.count()
+        total_customers = Customer.objects.count()
 
     total_orders = orders.count()
 
