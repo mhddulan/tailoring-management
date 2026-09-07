@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react";
 
 import {
     BrowserRouter,
@@ -7,7 +6,6 @@ import {
     Navigate,
 } from "react-router-dom";
 
-import api from "./services/api";
 
 import ForgotPassword from "./pages/ForgotPassword";
 import Dashboard from "./pages/Dashboard";
@@ -140,124 +138,9 @@ import Layout from "./components/Layout/Layout";
 
 function ProtectedLayout({ children }) {
 
-    const [checking, setChecking] = useState(true);
-    const [authenticated, setAuthenticated] = useState(false);
+    const token = localStorage.getItem("token");
 
-    useEffect(() => {
-
-        let mounted = true;
-
-        const checkAuthentication = async () => {
-
-            try {
-
-                const response = await api.get("me/");
-
-                if (
-                    mounted &&
-                    response.data &&
-                    response.data.success
-                ) {
-
-                    setAuthenticated(true);
-
-                    /*
-                    Store only user information.
-
-                    The authentication token itself is NOT
-                    stored in localStorage.
-                    */
-
-                    if (response.data.user) {
-
-                        localStorage.setItem(
-                            "user",
-                            JSON.stringify(
-                                response.data.user
-                            )
-                        );
-                    }
-                }
-
-                else if (mounted) {
-
-                    setAuthenticated(false);
-                }
-
-            } catch (error) {
-
-                console.error(
-                    "Authentication check failed:",
-                    error
-                );
-
-                if (mounted) {
-                    setAuthenticated(false);
-                }
-
-            } finally {
-
-                if (mounted) {
-                    setChecking(false);
-                }
-            }
-        };
-
-        checkAuthentication();
-
-        return () => {
-            mounted = false;
-        };
-
-    }, []);
-
-
-    /*
-    ---------------------------------------------------------
-    CHECKING AUTHENTICATION
-    ---------------------------------------------------------
-    */
-
-    if (checking) {
-
-        return (
-            <div
-                className="d-flex justify-content-center align-items-center"
-                style={{
-                    minHeight: "100vh",
-                }}
-            >
-
-                <div className="text-center">
-
-                    <div
-                        className="spinner-border"
-                        role="status"
-                    >
-                        <span className="visually-hidden">
-                            Loading...
-                        </span>
-                    </div>
-
-                    <p className="mt-3 text-muted">
-                        Checking authentication...
-                    </p>
-
-                </div>
-
-            </div>
-        );
-    }
-
-
-    /*
-    ---------------------------------------------------------
-    NOT AUTHENTICATED
-    ---------------------------------------------------------
-    */
-
-    if (!authenticated) {
-
+    if (!token) {
         return (
             <Navigate
                 to="/login"
@@ -266,20 +149,12 @@ function ProtectedLayout({ children }) {
         );
     }
 
-
-    /*
-    ---------------------------------------------------------
-    AUTHENTICATED
-    ---------------------------------------------------------
-    */
-
     return (
         <Layout>
             {children}
         </Layout>
     );
 }
-
 
 /* =========================================================
    APP

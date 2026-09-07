@@ -390,17 +390,30 @@ def order_product_price(request):
         )
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
+
 def dashboard_data(request):
 
     # =====================================================
-    # ADMIN ONLY
-    # =====================================================
+# =====================================================
+# ADMIN ONLY
+# =====================================================
 
-    if request.user.role != "Admin":
+    user_role = str(
+        getattr(request.user, "role", "")
+    ).strip()
+
+    is_admin = (
+        request.user.is_superuser
+        or user_role.lower() == "admin"
+    )
+
+    if not is_admin:
         return Response(
             {
                 "success": False,
-                "message": "Admin access required."
+                "message": "Admin access required.",
+                "user": request.user.username,
+                "role": user_role,
             },
             status=403
         )
