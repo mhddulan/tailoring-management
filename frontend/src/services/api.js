@@ -9,14 +9,30 @@ const api = axios.create({
     },
 });
 
-api.interceptors.request.use((config) => {
-    const token = localStorage.getItem("token");
+api.interceptors.request.use(
+    (config) => {
+        const token = localStorage.getItem("token");
 
-    if (token) {
-        config.headers.Authorization = `Token ${token}`;
+        console.log("API TOKEN:", token ? "TOKEN FOUND" : "NO TOKEN");
+
+        if (token) {
+            if (!config.headers) {
+                config.headers = {};
+            }
+
+            config.headers.Authorization = `Token ${token}`;
+        }
+
+        console.log(
+            "AUTH HEADER:",
+            config.headers?.Authorization || "NOT SET"
+        );
+
+        return config;
+    },
+    (error) => {
+        return Promise.reject(error);
     }
-
-    return config;
-});
+);
 
 export default api;
