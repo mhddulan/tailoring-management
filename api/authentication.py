@@ -6,7 +6,14 @@ from rest_framework.authtoken.models import Token
 class CookieTokenAuthentication(BaseAuthentication):
 
     def authenticate(self, request):
-        token_key = request.COOKIES.get("auth_token")
+        
+        # 1. Try Authorization header
+        auth_header = request.headers.get("Authorization")
+        if auth_header and auth_header.startswith("Token "):
+            token_key = auth_header.split(" ")[1]
+        else:
+            # 2. Try Cookie
+            token_key = request.COOKIES.get("auth_token")
 
         if not token_key:
             return None
@@ -22,3 +29,6 @@ class CookieTokenAuthentication(BaseAuthentication):
             raise AuthenticationFailed("User account is inactive.")
 
         return (token.user, token)
+        
+    def authenticate_header(self, request):
+        return 'Token'
