@@ -8,6 +8,7 @@ from .views import (
     dashboard_data,
     order_product_price,
     order_deliver,
+    branch_dashboard_data,
 
     # ViewSets
     BranchViewSet,
@@ -265,6 +266,11 @@ path(
         dashboard_data,
         name="dashboard_data"
     ),
+    path(
+    "branch-dashboard/",
+    branch_dashboard_data,
+    name="branch_dashboard_data"
+),
 
 
     # --------------------------------------------------------
@@ -304,6 +310,7 @@ path(
         order_deliver,
         name="order_deliver"
     ),
+
 
 
     # --------------------------------------------------------

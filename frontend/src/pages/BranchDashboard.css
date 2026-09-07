@@ -1,0 +1,645 @@
+/* =========================================================
+   BRANCH DASHBOARD
+========================================================= */
+
+.branch-dashboard {
+    min-height: 100vh;
+    padding-bottom: 40px;
+}
+
+
+/* =========================================================
+   HEADER
+========================================================= */
+
+.dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+}
+
+.dashboard-header h2 {
+    color: #111827;
+    font-size: 30px;
+    letter-spacing: -0.5px;
+}
+
+.dashboard-header h2 i {
+    font-size: 32px;
+}
+
+.dashboard-header p {
+    font-size: 15px;
+}
+
+
+/* =========================================================
+   ONLINE STATUS
+========================================================= */
+
+.branch-status-box {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+
+    padding: 12px 20px;
+
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+
+    border-radius: 30px;
+
+    font-weight: 600;
+    color: #374151;
+
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.04);
+}
+
+.branch-status-box .text-success {
+    font-size: 10px;
+}
+
+
+/* =========================================================
+   GENERAL CARD
+========================================================= */
+
+.dashboard-card {
+    background: #ffffff;
+
+    border: 1px solid #e5e7eb;
+
+    border-radius: 20px;
+
+    box-shadow: 0 6px 20px rgba(15, 23, 42, 0.05);
+
+    overflow: hidden;
+}
+
+.dashboard-card .card-body {
+    padding: 26px;
+}
+
+
+/* =========================================================
+   FILTER
+========================================================= */
+
+.filter-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    gap: 20px;
+}
+
+.filter-header h5 {
+    color: #111827;
+}
+
+.filter-header h5 i {
+    color: #2563eb;
+}
+
+.dashboard-filter {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.filter-btn {
+    border: 1px solid #dbe2ea;
+
+    background: #ffffff;
+
+    color: #475569;
+
+    padding: 10px 18px;
+
+    border-radius: 10px;
+
+    font-size: 14px;
+    font-weight: 500;
+
+    cursor: pointer;
+
+    transition: all 0.2s ease;
+}
+
+.filter-btn:hover {
+    background: #f1f5f9;
+    border-color: #bfc9d6;
+}
+
+.filter-btn.active {
+    background: #2563eb;
+    border-color: #2563eb;
+    color: #ffffff;
+
+    box-shadow: 0 5px 12px rgba(37, 99, 235, 0.2);
+}
+
+
+/* =========================================================
+   STAT CARDS
+========================================================= */
+
+.dashboard-stat-card {
+    min-height: 125px;
+
+    padding: 24px;
+
+    border-radius: 18px;
+
+    display: flex;
+    align-items: center;
+
+    gap: 18px;
+
+    overflow: hidden;
+
+    position: relative;
+
+    box-shadow: 0 7px 18px rgba(15, 23, 42, 0.08);
+
+    transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.dashboard-stat-card:hover {
+    transform: translateY(-3px);
+
+    box-shadow: 0 12px 25px rgba(15, 23, 42, 0.12);
+}
+
+
+/* STAT ICON */
+
+.stat-icon {
+    width: 54px;
+    height: 54px;
+
+    min-width: 54px;
+
+    border-radius: 15px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background: rgba(255, 255, 255, 0.20);
+
+    font-size: 25px;
+
+    color: #ffffff;
+}
+
+
+/* STAT TEXT */
+
+.stat-title {
+    font-size: 14px;
+
+    font-weight: 500;
+
+    color: rgba(255, 255, 255, 0.90);
+
+    margin: 0;
+}
+
+.stat-value {
+    font-size: 25px;
+
+    font-weight: 700;
+
+    color: #ffffff;
+
+    line-height: 1.2;
+}
+
+
+/* =========================================================
+   STAT COLORS
+========================================================= */
+
+.card-blue {
+    background: linear-gradient(
+        135deg,
+        #2563eb,
+        #3b82f6
+    );
+}
+
+.card-green {
+    background: linear-gradient(
+        135deg,
+        #059669,
+        #10b981
+    );
+}
+
+.card-orange {
+    background: linear-gradient(
+        135deg,
+        #ea580c,
+        #f97316
+    );
+}
+
+.card-purple {
+    background: linear-gradient(
+        135deg,
+        #7c3aed,
+        #8b5cf6
+    );
+}
+
+.card-red {
+    background: linear-gradient(
+        135deg,
+        #dc2626,
+        #ef4444
+    );
+}
+
+
+/* =========================================================
+   ORDER STATUS
+========================================================= */
+
+.status-icon {
+    display: inline-flex;
+
+    align-items: center;
+    justify-content: center;
+
+    width: 40px;
+    height: 40px;
+
+    margin-bottom: 8px;
+
+    border-radius: 12px;
+
+    background: #eff6ff;
+
+    color: #2563eb;
+
+    font-size: 18px;
+}
+
+.branch-status-box h4 {
+    color: #111827;
+}
+
+.branch-status-box small {
+    font-size: 13px;
+}
+
+
+/* =========================================================
+   PAYMENT ROW
+========================================================= */
+
+.payment-row {
+    display: flex;
+
+    align-items: center;
+    justify-content: space-between;
+
+    padding: 14px 0;
+
+    border-bottom: 1px solid #eef2f7;
+}
+
+.payment-row:last-child {
+    border-bottom: 0;
+}
+
+.payment-icon {
+    width: 40px;
+    height: 40px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 11px;
+
+    background: #eff6ff;
+
+    color: #2563eb;
+
+    font-size: 17px;
+}
+
+.payment-row strong {
+    color: #111827;
+    font-size: 15px;
+}
+
+
+/* =========================================================
+   PAYMENT SUMMARY
+========================================================= */
+
+.summary-box {
+    height: 100%;
+
+    padding: 20px;
+
+    border-radius: 15px;
+
+    background: #f8fafc;
+
+    border: 1px solid #e5e7eb;
+
+    transition: all 0.2s ease;
+}
+
+.summary-box:hover {
+    background: #f1f5f9;
+
+    transform: translateY(-2px);
+}
+
+.summary-box small {
+    display: block;
+
+    margin-bottom: 8px;
+
+    color: #64748b;
+
+    font-size: 13px;
+
+    font-weight: 500;
+}
+
+.summary-box h5 {
+    color: #111827;
+    font-size: 18px;
+}
+
+.summary-box.danger {
+    background: #fff1f2;
+
+    border-color: #fecdd3;
+}
+
+.summary-box.danger small {
+    color: #be123c;
+}
+
+.summary-box.danger h5 {
+    color: #e11d48;
+}
+
+
+/* =========================================================
+   TABLE
+========================================================= */
+
+.branch-dashboard .table {
+    margin-bottom: 0;
+}
+
+.branch-dashboard .table thead th {
+    background: #f8fafc;
+
+    color: #64748b;
+
+    border-bottom: 1px solid #e5e7eb;
+
+    font-size: 13px;
+
+    font-weight: 600;
+
+    text-transform: uppercase;
+
+    letter-spacing: 0.3px;
+
+    padding: 14px 12px;
+}
+
+.branch-dashboard .table tbody td {
+    padding: 15px 12px;
+
+    border-bottom: 1px solid #f1f5f9;
+
+    color: #374151;
+
+    font-size: 14px;
+}
+
+.branch-dashboard .table tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+.branch-dashboard .table tbody tr {
+    transition: background 0.15s ease;
+}
+
+.branch-dashboard .table tbody tr:hover {
+    background: #f8fafc;
+}
+
+
+/* =========================================================
+   STATUS BADGE
+========================================================= */
+
+.status-badge {
+    display: inline-block;
+
+    padding: 6px 10px;
+
+    border-radius: 8px;
+
+    background: #eff6ff;
+
+    color: #2563eb;
+
+    font-size: 12px;
+
+    font-weight: 600;
+}
+
+
+/* =========================================================
+   EMPTY STATE
+========================================================= */
+
+.empty-state {
+    min-height: 180px;
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+    justify-content: center;
+
+    text-align: center;
+
+    color: #94a3b8;
+}
+
+.empty-state i {
+    font-size: 42px;
+
+    margin-bottom: 12px;
+}
+
+.empty-state p {
+    margin: 0;
+
+    font-size: 14px;
+}
+
+
+/* =========================================================
+   LOADING
+========================================================= */
+
+.dashboard-loading {
+    min-height: 400px;
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+    justify-content: center;
+
+    color: #64748b;
+}
+
+.dashboard-loading .spinner-border {
+    width: 42px;
+    height: 42px;
+}
+
+
+/* =========================================================
+   ERROR
+========================================================= */
+
+.dashboard-error {
+    max-width: 600px;
+
+    margin: 60px auto;
+
+    padding: 40px;
+
+    text-align: center;
+
+    background: #ffffff;
+
+    border: 1px solid #fecaca;
+
+    border-radius: 20px;
+
+    box-shadow: 0 8px 25px rgba(15, 23, 42, 0.06);
+}
+
+.dashboard-error > i {
+    font-size: 45px;
+
+    color: #dc2626;
+}
+
+.dashboard-error h4 {
+    color: #111827;
+}
+
+.dashboard-error p {
+    color: #64748b;
+}
+
+
+/* =========================================================
+   RESPONSIVE
+========================================================= */
+
+@media (max-width: 992px) {
+
+    .dashboard-header {
+        align-items: flex-start;
+
+        flex-direction: column;
+    }
+
+    .filter-header {
+        flex-direction: column;
+
+        align-items: flex-start;
+    }
+
+    .dashboard-filter {
+        width: 100%;
+    }
+
+    .filter-btn {
+        flex: 1;
+    }
+}
+
+
+@media (max-width: 576px) {
+
+    .branch-dashboard {
+        padding-left: 12px !important;
+        padding-right: 12px !important;
+    }
+
+    .dashboard-header h2 {
+        font-size: 24px;
+    }
+
+    .dashboard-card .card-body {
+        padding: 18px;
+    }
+
+    .dashboard-stat-card {
+        min-height: 110px;
+
+        padding: 18px;
+
+        gap: 12px;
+    }
+
+    .stat-icon {
+        width: 45px;
+        height: 45px;
+
+        min-width: 45px;
+
+        font-size: 20px;
+    }
+
+    .stat-value {
+        font-size: 21px;
+    }
+
+    .dashboard-filter {
+        display: grid;
+
+        grid-template-columns: 1fr 1fr;
+
+        width: 100%;
+    }
+
+    .filter-btn {
+        width: 100%;
+    }
+
+    .payment-row {
+        padding: 12px 0;
+    }
+
+    .summary-box {
+        padding: 16px;
+    }
+}

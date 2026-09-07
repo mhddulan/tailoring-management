@@ -10,7 +10,7 @@ import {
 import ForgotPassword from "./pages/ForgotPassword";
 import Dashboard from "./pages/Dashboard";
 import Login from "./pages/Login";
-
+import BranchDashboard from "./pages/BranchDashboard";
 import Branches from "./pages/Branches";
 import CreateBranch from "./pages/CreateBranch";
 import BranchPerformance from "./pages/BranchPerformance";
@@ -332,6 +332,14 @@ function App() {
                         </ProtectedLayout>
                     }
                 />
+                <Route
+    path="/branch-dashboard"
+    element={
+        <ProtectedLayout>
+            <BranchDashboard />
+        </ProtectedLayout>
+    }
+/>
 
                 <Route
                     path="/orders/:id/edit"
