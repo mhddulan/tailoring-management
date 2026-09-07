@@ -1,32 +1,66 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./Branches.css";
+import api from "../services/api";
 
 function Branches() {
     const navigate = useNavigate();
 
-    // Temporary data only.
-    // Axios/API will be connected later.
     const [search, setSearch] = useState("");
 
-    const [branchData] = useState([
-        {
-            id: 1,
-            name: "a1",
-            address: "",
-            phone: "",
-            manager: "",
-            username: "",
-        },
-        {
-            id: 2,
-            name: "a1",
-            address: "",
-            phone: "",
-            manager: "",
-            username: "",
-        },
-    ]);
+    const [branchData, setBranchData] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState("");
+
+    // =====================================================
+    // LOAD BRANCHES
+    // =====================================================
+
+    useEffect(() => {
+        const fetchBranches = async () => {
+            try {
+                setLoading(true);
+                setError("");
+
+                const response = await api.get("branches/");
+
+                console.log("Branches API response:", response.data);
+
+                // DRF pagination returns { results: [...] }
+                // Non-paginated API returns [...]
+                const data =
+                    response.data?.results ||
+                    response.data;
+
+                if (Array.isArray(data)) {
+                    setBranchData(data);
+                } else {
+                    setBranchData([]);
+                }
+
+            } catch (err) {
+                console.error(
+                    "Failed to load branches:",
+                    err
+                );
+
+                setError(
+                    err.response?.data?.detail ||
+                    err.response?.data?.message ||
+                    "Unable to load branches. Please try again."
+                );
+
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchBranches();
+    }, []);
+
+    // =====================================================
+    // SEARCH
+    // =====================================================
 
     const filteredBranches = useMemo(() => {
         const value = search.trim().toLowerCase();
@@ -39,12 +73,15 @@ function Branches() {
             [
                 item.name,
                 item.phone,
+                item.manager_name,
                 item.manager,
                 item.username,
             ]
                 .filter(Boolean)
                 .some((field) =>
-                    String(field).toLowerCase().includes(value)
+                    String(field)
+                        .toLowerCase()
+                        .includes(value)
                 )
         );
     }, [search, branchData]);
@@ -74,7 +111,9 @@ function Branches() {
                     <button
                         type="button"
                         className="btn btn-primary"
-                        onClick={() => navigate("/branches/create")}
+                        onClick={() =>
+                            navigate("/branches/create")
+                        }
                     >
                         <i className="bi bi-plus-lg me-1"></i>
                         Add New Branch
@@ -98,7 +137,9 @@ function Branches() {
 
                     <form
                         className="row g-2 align-items-center w-100"
-                        onSubmit={(e) => e.preventDefault()}
+                        onSubmit={(e) =>
+                            e.preventDefault()
+                        }
                     >
 
                         {/* SEARCH */}
@@ -107,7 +148,9 @@ function Branches() {
 
                             <div
                                 className="header-search w-100"
-                                style={{ maxWidth: "100%" }}
+                                style={{
+                                    maxWidth: "100%",
+                                }}
                             >
 
                                 <i className="bi bi-search"></i>
@@ -117,7 +160,9 @@ function Branches() {
                                     name="search"
                                     value={search}
                                     onChange={(e) =>
-                                        setSearch(e.target.value)
+                                        setSearch(
+                                            e.target.value
+                                        )
                                     }
                                     className="form-control"
                                     placeholder="Search branch name, phone, or manager..."
@@ -193,165 +238,256 @@ function Branches() {
 
                         <tbody>
 
-                            {filteredBranches.length > 0 ? (
+                            {/* =================================================
+                                LOADING
+                            ================================================== */}
 
-                                filteredBranches.map((item, index) => (
+                            {loading ? (
 
-                                    <tr
-                                        className="branch-row"
-                                        key={item.id}
+                                <tr>
+
+                                    <td
+                                        colSpan="6"
+                                        className="text-center py-5"
                                     >
 
-                                        {/* NUMBER */}
+                                        <div className="py-3">
 
-                                        <td className="fw-semibold text-muted">
-                                            {index + 1}
-                                        </td>
+                                            <span
+                                                className="spinner-border me-2"
+                                                role="status"
+                                                aria-hidden="true"
+                                            ></span>
 
+                                            <span className="text-muted">
+                                                Loading branches...
+                                            </span>
 
-                                        {/* BRANCH */}
+                                        </div>
 
-                                        <td>
+                                    </td>
+
+                                </tr>
+
+                            ) : error ? (
+
+                                /* =================================================
+                                   ERROR
+                                ================================================== */
+
+                                <tr>
+
+                                    <td
+                                        colSpan="6"
+                                        className="text-center py-5"
+                                    >
+
+                                        <div className="empty-state">
+
+                                            <div className="empty-icon text-danger">
+
+                                                <i className="bi bi-exclamation-triangle"></i>
+
+                                            </div>
+
+                                            <h5 className="fw-bold mb-1">
+                                                Unable to Load Branches
+                                            </h5>
+
+                                            <p className="text-muted mb-3">
+                                                {error}
+                                            </p>
 
                                             <button
                                                 type="button"
-                                                className="branch-name-link"
-                                                title="View branch performance"
+                                                className="btn btn-primary"
                                                 onClick={() =>
-                                                    navigate(
-                                                        `/branches/${item.id}/performance`
-                                                    )
+                                                    window.location.reload()
                                                 }
                                             >
+                                                <i className="bi bi-arrow-clockwise me-1"></i>
+                                                Try Again
+                                            </button>
 
-                                                <span className="branch-icon-small">
+                                        </div>
 
-                                                    <i className="bi bi-building"></i>
+                                    </td>
 
-                                                </span>
+                                </tr>
+
+                            ) : filteredBranches.length > 0 ? (
+
+                                /* =================================================
+                                   BRANCH LIST
+                                ================================================== */
+
+                                filteredBranches.map(
+                                    (item, index) => (
+
+                                        <tr
+                                            className="branch-row"
+                                            key={item.id}
+                                        >
+
+                                            {/* NUMBER */}
+
+                                            <td className="fw-semibold text-muted">
+                                                {index + 1}
+                                            </td>
 
 
-                                                <span>
+                                            {/* BRANCH */}
 
-                                                    <span className="branch-name">
-                                                        {item.name}
+                                            <td>
+
+                                                <button
+                                                    type="button"
+                                                    className="branch-name-link"
+                                                    title="View branch performance"
+                                                    onClick={() =>
+                                                        navigate(
+                                                            `/branches/${item.id}/performance`
+                                                        )
+                                                    }
+                                                >
+
+                                                    <span className="branch-icon-small">
+
+                                                        <i className="bi bi-building"></i>
+
                                                     </span>
 
 
-                                                    {item.address && (
-                                                        <small className="d-block text-muted">
-                                                            {item.address}
-                                                        </small>
-                                                    )}
+                                                    <span>
 
-                                                </span>
-
-                                            </button>
-
-                                        </td>
+                                                        <span className="branch-name">
+                                                            {item.name}
+                                                        </span>
 
 
-                                        {/* PHONE */}
+                                                        {item.address && (
 
-                                        <td>
+                                                            <small className="d-block text-muted">
+                                                                {item.address}
+                                                            </small>
 
-                                            {item.phone ? (
+                                                        )}
 
-                                                <span>
+                                                    </span>
 
-                                                    <i className="bi bi-telephone text-muted me-1"></i>
+                                                </button>
 
-                                                    {item.phone}
-
-                                                </span>
-
-                                            ) : (
-
-                                                <span className="text-muted">
-                                                    —
-                                                </span>
-
-                                            )}
-
-                                        </td>
+                                            </td>
 
 
-                                        {/* MANAGER */}
+                                            {/* PHONE */}
 
-                                        <td>
+                                            <td>
 
-                                            {item.manager ? (
+                                                {item.phone ? (
 
-                                                <span className="badge bg-light text-dark border">
+                                                    <span>
 
-                                                    <i className="bi bi-person me-1"></i>
+                                                        <i className="bi bi-telephone text-muted me-1"></i>
 
-                                                    {item.manager}
+                                                        {item.phone}
 
-                                                </span>
+                                                    </span>
 
-                                            ) : (
+                                                ) : (
 
-                                                <span className="text-muted">
-                                                    —
-                                                </span>
+                                                    <span className="text-muted">
+                                                        —
+                                                    </span>
 
-                                            )}
+                                                )}
 
-                                        </td>
-
-
-                                        {/* USERNAME */}
-
-                                        <td>
-
-                                            {item.username ? (
-
-                                                <span className="badge bg-primary-subtle text-primary">
-
-                                                    <i className="bi bi-person-badge me-1"></i>
-
-                                                    {item.username}
-
-                                                </span>
-
-                                            ) : (
-
-                                                <span className="text-muted">
-                                                    —
-                                                </span>
-
-                                            )}
-
-                                        </td>
+                                            </td>
 
 
-                                        {/* ACTION */}
+                                            {/* MANAGER */}
 
-                                        <td className="text-end">
+                                            <td>
 
-                                            <button
-                                                type="button"
-                                                className="btn btn-sm btn-primary"
-                                                title="View branch performance"
-                                                onClick={() =>
-                                                    navigate(
-                                                        `/branches/${item.id}/performance`
-                                                    )
-                                                }
-                                            >
+                                                {(
+                                                    item.manager_name ||
+                                                    item.manager
+                                                ) ? (
 
-                                                <i className="bi bi-bar-chart-line me-1"></i>
+                                                    <span className="badge bg-light text-dark border">
 
-                                                Performance
+                                                        <i className="bi bi-person me-1"></i>
 
-                                            </button>
+                                                        {
+                                                            item.manager_name ||
+                                                            item.manager
+                                                        }
 
-                                        </td>
+                                                    </span>
 
-                                    </tr>
+                                                ) : (
 
-                                ))
+                                                    <span className="text-muted">
+                                                        —
+                                                    </span>
+
+                                                )}
+
+                                            </td>
+
+
+                                            {/* USERNAME */}
+
+                                            <td>
+
+                                                {item.username ? (
+
+                                                    <span className="badge bg-primary-subtle text-primary">
+
+                                                        <i className="bi bi-person-badge me-1"></i>
+
+                                                        {item.username}
+
+                                                    </span>
+
+                                                ) : (
+
+                                                    <span className="text-muted">
+                                                        —
+                                                    </span>
+
+                                                )}
+
+                                            </td>
+
+
+                                            {/* ACTION */}
+
+                                            <td className="text-end">
+
+                                                <button
+                                                    type="button"
+                                                    className="btn btn-sm btn-primary"
+                                                    title="View branch performance"
+                                                    onClick={() =>
+                                                        navigate(
+                                                            `/branches/${item.id}/performance`
+                                                        )
+                                                    }
+                                                >
+
+                                                    <i className="bi bi-bar-chart-line me-1"></i>
+
+                                                    Performance
+
+                                                </button>
+
+                                            </td>
+
+                                        </tr>
+
+                                    )
+                                )
 
                             ) : (
 
@@ -379,14 +515,19 @@ function Branches() {
                                             </h5>
 
                                             <p className="text-muted mb-3">
-                                                No branches match your search.
+                                                {search.trim()
+                                                    ? "No branches match your search."
+                                                    : "No branches have been created yet."
+                                                }
                                             </p>
 
                                             <button
                                                 type="button"
                                                 className="btn btn-primary"
                                                 onClick={() =>
-                                                    navigate("/branches/create")
+                                                    navigate(
+                                                        "/branches/create"
+                                                    )
                                                 }
                                             >
 
@@ -415,33 +556,41 @@ function Branches() {
                     FOOTER
                 ================================================== */}
 
-                {filteredBranches.length > 0 && (
+                {!loading &&
+                    !error &&
+                    filteredBranches.length > 0 && (
 
-                    <div className="branch-table-footer">
+                        <div className="branch-table-footer">
 
-                        <div className="text-muted small">
+                            <div className="text-muted small">
 
-                            <i className="bi bi-info-circle me-1"></i>
+                                <i className="bi bi-info-circle me-1"></i>
 
-                            Showing {filteredBranches.length} branch
-                            {filteredBranches.length !== 1 ? "es" : ""}
+                                Showing{" "}
+                                {filteredBranches.length}{" "}
+                                branch
+                                {filteredBranches.length !== 1
+                                    ? "es"
+                                    : ""}
+
+                            </div>
+
+
+                            <div className="text-muted small">
+
+                                Click a branch name or{" "}
+
+                                <strong>
+                                    Performance
+                                </strong>{" "}
+
+                                to view detailed branch statistics.
+
+                            </div>
 
                         </div>
 
-
-                        <div className="text-muted small">
-
-                            Click a branch name or{" "}
-
-                            <strong>Performance</strong>{" "}
-
-                            to view detailed branch statistics.
-
-                        </div>
-
-                    </div>
-
-                )}
+                    )}
 
             </div>
 
