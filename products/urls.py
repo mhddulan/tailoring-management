@@ -139,4 +139,37 @@ urlpatterns = [
         views.search_product,
         name="search_product"
     ),
+        # ==================================================
+    # STOCK PROCESSING
+    # ==================================================
+
+    path(
+        "processing/",
+        views.processing_list,
+        name="processing_list"
+    ),
+
+    path(
+        "processing/add/",
+        views.processing_create,
+        name="processing_create"
+    ),
+
+    path(
+        "processing/<int:id>/",
+        views.processing_detail,
+        name="processing_detail"
+    ),
+
+    path(
+        "processing/<int:id>/issue/",
+        views.processing_issue,
+        name="processing_issue"
+    ),
+
+    path(
+        "processing/<int:id>/complete/",
+        views.processing_complete,
+        name="processing_complete"
+    ),
 ]

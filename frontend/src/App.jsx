@@ -6,7 +6,7 @@ import {
     Navigate,
 } from "react-router-dom";
 
-
+import StockProcessing from "./pages/StockProcessing";
 import ForgotPassword from "./pages/ForgotPassword";
 import Dashboard from "./pages/Dashboard";
 import Login from "./pages/Login";
@@ -399,6 +399,10 @@ function App() {
                         </ProtectedLayout>
                     }
                 />
+                <Route
+  path="/stock-processing"
+  element={<StockProcessing />}
+/>
 
                 <Route
                     path="/products/:id/edit"

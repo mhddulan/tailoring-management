@@ -245,6 +245,14 @@ function Layout({ children }) {
                                     goTo("/branch-stock")
                                 }
                             />
+                            <SidebarLink
+    icon="bi-gear-wide-connected"
+    label="Stock Processing"
+    active={isActive("/stock-processing")}
+    onClick={() =>
+        goTo("/stock-processing")
+    }
+/>
 
 
                             <SidebarLink
@@ -604,6 +612,7 @@ function getPageTitle(path) {
         "/sales-report": "Sales Report",
         "/new-sale": "New Sale",
         "/branch-dashboard": "Dashboard",
+        "/stock-processing": "Stock Processing",
     };
 
     return titles[path] || "Stitching Pro";

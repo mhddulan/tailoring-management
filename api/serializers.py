@@ -12,6 +12,7 @@ from products.models import (
     ProductCategory,
     BranchProduct,
     StockTransfer,
+    StockProcessing,
 )
 
 from alterations.models import Alteration
@@ -305,7 +306,132 @@ class ProductSerializer(serializers.ModelSerializer):
             for branch_product in obj.branch_products.all()
         )
 
+# ============================================================
+# STOCK PROCESSING / PRODUCTION
+# ============================================================
 
+class StockProcessingSerializer(serializers.ModelSerializer):
+
+    branch_name = serializers.CharField(
+        source="branch.name",
+        read_only=True
+    )
+
+    input_product_name = serializers.CharField(
+        source="input_product.name",
+        read_only=True
+    )
+
+    output_product_name = serializers.CharField(
+        source="output_product.name",
+        read_only=True,
+        allow_null=True
+    )
+
+    employee_name = serializers.CharField(
+        source="employee.name",
+        read_only=True,
+        allow_null=True
+    )
+
+    process_type_display = serializers.CharField(
+        source="get_process_type_display",
+        read_only=True
+    )
+
+    status_display = serializers.CharField(
+        source="get_status_display",
+        read_only=True
+    )
+
+    remaining_to_issue = serializers.IntegerField(
+        read_only=True
+    )
+
+    pending_quantity = serializers.IntegerField(
+        read_only=True
+    )
+
+    is_fully_issued = serializers.BooleanField(
+        read_only=True
+    )
+
+    is_fully_returned = serializers.BooleanField(
+        read_only=True
+    )
+
+    class Meta:
+        model = StockProcessing
+
+        fields = [
+            "id",
+
+            # Branch
+            "branch",
+            "branch_name",
+
+            # Processing
+            "process_type",
+            "process_type_display",
+            "status",
+            "status_display",
+
+            # Input
+            "input_product",
+            "input_product_name",
+            "input_quantity",
+            "issued_quantity",
+            "remaining_to_issue",
+
+            # Output
+            "output_product",
+            "output_product_name",
+            "output_quantity",
+            "returned_quantity",
+            "pending_quantity",
+
+            # Employee
+            "employee",
+            "employee_name",
+
+            # Dates
+            "issue_date",
+            "expected_date",
+            "completed_date",
+
+            # Notes
+            "remarks",
+
+            # System
+            "created_at",
+            "updated_at",
+
+            # Calculated
+            "is_fully_issued",
+            "is_fully_returned",
+        ]
+
+        read_only_fields = [
+            "issued_quantity",
+            "returned_quantity",
+            "remaining_to_issue",
+            "pending_quantity",
+            "is_fully_issued",
+            "is_fully_returned",
+            "issue_date",
+            "completed_date",
+            "created_at",
+            "updated_at",
+        ]
+
+    def validate_input_quantity(self, value):
+
+        if value <= 0:
+            raise serializers.ValidationError(
+                "Input quantity must be greater than 0."
+            )
+
+        return value
 # ============================================================
 # EMPLOYEE
 # ============================================================

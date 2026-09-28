@@ -8,6 +8,8 @@ from django.shortcuts import (
     redirect,
     get_object_or_404,
 )
+from django.core.exceptions import ValidationError
+from .services import issue_processing, complete_processing
 from django.db.models import F, DecimalField, ExpressionWrapper
 from .models import *
 from .forms import *
@@ -929,4 +931,223 @@ def update_price(request, id):
         {
             "branch_product": branch_product
         }
+    )
+# =========================================================
+# STOCK PROCESSING
+# =========================================================
+
+@login_required
+def processing_list(request):
+
+    if request.user.role == "Admin":
+
+        processings = StockProcessing.objects.select_related(
+            "branch",
+            "input_product",
+            "output_product",
+            "employee",
+        ).order_by("-created_at")
+
+    else:
+
+        processings = StockProcessing.objects.filter(
+            branch=request.user.branch
+        ).select_related(
+            "input_product",
+            "output_product",
+            "employee",
+        ).order_by("-created_at")
+
+    return render(
+        request,
+        "products/processing_list.html",
+        {
+            "processings": processings,
+        }
+    )
+@login_required
+def processing_create(request):
+
+    if request.method == "POST":
+
+        form = StockProcessingForm(request.POST)
+
+        # Branch users can only create processing
+        # for their own branch
+        if request.user.role != "Admin":
+
+            form.fields["branch"].queryset = Branch.objects.filter(
+                id=request.user.branch.id
+            )
+
+        if form.is_valid():
+
+            processing = form.save(commit=False)
+
+            # Force branch for Branch Manager
+            if request.user.role != "Admin":
+                processing.branch = request.user.branch
+
+            processing.save()
+
+            messages.success(
+                request,
+                "Processing entry created successfully."
+            )
+
+            return redirect(
+                "processing_detail",
+                id=processing.id
+            )
+
+    else:
+
+        form = StockProcessingForm()
+
+        if request.user.role != "Admin":
+
+            form.fields["branch"].queryset = Branch.objects.filter(
+                id=request.user.branch.id
+            )
+
+            form.fields["branch"].initial = request.user.branch
+
+    return render(
+        request,
+        "products/processing_form.html",
+        {
+            "form": form,
+            "title": "New Stock Processing",
+        }
+    )
+@login_required
+def processing_detail(request, id):
+
+    if request.user.role == "Admin":
+
+        processing = get_object_or_404(
+            StockProcessing.objects.select_related(
+                "branch",
+                "input_product",
+                "output_product",
+                "employee",
+            ),
+            id=id
+        )
+
+    else:
+
+        processing = get_object_or_404(
+            StockProcessing.objects.select_related(
+                "branch",
+                "input_product",
+                "output_product",
+                "employee",
+            ),
+            id=id,
+            branch=request.user.branch
+        )
+
+    return render(
+        request,
+        "products/processing_detail.html",
+        {
+            "processing": processing,
+        }
+    )
+@login_required
+@transaction.atomic
+def processing_issue(request, id):
+
+    if request.user.role == "Admin":
+
+        processing = get_object_or_404(
+            StockProcessing,
+            id=id
+        )
+
+    else:
+
+        processing = get_object_or_404(
+            StockProcessing,
+            id=id,
+            branch=request.user.branch
+        )
+
+    if request.method == "POST":
+
+        quantity = request.POST.get("quantity")
+
+        try:
+
+            quantity = int(quantity)
+
+            issue_processing(
+                processing,
+                quantity
+            )
+
+            messages.success(
+                request,
+                f"{quantity} item(s) issued for processing."
+            )
+
+        except (ValueError, ValidationError) as e:
+
+            messages.error(
+                request,
+                str(e)
+            )
+
+    return redirect(
+        "processing_detail",
+        id=processing.id
+    )
+@login_required
+@transaction.atomic
+def processing_complete(request, id):
+
+    if request.user.role == "Admin":
+
+        processing = get_object_or_404(
+            StockProcessing,
+            id=id
+        )
+
+    else:
+
+        processing = get_object_or_404(
+            StockProcessing,
+            id=id,
+            branch=request.user.branch
+        )
+
+    if request.method == "POST":
+
+        quantity = request.POST.get("quantity")
+
+        try:
+
+            quantity = int(quantity)
+
+            complete_processing(
+                processing,
+                quantity
+            )
+
+            messages.success(
+                request,
+                f"{quantity} completed item(s) returned to branch stock."
+            )
+
+        except (ValueError, ValidationError) as e:
+
+            messages.error(
+                request,
+                str(e)
+            )
+
+    return redirect(
+        "processing_detail",
+        id=processing.id
     )

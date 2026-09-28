@@ -11,6 +11,7 @@ from rest_framework.decorators import (
     api_view,
     permission_classes,
     authentication_classes,
+    action,
 )
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -31,6 +32,7 @@ from products.models import (
     SaleItem,
     BranchProduct,
     StockTransfer,
+    StockProcessing,
 )
 
 from daybook.models import DayBook, OpeningBalance
@@ -62,6 +64,7 @@ from .serializers import (
     AlterationSerializer,
     BranchProductSerializer,
     StockTransferSerializer,
+    StockProcessingSerializer,
 )
 
 User = get_user_model()
@@ -179,9 +182,31 @@ def api_test(request):
 
 
 class CustomerViewSet(viewsets.ModelViewSet):
-    queryset = Customer.objects.select_related("branch").all()
+
+    queryset = Customer.objects.select_related(
+        "branch"
+    ).all()
+
     serializer_class = CustomerSerializer
     permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+
+        queryset = super().get_queryset()
+
+        user = self.request.user
+
+        # Admin → all customers
+        if user.role == "Admin" or user.is_superuser:
+            return queryset.order_by("-id")
+
+        # Branch → own branch customers only
+        if user.branch_id:
+            return queryset.filter(
+                branch_id=user.branch_id
+            ).order_by("-id")
+
+        return queryset.none()
 
 
 class MeasurementViewSet(viewsets.ModelViewSet):
@@ -1146,6 +1171,38 @@ class OrderViewSet(viewsets.ModelViewSet):
             )
 
         return queryset.none()
+    def perform_create(self, serializer):
+
+        user = self.request.user
+
+        customer = serializer.validated_data.get(
+            "customer"
+        )
+
+        if not customer:
+            raise serializers.ValidationError({
+                "customer": "Customer is required."
+            })
+
+        # Admin can create for any branch
+        if user.role == "Admin" or user.is_superuser:
+            serializer.save()
+            return
+
+        # Branch user must have a branch
+        if not user.branch_id:
+            raise serializers.ValidationError({
+                "customer": "User is not assigned to a branch."
+            })
+
+        # Customer must belong to user's branch
+        if customer.branch_id != user.branch_id:
+            raise serializers.ValidationError({
+                "customer":
+                "Customer does not belong to your branch."
+            })
+
+        serializer.save()
 
     def update(self, request, *args, **kwargs):
         order = self.get_object()
@@ -2910,3 +2967,727 @@ def branch_dashboard_data(request):
             "recent_payments": recent_payments_data,
         }
     )
+# ============================================================
+# STOCK PROCESSING API
+# ============================================================
+
+class StockProcessingViewSet(viewsets.ModelViewSet):
+
+    queryset = StockProcessing.objects.select_related(
+        "branch",
+        "input_product",
+        "output_product",
+        "employee",
+    ).all().order_by(
+        "-created_at",
+        "-id",
+    )
+
+    serializer_class = StockProcessingSerializer
+    permission_classes = [IsAuthenticated]
+
+    # --------------------------------------------------------
+    # LIST / FILTER
+    # --------------------------------------------------------
+
+    def get_queryset(self):
+
+        queryset = super().get_queryset()
+
+        user = self.request.user
+
+        # Admin → all branches
+        if user.role == "Admin" or user.is_superuser:
+            pass
+
+        # Branch → own branch only
+        elif user.branch_id:
+
+            queryset = queryset.filter(
+                branch_id=user.branch_id
+            )
+
+        else:
+
+            return queryset.none()
+
+        # Optional filters
+        process_type = self.request.query_params.get(
+            "process_type"
+        )
+
+        status_filter = self.request.query_params.get(
+            "status"
+        )
+
+        employee_id = self.request.query_params.get(
+            "employee"
+        )
+
+        if process_type:
+            queryset = queryset.filter(
+                process_type=process_type
+            )
+
+        if status_filter:
+            queryset = queryset.filter(
+                status=status_filter
+            )
+
+        if employee_id:
+            queryset = queryset.filter(
+                employee_id=employee_id
+            )
+
+        return queryset
+
+    # --------------------------------------------------------
+    # CREATE
+    # --------------------------------------------------------
+
+    @transaction.atomic
+    def perform_create(self, serializer):
+
+        user = self.request.user
+
+        # -----------------------------------------------
+        # DETERMINE BRANCH
+        # -----------------------------------------------
+
+        if user.role == "Admin" or user.is_superuser:
+
+            branch = serializer.validated_data.get(
+                "branch"
+            )
+
+            if not branch:
+
+                raise serializers.ValidationError({
+                    "branch":
+                    "Branch is required."
+                })
+
+        else:
+
+            if not user.branch_id:
+
+                raise serializers.ValidationError({
+                    "branch":
+                    "User is not assigned to a branch."
+                })
+
+            branch = Branch.objects.get(
+                id=user.branch_id
+            )
+
+        # -----------------------------------------------
+        # INPUT PRODUCT
+        # -----------------------------------------------
+
+        input_product = (
+            serializer.validated_data.get(
+                "input_product"
+            )
+        )
+
+        input_quantity = (
+            serializer.validated_data.get(
+                "input_quantity"
+            )
+        )
+
+        if not input_product:
+
+            raise serializers.ValidationError({
+                "input_product":
+                "Input product is required."
+            })
+
+        if not input_quantity or input_quantity <= 0:
+
+            raise serializers.ValidationError({
+                "input_quantity":
+                "Input quantity must be greater than 0."
+            })
+
+        # -----------------------------------------------
+        # OUTPUT PRODUCT
+        # -----------------------------------------------
+
+        output_product = (
+            serializer.validated_data.get(
+                "output_product"
+            )
+        )
+
+        if not output_product:
+
+            raise serializers.ValidationError({
+                "output_product":
+                "Output product is required."
+            })
+
+        # -----------------------------------------------
+        # EMPLOYEE
+        # -----------------------------------------------
+
+        employee = serializer.validated_data.get(
+            "employee"
+        )
+
+        if employee:
+
+            if employee.branch_id != branch.id:
+
+                raise serializers.ValidationError({
+                    "employee":
+                    "Employee must belong to the selected branch."
+                })
+
+        # -----------------------------------------------
+        # CHECK BRANCH STOCK
+        # -----------------------------------------------
+
+        branch_product = (
+            BranchProduct.objects
+            .select_for_update()
+            .filter(
+                branch=branch,
+                product=input_product,
+            )
+            .first()
+        )
+
+        if not branch_product:
+
+            raise serializers.ValidationError({
+                "input_product":
+                "Input product is not available in this branch."
+            })
+
+        if branch_product.stock < input_quantity:
+
+            raise serializers.ValidationError({
+                "input_quantity":
+                f"Insufficient stock for "
+                f"{input_product.name}. "
+                f"Available stock: "
+                f"{branch_product.stock}"
+            })
+
+        # -----------------------------------------------
+        # SAVE PROCESSING
+        # -----------------------------------------------
+
+        processing = serializer.save(
+            branch=branch
+        )
+
+        # -----------------------------------------------
+        # IMPORTANT
+        # -----------------------------------------------
+        #
+        # We DO NOT deduct stock here.
+        #
+        # Stock is deducted only when the user
+        # clicks "Issue".
+        #
+
+        return processing
+
+    # --------------------------------------------------------
+    # UPDATE
+    # --------------------------------------------------------
+
+    def perform_update(self, serializer):
+
+        processing = self.get_object()
+
+        user = self.request.user
+
+        if (
+            processing.issued_quantity > 0
+            or processing.returned_quantity > 0
+        ):
+
+            raise serializers.ValidationError({
+                "error":
+                "Processing cannot be edited after stock has been issued or returned."
+            })
+
+        if user.role == "Admin" or user.is_superuser:
+
+            branch = serializer.validated_data.get(
+                "branch",
+                processing.branch
+            )
+
+        else:
+
+            if not user.branch_id:
+
+                raise serializers.ValidationError({
+                    "branch":
+                    "User is not assigned to a branch."
+                })
+
+            branch = Branch.objects.get(
+                id=user.branch_id
+            )
+
+        employee = serializer.validated_data.get(
+            "employee",
+            processing.employee
+        )
+
+        if employee:
+
+            if employee.branch_id != branch.id:
+
+                raise serializers.ValidationError({
+                    "employee":
+                    "Employee must belong to the selected branch."
+                })
+
+        serializer.save(
+            branch=branch
+        )
+
+    # ========================================================
+    # ISSUE STOCK
+    # ========================================================
+
+    @action(
+        detail=True,
+        methods=["post"],
+        url_path="issue"
+    )
+    @transaction.atomic
+    def issue(self, request, pk=None):
+
+        processing = self.get_object()
+
+        user = request.user
+
+        # -----------------------------------------------
+        # BRANCH SECURITY
+        # -----------------------------------------------
+
+        if (
+            user.role != "Admin"
+            and not user.is_superuser
+        ):
+
+            if not user.branch_id:
+
+                return Response(
+                    {
+                        "error":
+                        "User is not assigned to a branch."
+                    },
+                    status=status.HTTP_403_FORBIDDEN
+                )
+
+            if processing.branch_id != user.branch_id:
+
+                return Response(
+                    {
+                        "error":
+                        "You cannot issue stock for this branch."
+                    },
+                    status=status.HTTP_403_FORBIDDEN
+                )
+
+        # -----------------------------------------------
+        # STATUS CHECK
+        # -----------------------------------------------
+
+        if processing.status == "CANCELLED":
+
+            return Response(
+                {
+                    "error":
+                    "Cancelled processing cannot receive stock."
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if processing.status == "COMPLETED":
+
+            return Response(
+                {
+                    "error":
+                    "Completed processing cannot receive more stock."
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # -----------------------------------------------
+        # QUANTITY
+        # -----------------------------------------------
+
+        quantity = request.data.get(
+            "quantity"
+        )
+
+        try:
+
+            quantity = int(quantity)
+
+        except (
+            TypeError,
+            ValueError
+        ):
+
+            return Response(
+                {
+                    "error":
+                    "Invalid issue quantity."
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if quantity <= 0:
+
+            return Response(
+                {
+                    "error":
+                    "Issue quantity must be greater than 0."
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # -----------------------------------------------
+        # REMAINING QUANTITY
+        # -----------------------------------------------
+
+        remaining = (
+            processing.input_quantity
+            - processing.issued_quantity
+        )
+
+        if quantity > remaining:
+
+            return Response(
+                {
+                    "error":
+                    "Issue quantity exceeds remaining quantity.",
+                    "remaining":
+                    remaining
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # -----------------------------------------------
+        # LOCK BRANCH STOCK
+        # -----------------------------------------------
+
+        branch_product = (
+            BranchProduct.objects
+            .select_for_update()
+            .filter(
+                branch_id=processing.branch_id,
+                product_id=processing.input_product_id,
+            )
+            .first()
+        )
+
+        if not branch_product:
+
+            return Response(
+                {
+                    "error":
+                    "Input product is not available in branch stock."
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # -----------------------------------------------
+        # STOCK CHECK
+        # -----------------------------------------------
+
+        if branch_product.stock < quantity:
+
+            return Response(
+                {
+                    "error":
+                    f"Insufficient stock. "
+                    f"Available stock: "
+                    f"{branch_product.stock}"
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # -----------------------------------------------
+        # DEDUCT STOCK
+        # -----------------------------------------------
+
+        branch_product.stock -= quantity
+
+        branch_product.save(
+            update_fields=["stock"]
+        )
+
+        # -----------------------------------------------
+        # UPDATE PROCESSING
+        # -----------------------------------------------
+
+        processing.issued_quantity += quantity
+
+        if processing.issued_quantity > 0:
+
+            processing.status = "IN_PROGRESS"
+
+        processing.save(
+            update_fields=[
+                "issued_quantity",
+                "status",
+                "updated_at",
+            ]
+        )
+
+        serializer = self.get_serializer(
+            processing
+        )
+
+        return Response(
+            {
+                "success": True,
+                "message":
+                    "Stock issued successfully.",
+                "issued_quantity":
+                    processing.issued_quantity,
+                "remaining_to_issue":
+                    processing.remaining_to_issue,
+                "branch_stock":
+                    branch_product.stock,
+                "processing":
+                    serializer.data,
+            },
+            status=status.HTTP_200_OK
+        )
+
+    # ========================================================
+    # COMPLETE / RETURN STOCK
+    # ========================================================
+
+    @action(
+        detail=True,
+        methods=["post"],
+        url_path="complete"
+    )
+    @transaction.atomic
+    def complete(self, request, pk=None):
+
+        processing = self.get_object()
+
+        user = request.user
+
+        # -----------------------------------------------
+        # BRANCH SECURITY
+        # -----------------------------------------------
+
+        if (
+            user.role != "Admin"
+            and not user.is_superuser
+        ):
+
+            if not user.branch_id:
+
+                return Response(
+                    {
+                        "error":
+                        "User is not assigned to a branch."
+                    },
+                    status=status.HTTP_403_FORBIDDEN
+                )
+
+            if processing.branch_id != user.branch_id:
+
+                return Response(
+                    {
+                        "error":
+                        "You cannot complete this processing."
+                    },
+                    status=status.HTTP_403_FORBIDDEN
+                )
+
+        # -----------------------------------------------
+        # STATUS
+        # -----------------------------------------------
+
+        if processing.status == "CANCELLED":
+
+            return Response(
+                {
+                    "error":
+                    "Cancelled processing cannot be completed."
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # -----------------------------------------------
+        # MUST HAVE ISSUED STOCK
+        # -----------------------------------------------
+
+        if processing.issued_quantity <= 0:
+
+            return Response(
+                {
+                    "error":
+                    "No stock has been issued for this processing."
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # -----------------------------------------------
+        # QUANTITY RETURNED
+        # -----------------------------------------------
+
+        quantity = request.data.get(
+            "quantity"
+        )
+
+        try:
+
+            quantity = int(quantity)
+
+        except (
+            TypeError,
+            ValueError
+        ):
+
+            return Response(
+                {
+                    "error":
+                    "Invalid return quantity."
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if quantity <= 0:
+
+            return Response(
+                {
+                    "error":
+                    "Return quantity must be greater than 0."
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # -----------------------------------------------
+        # PENDING QUANTITY
+        # -----------------------------------------------
+
+        pending = (
+            processing.issued_quantity
+            - processing.returned_quantity
+        )
+
+        if quantity > pending:
+
+            return Response(
+                {
+                    "error":
+                    "Return quantity exceeds pending quantity.",
+                    "pending":
+                    pending
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # -----------------------------------------------
+        # OUTPUT PRODUCT
+        # -----------------------------------------------
+
+        if not processing.output_product_id:
+
+            return Response(
+                {
+                    "error":
+                    "Output product is required."
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # -----------------------------------------------
+        # LOCK / CREATE BRANCH STOCK
+        # -----------------------------------------------
+
+        branch_product = (
+            BranchProduct.objects
+            .select_for_update()
+            .filter(
+                branch_id=processing.branch_id,
+                product_id=processing.output_product_id,
+            )
+            .first()
+        )
+
+        if not branch_product:
+
+            branch_product = BranchProduct.objects.create(
+                branch_id=processing.branch_id,
+                product_id=processing.output_product_id,
+                stock=0,
+                selling_price=processing.output_product.purchase_price,
+            )
+
+        # -----------------------------------------------
+        # ADD RETURNED STOCK
+        # -----------------------------------------------
+
+        branch_product.stock += quantity
+
+        branch_product.save(
+            update_fields=["stock"]
+        )
+
+        # -----------------------------------------------
+        # UPDATE PROCESSING
+        # -----------------------------------------------
+
+        processing.returned_quantity += quantity
+
+        processing.status = "IN_PROGRESS"
+
+        # Complete when all issued quantity has returned
+        if (
+            processing.returned_quantity
+            >= processing.issued_quantity
+        ):
+
+            processing.status = "COMPLETED"
+            processing.completed_date = timezone.now()
+
+        processing.save(
+            update_fields=[
+                "returned_quantity",
+                "status",
+                "completed_date",
+                "updated_at",
+            ]
+        )
+
+        serializer = self.get_serializer(
+            processing
+        )
+
+        return Response(
+            {
+                "success": True,
+                "message":
+                    "Stock returned successfully.",
+                "returned_quantity":
+                    processing.returned_quantity,
+                "pending_quantity":
+                    processing.pending_quantity,
+                "branch_stock":
+                    branch_product.stock,
+                "status":
+                    processing.status,
+                "processing":
+                    serializer.data,
+            },
+            status=status.HTTP_200_OK
+        )

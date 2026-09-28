@@ -29,6 +29,7 @@ from .views import (
     AlterationViewSet,
     BranchProductViewSet,
     StockTransferViewSet,
+    StockProcessingViewSet,
 )
 from accounts.password_reset_views import forgot_password
 from .views import current_user
@@ -74,6 +75,11 @@ router.register(
     "stock-transfers",
     StockTransferViewSet,
     basename="stock-transfers"
+)
+router.register(
+    "stock-processing",
+    StockProcessingViewSet,
+    basename="stock-processing"
 )
 # ============================================================
 # BRANCHES

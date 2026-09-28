@@ -246,3 +246,179 @@ class StockTransfer(models.Model):
 
     def __str__(self):
         return f"{self.product.name} -> {self.branch.name}"
+# =========================================================
+# STOCK PROCESSING / PRODUCTION
+# =========================================================
+
+class StockProcessing(models.Model):
+
+    PROCESS_TYPE_CHOICES = [
+        ("STITCHING", "Stitching"),
+        ("EMBROIDERY", "Embroidery"),
+        ("ALTERATION", "Alteration"),
+        ("OTHER", "Other"),
+    ]
+
+    STATUS_CHOICES = [
+        ("PENDING", "Pending"),
+        ("IN_PROGRESS", "In Progress"),
+        ("COMPLETED", "Completed"),
+        ("CANCELLED", "Cancelled"),
+    ]
+
+    # -----------------------------------------------------
+    # BASIC DETAILS
+    # -----------------------------------------------------
+
+    branch = models.ForeignKey(
+        Branch,
+        on_delete=models.CASCADE,
+        related_name="stock_processings"
+    )
+
+    process_type = models.CharField(
+        max_length=20,
+        choices=PROCESS_TYPE_CHOICES
+    )
+
+    # -----------------------------------------------------
+    # INPUT PRODUCT
+    # -----------------------------------------------------
+
+    input_product = models.ForeignKey(
+        Product,
+        on_delete=models.PROTECT,
+        related_name="processing_inputs"
+    )
+
+    input_quantity = models.PositiveIntegerField(
+        default=0
+    )
+
+    # Actual quantity taken from branch stock
+    issued_quantity = models.PositiveIntegerField(
+        default=0
+    )
+
+    # -----------------------------------------------------
+    # OUTPUT PRODUCT
+    # -----------------------------------------------------
+
+    output_product = models.ForeignKey(
+        Product,
+        on_delete=models.PROTECT,
+        related_name="processing_outputs",
+        null=True,
+        blank=True
+    )
+
+    output_quantity = models.PositiveIntegerField(
+        default=0
+    )
+
+    # Actual quantity returned to branch stock
+    returned_quantity = models.PositiveIntegerField(
+        default=0
+    )
+
+    # -----------------------------------------------------
+    # EMPLOYEE
+    # -----------------------------------------------------
+
+    employee = models.ForeignKey(
+        "employees.Employee",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="stock_processings"
+    )
+
+    # -----------------------------------------------------
+    # STATUS
+    # -----------------------------------------------------
+
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default="PENDING"
+    )
+
+    # -----------------------------------------------------
+    # DATES
+    # -----------------------------------------------------
+
+    issue_date = models.DateTimeField(
+        auto_now_add=True
+    )
+
+    expected_date = models.DateTimeField(
+        null=True,
+        blank=True
+    )
+
+    completed_date = models.DateTimeField(
+        null=True,
+        blank=True
+    )
+
+    # -----------------------------------------------------
+    # NOTES
+    # -----------------------------------------------------
+
+    remarks = models.TextField(
+        blank=True
+    )
+
+    # -----------------------------------------------------
+    # SYSTEM
+    # -----------------------------------------------------
+
+    created_at = models.DateTimeField(
+        auto_now_add=True
+    )
+
+    updated_at = models.DateTimeField(
+        auto_now=True
+    )
+
+    # =====================================================
+    # CALCULATED VALUES
+    # =====================================================
+
+    @property
+    def remaining_to_issue(self):
+
+        return max(
+            self.input_quantity - self.issued_quantity,
+            0
+        )
+
+    @property
+    def pending_quantity(self):
+
+        return max(
+            self.issued_quantity - self.returned_quantity,
+            0
+        )
+
+    @property
+    def is_fully_issued(self):
+
+        return self.issued_quantity >= self.input_quantity
+
+    @property
+    def is_fully_returned(self):
+
+        return self.returned_quantity >= self.output_quantity
+
+    # =====================================================
+    # DISPLAY
+    # =====================================================
+
+    def __str__(self):
+
+        return (
+            f"{self.get_process_type_display()} - "
+            f"{self.input_product.name} - "
+            f"{self.input_quantity}"
+        )

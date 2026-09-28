@@ -8,8 +8,8 @@ from .models import (
     Sale,
     SaleItem,
     StockTransfer,
+    StockProcessing,
 )
-
 
 # ==================================================
 # PRODUCT CATEGORY FORM
@@ -370,3 +370,150 @@ class StockTransferForm(forms.ModelForm):
                 }
             ),
         }
+# ==================================================
+# STOCK PROCESSING FORM
+# ==================================================
+
+class StockProcessingForm(forms.ModelForm):
+
+    class Meta:
+        model = StockProcessing
+
+        fields = [
+            "branch",
+            "process_type",
+            "input_product",
+            "input_quantity",
+            "output_product",
+            "employee",
+            "expected_date",
+            "remarks",
+        ]
+
+        widgets = {
+
+            "branch": forms.Select(
+                attrs={
+                    "class": "form-select"
+                }
+            ),
+
+            "process_type": forms.Select(
+                attrs={
+                    "class": "form-select"
+                }
+            ),
+
+            "input_product": forms.Select(
+                attrs={
+                    "class": "form-select"
+                }
+            ),
+
+            "input_quantity": forms.NumberInput(
+                attrs={
+                    "class": "form-control",
+                    "min": "1"
+                }
+            ),
+
+            "output_product": forms.Select(
+                attrs={
+                    "class": "form-select"
+                }
+            ),
+
+            "employee": forms.Select(
+                attrs={
+                    "class": "form-select"
+                }
+            ),
+
+            "expected_date": forms.DateTimeInput(
+                attrs={
+                    "type": "datetime-local",
+                    "class": "form-control"
+                }
+            ),
+
+            "remarks": forms.Textarea(
+                attrs={
+                    "class": "form-control",
+                    "rows": 3,
+                    "placeholder": "Optional remarks"
+                }
+            ),
+        }
+
+    def __init__(self, *args, **kwargs):
+
+        super().__init__(*args, **kwargs)
+
+        # Only active employees
+        self.fields["employee"].queryset = (
+            self.fields["employee"]
+            .queryset
+            .filter(active=True)
+        )
+
+        # Only active products
+        self.fields["input_product"].queryset = (
+            self.fields["input_product"]
+            .queryset
+            .filter(active=True)
+        )
+
+        self.fields["output_product"].queryset = (
+            self.fields["output_product"]
+            .queryset
+            .filter(active=True)
+        )
+
+    def clean(self):
+
+        cleaned_data = super().clean()
+
+        branch = cleaned_data.get("branch")
+        input_product = cleaned_data.get("input_product")
+        input_quantity = cleaned_data.get("input_quantity")
+        output_product = cleaned_data.get("output_product")
+        employee = cleaned_data.get("employee")
+
+        # --------------------------------------------------
+        # Employee must belong to selected branch
+        # --------------------------------------------------
+
+        if branch and employee:
+
+            if employee.branch_id != branch.id:
+
+                self.add_error(
+                    "employee",
+                    "Selected employee does not belong to this branch."
+                )
+
+        # --------------------------------------------------
+        # Output product required
+        # --------------------------------------------------
+
+        if not output_product:
+
+            self.add_error(
+                "output_product",
+                "Please select the output product."
+            )
+
+        # --------------------------------------------------
+        # Quantity validation
+        # --------------------------------------------------
+
+        if input_quantity is not None:
+
+            if input_quantity <= 0:
+
+                self.add_error(
+                    "input_quantity",
+                    "Quantity must be greater than zero."
+                )
+
+        return cleaned_data
