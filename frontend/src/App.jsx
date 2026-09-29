@@ -5,7 +5,7 @@ import {
     Route,
     Navigate,
 } from "react-router-dom";
-
+import NewSale from "./pages/NewSale";
 import StockProcessing from "./pages/StockProcessing";
 import ForgotPassword from "./pages/ForgotPassword";
 import Dashboard from "./pages/Dashboard";
@@ -654,6 +654,7 @@ function App() {
                                     >
                                         Stock Report
                                     </a>
+                                    
 
                                 </div>
 
@@ -680,6 +681,14 @@ function App() {
                         </ProtectedLayout>
                     }
                 />
+                <Route
+    path="/new-sale"
+    element={
+        <ProtectedLayout>
+            <NewSale />
+        </ProtectedLayout>
+    }
+/>
 
 
                 {/* =====================================================
