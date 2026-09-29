@@ -505,6 +505,10 @@ class DailyProductionSerializer(serializers.ModelSerializer):
         ]
 
         read_only_fields = [
+            "branch",
+            "branch_name",
+            "employee_name",
+            "product_name",
             "total_amount",
             "created_at",
         ]
