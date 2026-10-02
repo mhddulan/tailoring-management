@@ -1,23 +1,18 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../services/api";
 
 function AlterationCreate() {
+
     const navigate = useNavigate();
 
-    // ========================================================
+    // ============================================================
     // USER
-    // ========================================================
+    // ============================================================
 
-    const storedUser = useMemo(() => {
-        try {
-            return JSON.parse(
-                localStorage.getItem("user") || "{}"
-            );
-        } catch {
-            return {};
-        }
-    }, []);
+    const storedUser = JSON.parse(
+        localStorage.getItem("user") || "{}"
+    );
 
     const isAdmin =
         storedUser.role === "Admin" ||
@@ -26,45 +21,33 @@ function AlterationCreate() {
     const isBranchUser =
         storedUser.role === "Branch";
 
-    /*
-     * Depending on your login response, branch may be stored as:
-     *
-     * user.branch_id
-     * user.branch
-     * user.branch.id
-     *
-     * We support all three.
-     */
     const loggedInBranchId =
         storedUser.branch_id ||
-        (
-            typeof storedUser.branch === "object"
-                ? storedUser.branch?.id
-                : storedUser.branch
-        ) ||
+        storedUser.branch?.id ||
         "";
 
-    // ========================================================
+    // ============================================================
     // DATA
-    // ========================================================
+    // ============================================================
 
     const [branches, setBranches] = useState([]);
     const [customers, setCustomers] = useState([]);
     const [employees, setEmployees] = useState([]);
     const [products, setProducts] = useState([]);
 
-    // ========================================================
+    // ============================================================
     // CUSTOMER TYPE
-    // ========================================================
+    // ============================================================
 
     const [customerType, setCustomerType] =
         useState("existing");
 
-    // ========================================================
+    // ============================================================
     // FORM
-    // ========================================================
+    // ============================================================
 
     const [form, setForm] = useState({
+
         branch: "",
 
         customer: "",
@@ -85,152 +68,183 @@ function AlterationCreate() {
 
         total_amount: "",
         advance_amount: "",
+
         advance_payment_mode: "Cash",
 
         assigned_employee: "",
     });
 
-    // ========================================================
+    // ============================================================
     // STATE
-    // ========================================================
+    // ============================================================
 
     const [loading, setLoading] = useState(false);
     const [loadingData, setLoadingData] = useState(true);
     const [error, setError] = useState("");
 
-    // ========================================================
+    // ============================================================
+    // HELPER
+    // ============================================================
+
+    const getBranchId = (item) => {
+
+        if (!item) {
+            return "";
+        }
+
+        if (item.branch_id) {
+            return String(item.branch_id);
+        }
+
+        if (item.branch?.id) {
+            return String(item.branch.id);
+        }
+
+        if (
+            item.branch !== undefined &&
+            item.branch !== null
+        ) {
+            return String(item.branch);
+        }
+
+        return "";
+    };
+
+    // ============================================================
     // LOAD DATA
-    // ========================================================
+    // ============================================================
 
     useEffect(() => {
+
         loadData();
+
     }, []);
 
     const loadData = async () => {
+
         setLoadingData(true);
         setError("");
 
         try {
-            const requests = [
-                api.get("branches/"),
-                api.get("customers/"),
-                api.get("employees/"),
-                api.get("products/"),
-            ];
 
             const [
                 branchRes,
                 customerRes,
                 employeeRes,
                 productRes,
-            ] = await Promise.all(requests);
+            ] = await Promise.all([
+
+                api.get("branches/"),
+                api.get("customers/"),
+                api.get("employees/"),
+                api.get("products/"),
+
+            ]);
 
             const branchData =
-                branchRes.data?.results ||
+                branchRes.data.results ||
                 branchRes.data ||
                 [];
 
             const customerData =
-                customerRes.data?.results ||
+                customerRes.data.results ||
                 customerRes.data ||
                 [];
 
             const employeeData =
-                employeeRes.data?.results ||
+                employeeRes.data.results ||
                 employeeRes.data ||
                 [];
 
             const productData =
-                productRes.data?.results ||
+                productRes.data.results ||
                 productRes.data ||
                 [];
 
-            setBranches(
-                Array.isArray(branchData)
-                    ? branchData
-                    : []
-            );
+            setBranches(branchData);
+            setCustomers(customerData);
+            setEmployees(employeeData);
+            setProducts(productData);
 
-            setCustomers(
-                Array.isArray(customerData)
-                    ? customerData
-                    : []
-            );
+            // ====================================================
+            // BRANCH USER AUTO SELECT
+            // ====================================================
 
-            setEmployees(
-                Array.isArray(employeeData)
-                    ? employeeData
-                    : []
-            );
+            if (isBranchUser) {
 
-            setProducts(
-                Array.isArray(productData)
-                    ? productData
-                    : []
-            );
+                let branchId =
+                    loggedInBranchId;
+
+                // Fallback:
+                // If login data doesn't contain branch_id,
+                // try to find the branch from available data.
+                if (!branchId) {
+
+                    const firstEmployee =
+                        employeeData.find(
+                            (employee) =>
+                                getBranchId(employee)
+                        );
+
+                    if (firstEmployee) {
+
+                        branchId =
+                            getBranchId(firstEmployee);
+                    }
+                }
+
+                // Another fallback:
+                // If only one branch is available.
+                if (
+                    !branchId &&
+                    branchData.length === 1
+                ) {
+
+                    branchId =
+                        String(branchData[0].id);
+                }
+
+                if (branchId) {
+
+                    setForm((prev) => ({
+                        ...prev,
+                        branch: String(branchId),
+                    }));
+
+                } else {
+
+                    setError(
+                        "Your account is not assigned to a branch."
+                    );
+                }
+            }
+
         } catch (err) {
+
             console.error(
-                "Alteration form load error:",
+                "Alteration load error:",
                 err
             );
 
             setError(
-                "Unable to load alteration form data."
+                "Unable to load form data."
             );
+
         } finally {
+
             setLoadingData(false);
         }
     };
 
-    // ========================================================
-    // AUTO SELECT BRANCH
-    // ========================================================
-
-    useEffect(() => {
-        if (!isBranchUser) {
-            return;
-        }
-
-        /*
-         * If branch ID is available in login user data,
-         * automatically select it.
-         */
-        if (loggedInBranchId) {
-            setForm((prev) => ({
-                ...prev,
-                branch: String(loggedInBranchId),
-            }));
-
-            return;
-        }
-
-        /*
-         * Fallback:
-         *
-         * Branch APIs in this project may already return only
-         * the user's branch. If exactly one branch is returned,
-         * use it automatically.
-         */
-        if (branches.length === 1) {
-            setForm((prev) => ({
-                ...prev,
-                branch: String(branches[0].id),
-            }));
-        }
-    }, [
-        isBranchUser,
-        loggedInBranchId,
-        branches,
-    ]);
-
-    // ========================================================
+    // ============================================================
     // INPUT CHANGE
-    // ========================================================
+    // ============================================================
 
     const handleChange = (e) => {
+
         const {
             name,
-            value,
+            value
         } = e.target;
 
         setForm((prev) => ({
@@ -239,30 +253,36 @@ function AlterationCreate() {
         }));
     };
 
-    // ========================================================
-    // CUSTOMER TYPE CHANGE
-    // ========================================================
+    // ============================================================
+    // CUSTOMER TYPE
+    // ============================================================
 
     const handleCustomerTypeChange = (e) => {
-        const type = e.target.value;
+
+        const type =
+            e.target.value;
 
         setCustomerType(type);
 
         setForm((prev) => ({
+
             ...prev,
 
             customer: "",
             customer_name: "",
             phone: "",
+
         }));
     };
 
-    // ========================================================
-    // EXISTING CUSTOMER CHANGE
-    // ========================================================
+    // ============================================================
+    // EXISTING CUSTOMER
+    // ============================================================
 
     const handleCustomerChange = (e) => {
-        const customerId = e.target.value;
+
+        const customerId =
+            e.target.value;
 
         const selectedCustomer =
             customers.find(
@@ -272,21 +292,26 @@ function AlterationCreate() {
             );
 
         if (!selectedCustomer) {
+
             setForm((prev) => ({
+
                 ...prev,
 
                 customer: "",
                 customer_name: "",
                 phone: "",
+
             }));
 
             return;
         }
 
         setForm((prev) => ({
+
             ...prev,
 
-            customer: customerId,
+            customer:
+                customerId,
 
             customer_name:
                 selectedCustomer.name || "",
@@ -295,147 +320,133 @@ function AlterationCreate() {
                 selectedCustomer.mobile ||
                 selectedCustomer.phone ||
                 "",
+
         }));
     };
 
-    // ========================================================
+    // ============================================================
     // BRANCH CHANGE
-    // ========================================================
+    // ADMIN ONLY
+    // ============================================================
 
     const handleBranchChange = (e) => {
-        /*
-         * Branch user should never reach this function because
-         * their branch selector is hidden.
-         */
+
         if (isBranchUser) {
             return;
         }
 
-        const branchId = e.target.value;
+        const branchId =
+            e.target.value;
 
         setForm((prev) => ({
+
             ...prev,
 
-            branch: branchId,
+            branch:
+                branchId,
 
-            assigned_employee: "",
+            assigned_employee:
+                "",
 
-            customer: "",
-            customer_name: "",
-            phone: "",
+            customer:
+                "",
+
+            customer_name:
+                "",
+
+            phone:
+                "",
+
         }));
     };
 
-    // ========================================================
-    // FILTER EMPLOYEES
-    // ========================================================
-
-    const availableEmployees = useMemo(() => {
-        if (!form.branch) {
-            return [];
-        }
-
-        return employees.filter(
-            (employee) =>
-                String(employee.branch) ===
-                String(form.branch)
-        );
-    }, [
-        employees,
-        form.branch,
-    ]);
-
-    // ========================================================
+    // ============================================================
     // FILTER CUSTOMERS
-    // ========================================================
+    // ============================================================
 
-    const availableCustomers = useMemo(() => {
-        if (!form.branch) {
-            return [];
-        }
+    const availableCustomers =
+        form.branch
 
-        return customers.filter(
-            (customer) =>
-                String(customer.branch) ===
-                String(form.branch)
+            ? customers.filter(
+                (customer) =>
+                    getBranchId(customer) ===
+                    String(form.branch)
+            )
+
+            : [];
+
+    // ============================================================
+    // FILTER EMPLOYEES
+    // ============================================================
+
+    const availableEmployees =
+        form.branch
+
+            ? employees.filter(
+                (employee) =>
+                    getBranchId(employee) ===
+                    String(form.branch)
+            )
+
+            : [];
+
+    // ============================================================
+    // BALANCE
+    // ============================================================
+
+    const totalAmount =
+        Number(form.total_amount || 0);
+
+    const advanceAmount =
+        Number(form.advance_amount || 0);
+
+    const balanceAmount =
+        Math.max(
+            totalAmount - advanceAmount,
+            0
         );
-    }, [
-        customers,
-        form.branch,
-    ]);
 
-    // ========================================================
-    // VALIDATE AMOUNTS
-    // ========================================================
-
-    const validateAmounts = () => {
-        const total =
-            parseFloat(form.total_amount || 0);
-
-        const advance =
-            parseFloat(form.advance_amount || 0);
-
-        if (total < 0) {
-            setError(
-                "Total amount cannot be negative."
-            );
-
-            return false;
-        }
-
-        if (advance < 0) {
-            setError(
-                "Advance amount cannot be negative."
-            );
-
-            return false;
-        }
-
-        if (advance > total) {
-            setError(
-                "Advance cannot be greater than total amount."
-            );
-
-            return false;
-        }
-
-        return true;
-    };
-
-    // ========================================================
+    // ============================================================
     // SUBMIT
-    // ========================================================
+    // ============================================================
 
     const handleSubmit = async (e) => {
+
         e.preventDefault();
 
         setError("");
 
-        // ----------------------------------------------------
+        // ========================================================
         // BRANCH VALIDATION
-        // ----------------------------------------------------
+        // ========================================================
 
-        if (!isAdmin && !form.branch) {
+        if (!form.branch) {
+
             setError(
-                "Your branch could not be determined. Please contact the administrator."
+                "Branch is required."
             );
 
             return;
         }
 
-        if (isAdmin && !form.branch) {
-            setError(
-                "Please select a branch."
-            );
-
-            return;
-        }
-
-        // ----------------------------------------------------
+        // ========================================================
         // CUSTOMER VALIDATION
-        // ----------------------------------------------------
+        // ========================================================
+
+        if (
+            customerType === "existing" &&
+            !form.customer
+        ) {
+
+            setError(
+                "Please select an existing customer."
+            );
+
+            return;
+        }
 
         if (!form.customer_name.trim()) {
+
             setError(
                 "Customer name is required."
             );
@@ -444,6 +455,7 @@ function AlterationCreate() {
         }
 
         if (!form.phone.trim()) {
+
             setError(
                 "Phone number is required."
             );
@@ -451,29 +463,37 @@ function AlterationCreate() {
             return;
         }
 
-        // ----------------------------------------------------
-        // EXISTING CUSTOMER VALIDATION
-        // ----------------------------------------------------
+        // ========================================================
+        // EXPECTED DELIVERY
+        // ========================================================
 
-        if (
-            customerType === "existing" &&
-            !form.customer
-        ) {
+        if (!form.expected_delivery_date) {
+
             setError(
-                "Please select an existing customer."
+                "Expected delivery date is required."
             );
 
             return;
         }
 
-        // ----------------------------------------------------
-        // PRODUCT / ITEM VALIDATION
-        // ----------------------------------------------------
+        if (!form.expected_delivery_time) {
+
+            setError(
+                "Expected delivery time is required."
+            );
+
+            return;
+        }
+
+        // ========================================================
+        // PRODUCT / ITEM
+        // ========================================================
 
         if (
             !form.product &&
             !form.item_name.trim()
         ) {
+
             setError(
                 "Select a product or enter an outside/customer item."
             );
@@ -481,41 +501,75 @@ function AlterationCreate() {
             return;
         }
 
-        // ----------------------------------------------------
+        // ========================================================
         // TOTAL AMOUNT
-        // ----------------------------------------------------
+        // ========================================================
 
         if (
             form.total_amount === "" ||
-            form.total_amount === null
+            Number(form.total_amount) < 0
         ) {
+
             setError(
-                "Total amount is required."
+                "Enter a valid total amount."
             );
 
             return;
         }
 
-        if (!validateAmounts()) {
+        // ========================================================
+        // ADVANCE
+        // ========================================================
+
+        if (
+            form.advance_amount !== "" &&
+            Number(form.advance_amount) < 0
+        ) {
+
+            setError(
+                "Advance amount cannot be negative."
+            );
+
             return;
         }
+
+        if (
+            Number(form.advance_amount || 0) >
+            Number(form.total_amount || 0)
+        ) {
+
+            setError(
+                "Advance amount cannot be greater than total amount."
+            );
+
+            return;
+        }
+
+        // ========================================================
+        // START SAVE
+        // ========================================================
 
         setLoading(true);
 
         try {
-            /*
-             * For branch users, send their selected automatic
-             * branch. Backend will still force request.user.branch.
-             *
-             * For Admin, send selected branch.
-             */
 
             const payload = {
-                branch: form.branch || null,
 
-                // --------------------------------------------
-                // CUSTOMER
-                // --------------------------------------------
+                // ------------------------------------------------
+                // Branch
+                // ------------------------------------------------
+
+                branch:
+                    form.branch,
+
+                // ------------------------------------------------
+                // Customer
+                // ------------------------------------------------
+
+                customer:
+                    customerType === "existing"
+                        ? form.customer
+                        : null,
 
                 customer_name:
                     form.customer_name.trim(),
@@ -523,28 +577,22 @@ function AlterationCreate() {
                 phone:
                     form.phone.trim(),
 
-                // --------------------------------------------
-                // DATE
-                // --------------------------------------------
+                // ------------------------------------------------
+                // Dates
+                // ------------------------------------------------
 
                 alteration_date:
                     form.alteration_date,
 
-                // --------------------------------------------
-                // EXPECTED DELIVERY
-                // --------------------------------------------
-
                 expected_delivery_date:
-                    form.expected_delivery_date ||
-                    null,
+                    form.expected_delivery_date,
 
                 expected_delivery_time:
-                    form.expected_delivery_time ||
-                    null,
+                    form.expected_delivery_time,
 
-                // --------------------------------------------
-                // PRODUCT
-                // --------------------------------------------
+                // ------------------------------------------------
+                // Product
+                // ------------------------------------------------
 
                 product:
                     form.product || null,
@@ -552,9 +600,9 @@ function AlterationCreate() {
                 item_name:
                     form.item_name.trim(),
 
-                // --------------------------------------------
-                // ALTERATION
-                // --------------------------------------------
+                // ------------------------------------------------
+                // Details
+                // ------------------------------------------------
 
                 custom_size:
                     form.custom_size,
@@ -562,29 +610,29 @@ function AlterationCreate() {
                 notes:
                     form.notes,
 
-                // --------------------------------------------
-                // AMOUNTS
-                // --------------------------------------------
+                // ------------------------------------------------
+                // Amount
+                // ------------------------------------------------
 
                 total_amount:
-                    form.total_amount || 0,
+                    Number(form.total_amount || 0),
 
                 advance_amount:
-                    form.advance_amount || 0,
+                    Number(form.advance_amount || 0),
 
                 advance_payment_mode:
                     form.advance_payment_mode,
 
-                // --------------------------------------------
-                // EMPLOYEE
-                // --------------------------------------------
+                // ------------------------------------------------
+                // Employee
+                // ------------------------------------------------
 
                 assigned_employee:
                     form.assigned_employee || null,
             };
 
             console.log(
-                "Creating alteration:",
+                "ALTERATION PAYLOAD:",
                 payload
             );
 
@@ -593,10 +641,14 @@ function AlterationCreate() {
                 payload
             );
 
-            navigate("/alterations");
+            navigate(
+                "/alterations"
+            );
+
         } catch (err) {
+
             console.error(
-                "Alteration create error:",
+                "Alteration save error:",
                 err
             );
 
@@ -604,258 +656,293 @@ function AlterationCreate() {
                 err.response?.data;
 
             if (data) {
+
                 if (
                     typeof data === "object"
                 ) {
-                    const firstError =
-                        Object.values(data)[0];
 
-                    if (
-                        Array.isArray(firstError)
-                    ) {
-                        setError(
-                            String(firstError[0])
-                        );
-                    } else if (
-                        typeof firstError ===
-                        "object"
-                    ) {
-                        setError(
-                            JSON.stringify(
-                                firstError
-                            )
-                        );
-                    } else {
-                        setError(
-                            String(firstError)
-                        );
-                    }
+                    const messages = [];
+
+                    Object.entries(
+                        data
+                    ).forEach(
+                        ([field, value]) => {
+
+                            if (
+                                Array.isArray(value)
+                            ) {
+
+                                messages.push(
+                                    `${field}: ${value.join(", ")}`
+                                );
+
+                            } else {
+
+                                messages.push(
+                                    `${field}: ${value}`
+                                );
+                            }
+                        }
+                    );
+
+                    setError(
+                        messages.join(" | ") ||
+                        "Unable to save alteration."
+                    );
+
                 } else {
+
                     setError(
                         String(data)
                     );
                 }
+
             } else {
+
                 setError(
                     "Unable to save alteration."
                 );
             }
+
         } finally {
+
             setLoading(false);
         }
     };
 
-    // ========================================================
-    // CALCULATE BALANCE
-    // ========================================================
+    // ============================================================
+    // LOADING
+    // ============================================================
 
-    const totalAmount =
-        parseFloat(
-            form.total_amount || 0
-        );
+    if (loadingData) {
 
-    const advanceAmount =
-        parseFloat(
-            form.advance_amount || 0
-        );
+        return (
 
-    const balanceAmount =
-        Math.max(
-            totalAmount - advanceAmount,
-            0
-        );
+            <div className="container-fluid py-5">
 
-    // ========================================================
-    // UI
-    // ========================================================
+                <div className="text-center">
 
-    return (
-        <div className="container-fluid py-4">
+                    <div
+                        className="spinner-border text-primary"
+                        role="status"
+                    />
 
-            <div className="card shadow-sm border-0 rounded-4">
+                    <div className="mt-3 text-muted">
 
-                <div className="card-body p-4">
-
-                    {/* ==================================================
-                        HEADER
-                    ================================================== */}
-
-                    <div className="d-flex justify-content-between align-items-center mb-4">
-
-                        <div>
-
-                            <h2 className="fw-bold mb-1">
-                                Add Alteration
-                            </h2>
-
-                            <p className="text-muted mb-0">
-                                Record customer alteration
-                                details, measurements,
-                                delivery and payment.
-                            </p>
-
-                        </div>
+                        Loading alteration form...
 
                     </div>
 
-                    {/* ==================================================
-                        LOADING
-                    ================================================== */}
+                </div>
 
-                    {loadingData && (
-                        <div className="alert alert-info">
-                            Loading alteration form...
-                        </div>
-                    )}
+            </div>
+        );
+    }
 
-                    {/* ==================================================
-                        ERROR
-                    ================================================== */}
+    // ============================================================
+    // UI
+    // ============================================================
 
-                    {error && (
-                        <div className="alert alert-danger">
-                            {error}
-                        </div>
-                    )}
+    return (
 
-                    <form
-                        onSubmit={handleSubmit}
-                    >
+        <div className="container-fluid py-4">
+
+            {/* ====================================================
+                HEADER
+            ==================================================== */}
+
+            <div className="d-flex justify-content-between align-items-center mb-4">
+
+                <div>
+
+                    <h2 className="fw-bold mb-1">
+
+                        Create Alteration
+
+                    </h2>
+
+                    <p className="text-muted mb-0">
+
+                        Create a new alteration job
+
+                    </p>
+
+                </div>
+
+                <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={() =>
+                        navigate("/alterations")
+                    }
+                >
+
+                    ← Back
+
+                </button>
+
+            </div>
+
+            {/* ====================================================
+                ERROR
+            ==================================================== */}
+
+            {error && (
+
+                <div
+                    className="alert alert-danger"
+                    role="alert"
+                >
+
+                    {error}
+
+                </div>
+
+            )}
+
+            <form
+                onSubmit={handleSubmit}
+            >
+
+                {/* =================================================
+                    CUSTOMER DETAILS
+                ================================================= */}
+
+                <div className="card shadow-sm mb-4">
+
+                    <div className="card-header">
+
+                        <h5 className="mb-0">
+
+                            Customer Details
+
+                        </h5>
+
+                    </div>
+
+                    <div className="card-body">
 
                         <div className="row g-3">
 
-                            {/* ==================================================
+                            {/* =====================================
                                 BRANCH
-                            ================================================== */}
-
-                            {isAdmin ? (
-                                <div className="col-md-6">
-
-                                    <label className="form-label fw-semibold">
-                                        Branch *
-                                    </label>
-
-                                    <select
-                                        name="branch"
-                                        value={form.branch}
-                                        onChange={
-                                            handleBranchChange
-                                        }
-                                        className="form-select"
-                                        required
-                                    >
-
-                                        <option value="">
-                                            Select Branch
-                                        </option>
-
-                                        {branches.map(
-                                            (branch) => (
-                                                <option
-                                                    key={
-                                                        branch.id
-                                                    }
-                                                    value={
-                                                        branch.id
-                                                    }
-                                                >
-                                                    {
-                                                        branch.name
-                                                    }
-                                                </option>
-                                            )
-                                        )}
-
-                                    </select>
-
-                                </div>
-                            ) : (
-                                <div className="col-md-6">
-
-                                    <label className="form-label fw-semibold">
-                                        Branch
-                                    </label>
-
-                                    <input
-                                        type="text"
-                                        className="form-control"
-                                        value={
-                                            branches.find(
-                                                (branch) =>
-                                                    String(
-                                                        branch.id
-                                                    ) ===
-                                                    String(
-                                                        form.branch
-                                                    )
-                                            )?.name ||
-                                            (
-                                                form.branch
-                                                    ? `Branch #${form.branch}`
-                                                    : "Loading branch..."
-                                            )
-                                        }
-                                        readOnly
-                                    />
-
-                                    <small className="text-muted">
-                                        Branch is automatically
-                                        selected from your
-                                        account.
-                                    </small>
-
-                                </div>
-                            )}
-
-                            {/* ==================================================
-                                CUSTOMER TYPE
-                            ================================================== */}
+                            ====================================== */}
 
                             <div className="col-md-6">
 
                                 <label className="form-label fw-semibold">
-                                    Customer Type *
+
+                                    Branch
+                                    <span className="text-danger">
+                                        *
+                                    </span>
+
+                                </label>
+
+                                <select
+                                    name="branch"
+                                    value={form.branch}
+                                    onChange={handleBranchChange}
+                                    className="form-select"
+                                    disabled={isBranchUser}
+                                    required
+                                >
+
+                                    <option value="">
+
+                                        Select Branch
+
+                                    </option>
+
+                                    {branches.map(
+                                        (branch) => (
+
+                                            <option
+                                                key={branch.id}
+                                                value={branch.id}
+                                            >
+
+                                                {branch.name}
+
+                                            </option>
+
+                                        )
+                                    )}
+
+                                </select>
+
+                                {isBranchUser && (
+
+                                    <small className="text-muted">
+
+                                        Branch is automatically selected
+                                        from your account.
+
+                                    </small>
+
+                                )}
+
+                            </div>
+
+                            {/* =====================================
+                                CUSTOMER TYPE
+                            ====================================== */}
+
+                            <div className="col-md-6">
+
+                                <label className="form-label fw-semibold">
+
+                                    Customer Type
+                                    <span className="text-danger">
+                                        *
+                                    </span>
+
                                 </label>
 
                                 <select
                                     className="form-select"
-                                    value={
-                                        customerType
-                                    }
+                                    value={customerType}
                                     onChange={
                                         handleCustomerTypeChange
                                     }
                                 >
 
                                     <option value="existing">
+
                                         Existing Customer
+
                                     </option>
 
                                     <option value="walkin">
+
                                         Walk-in Customer
+
                                     </option>
 
                                 </select>
 
                             </div>
 
-                            {/* ==================================================
+                            {/* =====================================
                                 EXISTING CUSTOMER
-                            ================================================== */}
+                            ====================================== */}
 
-                            {customerType ===
-                                "existing" && (
+                            {customerType === "existing" && (
+
                                 <div className="col-12">
 
                                     <label className="form-label fw-semibold">
-                                        Select Customer *
+
+                                        Select Customer
+                                        <span className="text-danger">
+                                            *
+                                        </span>
+
                                     </label>
 
                                     <select
                                         className="form-select"
-                                        value={
-                                            form.customer
-                                        }
+                                        value={form.customer}
                                         onChange={
                                             handleCustomerChange
                                         }
@@ -863,56 +950,69 @@ function AlterationCreate() {
                                     >
 
                                         <option value="">
+
                                             Select Existing Customer
+
                                         </option>
 
                                         {availableCustomers.map(
                                             (customer) => (
+
                                                 <option
-                                                    key={
-                                                        customer.id
-                                                    }
-                                                    value={
-                                                        customer.id
-                                                    }
+                                                    key={customer.id}
+                                                    value={customer.id}
                                                 >
-                                                    {
-                                                        customer.name
-                                                    }
+
+                                                    {customer.name}
+
                                                     {" — "}
+
                                                     {
                                                         customer.mobile ||
-                                                        customer.phone
+                                                        customer.phone ||
+                                                        ""
                                                     }
+
                                                 </option>
+
                                             )
                                         )}
 
                                     </select>
 
                                     {form.branch &&
-                                        availableCustomers.length ===
-                                            0 && (
-                                            <small className="text-danger">
+                                        availableCustomers.length === 0 && (
+
+                                            <small className="text-muted">
+
                                                 No customers found
                                                 for this branch.
+
                                             </small>
+
                                         )}
 
                                 </div>
+
                             )}
 
-                            {/* ==================================================
+                            {/* =====================================
                                 WALK-IN CUSTOMER
-                            ================================================== */}
+                            ====================================== */}
 
-                            {customerType ===
-                                "walkin" && (
+                            {customerType === "walkin" && (
+
                                 <>
+
                                     <div className="col-md-6">
 
                                         <label className="form-label fw-semibold">
-                                            Customer Name *
+
+                                            Customer Name
+                                            <span className="text-danger">
+                                                *
+                                            </span>
+
                                         </label>
 
                                         <input
@@ -934,7 +1034,12 @@ function AlterationCreate() {
                                     <div className="col-md-6">
 
                                         <label className="form-label fw-semibold">
-                                            Phone *
+
+                                            Phone
+                                            <span className="text-danger">
+                                                *
+                                            </span>
+
                                         </label>
 
                                         <input
@@ -952,21 +1057,26 @@ function AlterationCreate() {
                                         />
 
                                     </div>
+
                                 </>
+
                             )}
 
-                            {/* ==================================================
+                            {/* =====================================
                                 EXISTING CUSTOMER DETAILS
-                            ================================================== */}
+                            ====================================== */}
 
-                            {customerType ===
-                                "existing" &&
+                            {customerType === "existing" &&
                                 form.customer && (
+
                                     <>
+
                                         <div className="col-md-6">
 
                                             <label className="form-label fw-semibold">
+
                                                 Customer Name
+
                                             </label>
 
                                             <input
@@ -983,7 +1093,9 @@ function AlterationCreate() {
                                         <div className="col-md-6">
 
                                             <label className="form-label fw-semibold">
+
                                                 Phone
+
                                             </label>
 
                                             <input
@@ -996,72 +1108,47 @@ function AlterationCreate() {
                                             />
 
                                         </div>
+
                                     </>
+
                                 )}
 
-                            {/* ==================================================
-                                EMPLOYEE
-                            ================================================== */}
+                        </div>
 
-                            <div className="col-md-6">
+                    </div>
 
-                                <label className="form-label fw-semibold">
-                                    Assigned Employee
-                                </label>
+                </div>
 
-                                <select
-                                    name="assigned_employee"
-                                    value={
-                                        form.assigned_employee
-                                    }
-                                    onChange={
-                                        handleChange
-                                    }
-                                    className="form-select"
-                                >
+                {/* =================================================
+                    ALTERATION DETAILS
+                ================================================= */}
 
-                                    <option value="">
-                                        Unassigned
-                                    </option>
+                <div className="card shadow-sm mb-4">
 
-                                    {availableEmployees.map(
-                                        (employee) => (
-                                            <option
-                                                key={
-                                                    employee.id
-                                                }
-                                                value={
-                                                    employee.id
-                                                }
-                                            >
-                                                {
-                                                    employee.name
-                                                }
-                                                {employee.designation
-                                                    ? ` — ${employee.designation}`
-                                                    : ""}
-                                            </option>
-                                        )
-                                    )}
+                    <div className="card-header">
 
-                                </select>
+                        <h5 className="mb-0">
 
-                                <small className="text-muted">
-                                    Optional. Only employees
-                                    from the selected branch
-                                    are shown.
-                                </small>
+                            Alteration Details
 
-                            </div>
+                        </h5>
 
-                            {/* ==================================================
+                    </div>
+
+                    <div className="card-body">
+
+                        <div className="row g-3">
+
+                            {/* =====================================
                                 ALTERATION DATE
-                            ================================================== */}
+                            ====================================== */}
 
-                            <div className="col-md-6">
+                            <div className="col-md-4">
 
                                 <label className="form-label fw-semibold">
-                                    Alteration Date *
+
+                                    Alteration Date
+
                                 </label>
 
                                 <input
@@ -1074,19 +1161,23 @@ function AlterationCreate() {
                                         handleChange
                                     }
                                     className="form-control"
-                                    required
                                 />
 
                             </div>
 
-                            {/* ==================================================
+                            {/* =====================================
                                 EXPECTED DELIVERY DATE
-                            ================================================== */}
+                            ====================================== */}
 
-                            <div className="col-md-6">
+                            <div className="col-md-4">
 
                                 <label className="form-label fw-semibold">
+
                                     Expected Delivery Date
+                                    <span className="text-danger">
+                                        *
+                                    </span>
+
                                 </label>
 
                                 <input
@@ -1099,18 +1190,24 @@ function AlterationCreate() {
                                         handleChange
                                     }
                                     className="form-control"
+                                    required
                                 />
 
                             </div>
 
-                            {/* ==================================================
+                            {/* =====================================
                                 EXPECTED DELIVERY TIME
-                            ================================================== */}
+                            ====================================== */}
 
-                            <div className="col-md-6">
+                            <div className="col-md-4">
 
                                 <label className="form-label fw-semibold">
+
                                     Expected Delivery Time
+                                    <span className="text-danger">
+                                        *
+                                    </span>
+
                                 </label>
 
                                 <input
@@ -1123,18 +1220,21 @@ function AlterationCreate() {
                                         handleChange
                                     }
                                     className="form-control"
+                                    required
                                 />
 
                             </div>
 
-                            {/* ==================================================
+                            {/* =====================================
                                 PRODUCT
-                            ================================================== */}
+                            ====================================== */}
 
                             <div className="col-md-6">
 
                                 <label className="form-label fw-semibold">
-                                    Our Product
+
+                                    Product
+
                                 </label>
 
                                 <select
@@ -1149,23 +1249,23 @@ function AlterationCreate() {
                                 >
 
                                     <option value="">
-                                        Select Product
+
+                                        Other Item
+
                                     </option>
 
                                     {products.map(
                                         (product) => (
+
                                             <option
-                                                key={
-                                                    product.id
-                                                }
-                                                value={
-                                                    product.id
-                                                }
+                                                key={product.id}
+                                                value={product.id}
                                             >
-                                                {
-                                                    product.name
-                                                }
+
+                                                {product.name}
+
                                             </option>
+
                                         )
                                     )}
 
@@ -1173,14 +1273,16 @@ function AlterationCreate() {
 
                             </div>
 
-                            {/* ==================================================
-                                OUTSIDE ITEM
-                            ================================================== */}
+                            {/* =====================================
+                                OTHER ITEM
+                            ====================================== */}
 
                             <div className="col-md-6">
 
                                 <label className="form-label fw-semibold">
-                                    Outside / Customer Item
+
+                                    Other Item
+
                                 </label>
 
                                 <input
@@ -1193,19 +1295,80 @@ function AlterationCreate() {
                                         handleChange
                                     }
                                     className="form-control"
-                                    placeholder="e.g. Shirt, Pant"
+                                    placeholder="Example: Shirt, Pant"
                                 />
 
                             </div>
 
-                            {/* ==================================================
+                            {/* =====================================
+                                EMPLOYEE
+                            ====================================== */}
+
+                            <div className="col-md-6">
+
+                                <label className="form-label fw-semibold">
+
+                                    Assigned Employee
+
+                                </label>
+
+                                <select
+                                    name="assigned_employee"
+                                    value={
+                                        form.assigned_employee
+                                    }
+                                    onChange={
+                                        handleChange
+                                    }
+                                    className="form-select"
+                                >
+
+                                    <option value="">
+
+                                        Unassigned
+
+                                    </option>
+
+                                    {availableEmployees.map(
+                                        (employee) => (
+
+                                            <option
+                                                key={employee.id}
+                                                value={employee.id}
+                                            >
+
+                                                {employee.name}
+
+                                                {employee.designation
+                                                    ? ` — ${employee.designation}`
+                                                    : ""}
+
+                                            </option>
+
+                                        )
+                                    )}
+
+                                </select>
+
+                                <small className="text-muted">
+
+                                    Only employees from the
+                                    selected branch are shown.
+
+                                </small>
+
+                            </div>
+
+                            {/* =====================================
                                 CUSTOM SIZE
-                            ================================================== */}
+                            ====================================== */}
 
                             <div className="col-12">
 
                                 <label className="form-label fw-semibold">
+
                                     Custom Size / Measurements
+
                                 </label>
 
                                 <textarea
@@ -1218,19 +1381,21 @@ function AlterationCreate() {
                                     }
                                     className="form-control"
                                     rows="3"
-                                    placeholder="Enter alteration measurements..."
+                                    placeholder="Enter alteration size/details"
                                 />
 
                             </div>
 
-                            {/* ==================================================
+                            {/* =====================================
                                 NOTES
-                            ================================================== */}
+                            ====================================== */}
 
                             <div className="col-12">
 
                                 <label className="form-label fw-semibold">
+
                                     Notes
+
                                 </label>
 
                                 <textarea
@@ -1243,19 +1408,50 @@ function AlterationCreate() {
                                     }
                                     className="form-control"
                                     rows="3"
-                                    placeholder="Additional notes..."
+                                    placeholder="Additional notes"
                                 />
 
                             </div>
 
-                            {/* ==================================================
-                                TOTAL AMOUNT
-                            ================================================== */}
+                        </div>
+
+                    </div>
+
+                </div>
+
+                {/* =================================================
+                    PAYMENT
+                ================================================= */}
+
+                <div className="card shadow-sm mb-4">
+
+                    <div className="card-header">
+
+                        <h5 className="mb-0">
+
+                            Payment Details
+
+                        </h5>
+
+                    </div>
+
+                    <div className="card-body">
+
+                        <div className="row g-3">
+
+                            {/* =====================================
+                                TOTAL
+                            ====================================== */}
 
                             <div className="col-md-4">
 
                                 <label className="form-label fw-semibold">
-                                    Total Amount *
+
+                                    Total Amount
+                                    <span className="text-danger">
+                                        *
+                                    </span>
+
                                 </label>
 
                                 <input
@@ -1276,14 +1472,16 @@ function AlterationCreate() {
 
                             </div>
 
-                            {/* ==================================================
+                            {/* =====================================
                                 ADVANCE
-                            ================================================== */}
+                            ====================================== */}
 
                             <div className="col-md-4">
 
                                 <label className="form-label fw-semibold">
+
                                     Advance Amount
+
                                 </label>
 
                                 <input
@@ -1303,14 +1501,16 @@ function AlterationCreate() {
 
                             </div>
 
-                            {/* ==================================================
+                            {/* =====================================
                                 PAYMENT MODE
-                            ================================================== */}
+                            ====================================== */}
 
                             <div className="col-md-4">
 
                                 <label className="form-label fw-semibold">
-                                    Payment Mode
+
+                                    Advance Payment Mode
+
                                 </label>
 
                                 <select
@@ -1325,81 +1525,85 @@ function AlterationCreate() {
                                 >
 
                                     <option value="Cash">
+
                                         Cash
+
                                     </option>
 
                                     <option value="Bank">
+
                                         Bank
+
                                     </option>
 
                                     <option value="Online">
+
                                         Online
+
                                     </option>
 
                                     <option value="Cheque">
+
                                         Cheque
+
                                     </option>
 
                                     <option value="POS">
+
                                         POS
+
                                     </option>
 
                                 </select>
 
                             </div>
 
-                            {/* ==================================================
-                                BALANCE PREVIEW
-                            ================================================== */}
+                            {/* =====================================
+                                BALANCE
+                            ====================================== */}
 
                             <div className="col-12">
 
-                                <div className="border rounded-3 p-3 bg-light">
+                                <div className="alert alert-light border mb-0">
 
                                     <div className="row">
 
                                         <div className="col-md-4">
 
-                                            <small className="text-muted d-block">
-                                                Total Amount
-                                            </small>
-
                                             <strong>
-                                                ₹{" "}
-                                                {totalAmount.toFixed(
-                                                    2
-                                                )}
+                                                Total:
                                             </strong>
+
+                                            <br />
+
+                                            ₹
+                                            {totalAmount.toFixed(2)}
 
                                         </div>
 
                                         <div className="col-md-4">
 
-                                            <small className="text-muted d-block">
-                                                Advance
-                                            </small>
-
                                             <strong>
-                                                ₹{" "}
-                                                {advanceAmount.toFixed(
-                                                    2
-                                                )}
+                                                Advance:
                                             </strong>
+
+                                            <br />
+
+                                            ₹
+                                            {advanceAmount.toFixed(2)}
 
                                         </div>
 
                                         <div className="col-md-4">
 
-                                            <small className="text-muted d-block">
-                                                Balance
-                                            </small>
-
                                             <strong>
-                                                ₹{" "}
-                                                {balanceAmount.toFixed(
-                                                    2
-                                                )}
+                                                Balance:
                                             </strong>
+
+                                            <br />
+
+                                            ₹
+                                            {balanceAmount.toFixed(2)}
 
                                         </div>
 
@@ -1411,45 +1615,44 @@ function AlterationCreate() {
 
                         </div>
 
-                        {/* ==================================================
-                            BUTTONS
-                        ================================================== */}
-
-                        <div className="d-flex justify-content-end gap-2 mt-4">
-
-                            <button
-                                type="button"
-                                className="btn btn-light"
-                                onClick={() =>
-                                    navigate(
-                                        "/alterations"
-                                    )
-                                }
-                                disabled={loading}
-                            >
-                                Cancel
-                            </button>
-
-                            <button
-                                type="submit"
-                                className="btn btn-primary"
-                                disabled={
-                                    loading ||
-                                    loadingData
-                                }
-                            >
-                                {loading
-                                    ? "Saving..."
-                                    : "Save Alteration"}
-                            </button>
-
-                        </div>
-
-                    </form>
+                    </div>
 
                 </div>
 
-            </div>
+                {/* =================================================
+                    BUTTONS
+                ================================================= */}
+
+                <div className="d-flex justify-content-end gap-2 mb-4">
+
+                    <button
+                        type="button"
+                        className="btn btn-light"
+                        onClick={() =>
+                            navigate("/alterations")
+                        }
+                        disabled={loading}
+                    >
+
+                        Cancel
+
+                    </button>
+
+                    <button
+                        type="submit"
+                        className="btn btn-primary"
+                        disabled={loading}
+                    >
+
+                        {loading
+                            ? "Saving..."
+                            : "Save Alteration"}
+
+                    </button>
+
+                </div>
+
+            </form>
 
         </div>
     );

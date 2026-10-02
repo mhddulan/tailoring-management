@@ -144,26 +144,66 @@ def api_login(request):
         },
         status=status.HTTP_200_OK,
     )
-
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
 def current_user(request):
+
     user = request.user
+
+    # ============================================================
+    # DASHBOARD
+    # ============================================================
 
     if user.is_superuser:
         dashboard = "admin"
+
     elif user.role == "Admin":
         dashboard = "admin"
+
     elif user.role == "Branch":
         dashboard = "branch"
+
     else:
         dashboard = None
 
+    # ============================================================
+    # BRANCH INFORMATION
+    # ============================================================
+
+    branch_id = None
+    branch_name = None
+
+    if user.branch:
+        branch_id = user.branch.id
+        branch_name = user.branch.name
+
+    # ============================================================
+    # RESPONSE
+    # ============================================================
+
     return Response({
+
         "success": True,
+
         "user": {
-            "id": user.id,
-            "username": user.username,
-            "role": user.role,
-            "dashboard": dashboard,
+
+            "id":
+                user.id,
+
+            "username":
+                user.username,
+
+            "role":
+                user.role,
+
+            "branch_id":
+                branch_id,
+
+            "branch_name":
+                branch_name,
+
+            "dashboard":
+                dashboard,
         },
     })
 from django.http import JsonResponse
