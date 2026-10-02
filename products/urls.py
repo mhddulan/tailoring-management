@@ -161,15 +161,5 @@ urlpatterns = [
         name="processing_detail"
     ),
 
-    path(
-        "processing/<int:id>/issue/",
-        views.processing_issue,
-        name="processing_issue"
-    ),
 
-    path(
-        "processing/<int:id>/complete/",
-        views.processing_complete,
-        name="processing_complete"
-    ),
 ]

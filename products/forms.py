@@ -381,12 +381,16 @@ class StockProcessingForm(forms.ModelForm):
 
         fields = [
             "branch",
+            "product",
+            "purchase_date",
+            "quantity",
+            "purchase_price",
             "process_type",
-            "input_product",
-            "input_quantity",
-            "output_product",
             "employee",
+            "payment_mode",
             "expected_date",
+            "expected_time",
+            "status",
             "remarks",
         ]
 
@@ -394,45 +398,75 @@ class StockProcessingForm(forms.ModelForm):
 
             "branch": forms.Select(
                 attrs={
-                    "class": "form-select"
+                    "class": "form-select",
+                }
+            ),
+
+            "product": forms.Select(
+                attrs={
+                    "class": "form-select",
+                }
+            ),
+
+            "purchase_date": forms.DateInput(
+                attrs={
+                    "class": "form-control",
+                    "type": "date",
+                }
+            ),
+
+            "quantity": forms.NumberInput(
+                attrs={
+                    "class": "form-control",
+                    "min": "1",
+                    "placeholder": "Quantity",
+                }
+            ),
+
+            "purchase_price": forms.NumberInput(
+                attrs={
+                    "class": "form-control",
+                    "step": "0.01",
+                    "min": "0",
+                    "placeholder": "Purchase Price",
                 }
             ),
 
             "process_type": forms.Select(
                 attrs={
-                    "class": "form-select"
-                }
-            ),
-
-            "input_product": forms.Select(
-                attrs={
-                    "class": "form-select"
-                }
-            ),
-
-            "input_quantity": forms.NumberInput(
-                attrs={
-                    "class": "form-control",
-                    "min": "1"
-                }
-            ),
-
-            "output_product": forms.Select(
-                attrs={
-                    "class": "form-select"
+                    "class": "form-select",
                 }
             ),
 
             "employee": forms.Select(
                 attrs={
-                    "class": "form-select"
+                    "class": "form-select",
                 }
             ),
 
-            "expected_date": forms.DateTimeInput(
+            "payment_mode": forms.Select(
                 attrs={
-                    "type": "datetime-local",
-                    "class": "form-control"
+                    "class": "form-select",
+                }
+            ),
+
+            "expected_date": forms.DateInput(
+                attrs={
+                    "class": "form-control",
+                    "type": "date",
+                }
+            ),
+
+            "expected_time": forms.TimeInput(
+                attrs={
+                    "class": "form-control",
+                    "type": "time",
+                }
+            ),
+
+            "status": forms.Select(
+                attrs={
+                    "class": "form-select",
                 }
             ),
 
@@ -440,80 +474,28 @@ class StockProcessingForm(forms.ModelForm):
                 attrs={
                     "class": "form-control",
                     "rows": 3,
-                    "placeholder": "Optional remarks"
+                    "placeholder": "Remarks",
                 }
             ),
         }
-
-    def __init__(self, *args, **kwargs):
-
-        super().__init__(*args, **kwargs)
-
-        # Only active employees
-        self.fields["employee"].queryset = (
-            self.fields["employee"]
-            .queryset
-            .filter(active=True)
-        )
-
-        # Only active products
-        self.fields["input_product"].queryset = (
-            self.fields["input_product"]
-            .queryset
-            .filter(active=True)
-        )
-
-        self.fields["output_product"].queryset = (
-            self.fields["output_product"]
-            .queryset
-            .filter(active=True)
-        )
 
     def clean(self):
 
         cleaned_data = super().clean()
 
-        branch = cleaned_data.get("branch")
-        input_product = cleaned_data.get("input_product")
-        input_quantity = cleaned_data.get("input_quantity")
-        output_product = cleaned_data.get("output_product")
-        employee = cleaned_data.get("employee")
+        quantity = cleaned_data.get("quantity")
+        purchase_price = cleaned_data.get("purchase_price")
 
-        # --------------------------------------------------
-        # Employee must belong to selected branch
-        # --------------------------------------------------
-
-        if branch and employee:
-
-            if employee.branch_id != branch.id:
-
-                self.add_error(
-                    "employee",
-                    "Selected employee does not belong to this branch."
-                )
-
-        # --------------------------------------------------
-        # Output product required
-        # --------------------------------------------------
-
-        if not output_product:
-
+        if quantity is not None and quantity <= 0:
             self.add_error(
-                "output_product",
-                "Please select the output product."
+                "quantity",
+                "Quantity must be greater than zero."
             )
 
-        # --------------------------------------------------
-        # Quantity validation
-        # --------------------------------------------------
-
-        if input_quantity is not None:
-
-            if input_quantity <= 0:
-
-                self.add_error(
-                    "input_quantity",
-                    "Quantity must be greater than zero."
-                )
+        if purchase_price is not None and purchase_price < 0:
+            self.add_error(
+                "purchase_price",
+                "Purchase price cannot be negative."
+            )
 
         return cleaned_data

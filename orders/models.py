@@ -2,6 +2,10 @@ from django.db import models
 from django.db.models import Sum
 from customers.models import Customer
 from django.conf import settings
+from branches.models import Branch
+from employees.models import Employee
+from django.utils import timezone
+
 
 
 # =============================================================
@@ -10,13 +14,15 @@ from django.conf import settings
 
 class Order(models.Model):
 
+    # =========================================================
+    # STATUS
+    # =========================================================
+
     STATUS_CHOICES = [
         ("Pending", "Pending"),
-        ("Cutting", "Cutting"),
-        ("Stitching", "Stitching"),
         ("Ready", "Ready"),
-        ("Delivery", "Delivery"),
         ("Delivered", "Delivered"),
+        ("Cancel", "Cancel"),
     ]
 
     customer = models.ForeignKey(
@@ -24,9 +30,24 @@ class Order(models.Model):
         on_delete=models.CASCADE
     )
 
+    # =========================================================
+    # ORDER DATE
+    # =========================================================
+
     order_date = models.DateField()
 
+    # =========================================================
+    # EXPECTED DELIVERY
+    # =========================================================
+
+    # Expected delivery date
     delivery_date = models.DateField()
+
+    # Expected delivery time
+    delivery_time = models.TimeField(
+        null=True,
+        blank=True
+    )
 
     # =========================================================
     # ADVANCE PAYMENT MODE
@@ -57,9 +78,10 @@ class Order(models.Model):
     )
 
     # =========================================================
-    # DELIVERY INFORMATION
+    # ACTUAL DELIVERY INFORMATION
     # =========================================================
 
+    # Actual date and time when the order was delivered
     delivered_date = models.DateTimeField(
         null=True,
         blank=True
@@ -159,6 +181,7 @@ class Order(models.Model):
 # =============================================================
 # ORDER ITEM
 # =============================================================
+
 class OrderItem(models.Model):
 
     order = models.ForeignKey(
@@ -187,11 +210,19 @@ class OrderItem(models.Model):
         decimal_places=2
     )
 
+    # =========================================================
+    # CALCULATE AMOUNT
+    # =========================================================
+
     def save(self, *args, **kwargs):
 
         self.amount = self.quantity * self.rate
 
         super().save(*args, **kwargs)
+
+    # =========================================================
+    # STRING
+    # =========================================================
 
     def __str__(self):
 
@@ -199,12 +230,17 @@ class OrderItem(models.Model):
             f"{self.product.name} x "
             f"{self.quantity}"
         )
-      
+
+
 # =============================================================
 # PAYMENT
 # =============================================================
 
 class Payment(models.Model):
+
+    # =========================================================
+    # PAYMENT MODES
+    # =========================================================
 
     PAYMENT_MODES = [
         ("Cash", "Cash"),
@@ -213,6 +249,10 @@ class Payment(models.Model):
         ("Cheque", "Cheque"),
         ("POS", "POS"),
     ]
+
+    # =========================================================
+    # PAYMENT TYPES
+    # =========================================================
 
     PAYMENT_TYPE_CHOICES = [
         ("Advance", "Advance"),
@@ -254,4 +294,169 @@ class Payment(models.Model):
         return (
             f"{self.order} - "
             f"SAR{self.amount}"
+        )
+# =============================================================
+# STOCK PROCESSING / STOCK PURCHASE
+# =============================================================
+
+class StockProcessing(models.Model):
+
+    PROCESS_TYPE_CHOICES = [
+        ("PURCHASE", "Purchase"),
+        ("EMBROIDERY", "Embroidery"),
+        ("PRINTING", "Printing"),
+        ("STITCHING", "Stitching"),
+        ("ALTERATION", "Alteration"),
+        ("OTHER", "Other"),
+    ]
+
+    PAYMENT_MODES = [
+        ("Cash", "Cash"),
+        ("Bank", "Bank"),
+        ("Online", "Online"),
+        ("Cheque", "Cheque"),
+        ("POS", "POS"),
+    ]
+
+    STATUS_CHOICES = [
+        ("Pending", "Pending"),
+        ("Processing", "Processing"),
+        ("Completed", "Completed"),
+    ]
+
+    # =========================================================
+    # BRANCH
+    # =========================================================
+
+    branch = models.ForeignKey(
+        Branch,
+        on_delete=models.CASCADE,
+        related_name="stock_processing"
+    )
+
+    # =========================================================
+    # PRODUCT
+    # =========================================================
+
+    product = models.ForeignKey(
+    "products.Product",
+    on_delete=models.PROTECT,
+    related_name="stock_processing",
+    null=True,
+    blank=True
+    )
+
+    # =========================================================
+    # PURCHASE INFORMATION
+    # =========================================================
+
+    purchase_date = models.DateField(
+        default=timezone.now
+    )
+
+    quantity = models.PositiveIntegerField(
+        default=1
+    )
+
+    purchase_price = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0
+    )
+
+    total_amount = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=0
+    )
+
+    # =========================================================
+    # PROCESSING
+    # =========================================================
+
+    process_type = models.CharField(
+        max_length=30,
+        choices=PROCESS_TYPE_CHOICES,
+        default="PURCHASE"
+    )
+
+    employee = models.ForeignKey(
+        Employee,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="stock_processing"
+    )
+
+    # =========================================================
+    # PAYMENT
+    # =========================================================
+
+    payment_mode = models.CharField(
+        max_length=20,
+        choices=PAYMENT_MODES,
+        default="Cash"
+    )
+
+    # =========================================================
+    # EXPECTED COMPLETION
+    # =========================================================
+
+    expected_date = models.DateField(
+        null=True,
+        blank=True
+    )
+
+    expected_time = models.TimeField(
+        null=True,
+        blank=True
+    )
+
+    # =========================================================
+    # STATUS
+    # =========================================================
+
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default="Pending"
+    )
+
+    # =========================================================
+    # REMARKS
+    # =========================================================
+
+    remarks = models.TextField(
+        blank=True
+    )
+
+    # =========================================================
+    # CREATED
+    # =========================================================
+
+    created_at = models.DateTimeField(
+        auto_now_add=True
+    )
+
+    # =========================================================
+    # AUTO CALCULATE TOTAL
+    # =========================================================
+
+    def save(self, *args, **kwargs):
+
+        self.total_amount = (
+            self.quantity * self.purchase_price
+        )
+
+        super().save(*args, **kwargs)
+
+    # =========================================================
+    # STRING
+    # =========================================================
+
+    def __str__(self):
+
+        return (
+            f"{self.product.name} - "
+            f"{self.quantity} units"
         )

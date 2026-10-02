@@ -935,6 +935,9 @@ def update_price(request, id):
 # =========================================================
 # STOCK PROCESSING
 # =========================================================
+# =========================================================
+# STOCK PROCESSING / STOCK PURCHASE
+# =========================================================
 
 @login_required
 def processing_list(request):
@@ -943,8 +946,7 @@ def processing_list(request):
 
         processings = StockProcessing.objects.select_related(
             "branch",
-            "input_product",
-            "output_product",
+            "product",
             "employee",
         ).order_by("-created_at")
 
@@ -953,8 +955,8 @@ def processing_list(request):
         processings = StockProcessing.objects.filter(
             branch=request.user.branch
         ).select_related(
-            "input_product",
-            "output_product",
+            "branch",
+            "product",
             "employee",
         ).order_by("-created_at")
 
@@ -965,34 +967,127 @@ def processing_list(request):
             "processings": processings,
         }
     )
+
+
+# =========================================================
+# CREATE STOCK PROCESSING
+# =========================================================
+
 @login_required
+@transaction.atomic
 def processing_create(request):
 
     if request.method == "POST":
 
         form = StockProcessingForm(request.POST)
 
-        # Branch users can only create processing
-        # for their own branch
+        # -------------------------------------------------
+        # BRANCH USER
+        # -------------------------------------------------
+
         if request.user.role != "Admin":
 
+            if not request.user.branch:
+
+                messages.error(
+                    request,
+                    "You are not assigned to a branch."
+                )
+
+                return redirect("processing_create")
+
+            # Branch user can only see their branch
             form.fields["branch"].queryset = Branch.objects.filter(
                 id=request.user.branch.id
             )
+
+        # -------------------------------------------------
+        # VALIDATE
+        # -------------------------------------------------
 
         if form.is_valid():
 
             processing = form.save(commit=False)
 
-            # Force branch for Branch Manager
+            # -------------------------------------------------
+            # FORCE BRANCH FOR BRANCH USER
+            # -------------------------------------------------
+
             if request.user.role != "Admin":
+
                 processing.branch = request.user.branch
+
+            # -------------------------------------------------
+            # GET / CREATE BRANCH STOCK
+            # -------------------------------------------------
+
+            branch_product, created = BranchProduct.objects.get_or_create(
+
+                branch=processing.branch,
+
+                product=processing.product,
+
+                defaults={
+                    "stock": 0,
+                    "selling_price": processing.product.purchase_price,
+                }
+            )
+
+            # -------------------------------------------------
+            # CALCULATE TOTAL
+            # -------------------------------------------------
+
+            processing.total_amount = (
+                processing.quantity *
+                processing.purchase_price
+            )
+
+            # -------------------------------------------------
+            # SAVE STOCK PROCESSING
+            # -------------------------------------------------
 
             processing.save()
 
+            # -------------------------------------------------
+            # UPDATE STOCK
+            # -------------------------------------------------
+
+            branch_product.stock += processing.quantity
+
+            branch_product.save()
+
+            # -------------------------------------------------
+            # DAYBOOK EXPENSE
+            # -------------------------------------------------
+
+            DayBook.objects.create(
+
+                branch=processing.branch,
+
+                date=processing.purchase_date,
+
+                transaction_type="Expense",
+
+                category="Purchase",
+
+                payment_mode=processing.payment_mode,
+
+                amount=processing.total_amount,
+
+                description=(
+                    f"Stock Purchase - "
+                    f"{processing.product.name} "
+                    f"x {processing.quantity}"
+                )
+            )
+
             messages.success(
                 request,
-                "Processing entry created successfully."
+                (
+                    f"Stock processing created successfully. "
+                    f"{processing.quantity} "
+                    f"{processing.product.name} added to stock."
+                )
             )
 
             return redirect(
@@ -1004,12 +1099,27 @@ def processing_create(request):
 
         form = StockProcessingForm()
 
+        # -------------------------------------------------
+        # BRANCH USER
+        # -------------------------------------------------
+
         if request.user.role != "Admin":
 
+            if not request.user.branch:
+
+                messages.error(
+                    request,
+                    "You are not assigned to a branch."
+                )
+
+                return redirect("dashboard")
+
+            # Only user's branch
             form.fields["branch"].queryset = Branch.objects.filter(
                 id=request.user.branch.id
             )
 
+            # Automatically select user's branch
             form.fields["branch"].initial = request.user.branch
 
     return render(
@@ -1020,6 +1130,12 @@ def processing_create(request):
             "title": "New Stock Processing",
         }
     )
+
+
+# =========================================================
+# STOCK PROCESSING DETAIL
+# =========================================================
+
 @login_required
 def processing_detail(request, id):
 
@@ -1028,8 +1144,7 @@ def processing_detail(request, id):
         processing = get_object_or_404(
             StockProcessing.objects.select_related(
                 "branch",
-                "input_product",
-                "output_product",
+                "product",
                 "employee",
             ),
             id=id
@@ -1040,8 +1155,7 @@ def processing_detail(request, id):
         processing = get_object_or_404(
             StockProcessing.objects.select_related(
                 "branch",
-                "input_product",
-                "output_product",
+                "product",
                 "employee",
             ),
             id=id,
@@ -1054,100 +1168,4 @@ def processing_detail(request, id):
         {
             "processing": processing,
         }
-    )
-@login_required
-@transaction.atomic
-def processing_issue(request, id):
-
-    if request.user.role == "Admin":
-
-        processing = get_object_or_404(
-            StockProcessing,
-            id=id
-        )
-
-    else:
-
-        processing = get_object_or_404(
-            StockProcessing,
-            id=id,
-            branch=request.user.branch
-        )
-
-    if request.method == "POST":
-
-        quantity = request.POST.get("quantity")
-
-        try:
-
-            quantity = int(quantity)
-
-            issue_processing(
-                processing,
-                quantity
-            )
-
-            messages.success(
-                request,
-                f"{quantity} item(s) issued for processing."
-            )
-
-        except (ValueError, ValidationError) as e:
-
-            messages.error(
-                request,
-                str(e)
-            )
-
-    return redirect(
-        "processing_detail",
-        id=processing.id
-    )
-@login_required
-@transaction.atomic
-def processing_complete(request, id):
-
-    if request.user.role == "Admin":
-
-        processing = get_object_or_404(
-            StockProcessing,
-            id=id
-        )
-
-    else:
-
-        processing = get_object_or_404(
-            StockProcessing,
-            id=id,
-            branch=request.user.branch
-        )
-
-    if request.method == "POST":
-
-        quantity = request.POST.get("quantity")
-
-        try:
-
-            quantity = int(quantity)
-
-            complete_processing(
-                processing,
-                quantity
-            )
-
-            messages.success(
-                request,
-                f"{quantity} completed item(s) returned to branch stock."
-            )
-
-        except (ValueError, ValidationError) as e:
-
-            messages.error(
-                request,
-                str(e)
-            )
-
-    return redirect(
-        "processing_detail",
-        id=processing.id
     )

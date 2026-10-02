@@ -91,6 +91,7 @@ INSTALLED_APPS = [
     "purchase",
     "logs",
     "api",
+    "production_jobs",
 ]
 
 

@@ -39,7 +39,7 @@ PRODUCTS
 import Products from "./pages/Products/Products";
 import ProductCreate from "./pages/Products/ProductCreate";
 import ProductEdit from "./pages/Products/ProductEdit";
-
+import ProductionJob from "./pages/ProductionJob";
 /*
 =========================================================
 INVENTORY
@@ -540,6 +540,14 @@ function App() {
                         </ProtectedLayout>
                     }
                 />
+                <Route
+    path="/production-jobs"
+    element={
+        <ProtectedLayout>
+            <ProductionJob />
+        </ProtectedLayout>
+    }
+/>
 
 
                 {/* =====================================================

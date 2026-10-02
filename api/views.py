@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-
+from decimal import Decimal
 from django.contrib.auth import authenticate, get_user_model
 from django.db import transaction
 from django.db.models import Q, Sum
@@ -12,6 +12,11 @@ from rest_framework.decorators import (
     permission_classes,
     authentication_classes,
     action,
+)
+from production_jobs.models import (
+    ProductionJob,
+    JobPurchase,
+    JobPayment,
 )
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -65,7 +70,11 @@ from .serializers import (
     BranchProductSerializer,
     StockTransferSerializer,
     StockProcessingSerializer,
+    ProductionJobSerializer,
+    JobPurchaseSerializer,
+    JobPaymentSerializer,
 )
+
 
 User = get_user_model()
 @api_view(["POST"])
@@ -1143,6 +1152,7 @@ class SaleItemViewSet(viewsets.ModelViewSet):
 # ORDER ITEM API
 # ============================================================
 class OrderViewSet(viewsets.ModelViewSet):
+
     queryset = Order.objects.select_related(
         "customer"
     ).prefetch_related(
@@ -1153,17 +1163,35 @@ class OrderViewSet(viewsets.ModelViewSet):
     serializer_class = OrderSerializer
     permission_classes = [IsAuthenticated]
 
+    # =========================================================
+    # GET ORDERS
+    # =========================================================
+
     def get_queryset(self):
+
         queryset = super().get_queryset()
 
-        customer_id = self.request.query_params.get("customer")
+        customer_id = self.request.query_params.get(
+            "customer"
+        )
+
         if customer_id:
-            queryset = queryset.filter(customer_id=customer_id)
+            queryset = queryset.filter(
+                customer_id=customer_id
+            )
 
         user = self.request.user
 
+        # -----------------------------------------------------
+        # ADMIN
+        # -----------------------------------------------------
+
         if user.role == "Admin" or user.is_superuser:
             return queryset
+
+        # -----------------------------------------------------
+        # BRANCH USER
+        # -----------------------------------------------------
 
         if user.branch_id:
             return queryset.filter(
@@ -1171,6 +1199,11 @@ class OrderViewSet(viewsets.ModelViewSet):
             )
 
         return queryset.none()
+
+    # =========================================================
+    # CREATE ORDER
+    # =========================================================
+
     def perform_create(self, serializer):
 
         user = self.request.user
@@ -1184,19 +1217,31 @@ class OrderViewSet(viewsets.ModelViewSet):
                 "customer": "Customer is required."
             })
 
-        # Admin can create for any branch
+        # -----------------------------------------------------
+        # ADMIN
+        # -----------------------------------------------------
+
         if user.role == "Admin" or user.is_superuser:
+
             serializer.save()
+
             return
 
-        # Branch user must have a branch
+        # -----------------------------------------------------
+        # BRANCH USER
+        # -----------------------------------------------------
+
         if not user.branch_id:
+
             raise serializers.ValidationError({
-                "customer": "User is not assigned to a branch."
+                "customer":
+                "User is not assigned to a branch."
             })
 
         # Customer must belong to user's branch
+
         if customer.branch_id != user.branch_id:
+
             raise serializers.ValidationError({
                 "customer":
                 "Customer does not belong to your branch."
@@ -1204,60 +1249,145 @@ class OrderViewSet(viewsets.ModelViewSet):
 
         serializer.save()
 
-    def update(self, request, *args, **kwargs):
+    # =========================================================
+    # UPDATE ORDER
+    # =========================================================
+
+    def update(
+        self,
+        request,
+        *args,
+        **kwargs
+    ):
+
         order = self.get_object()
 
-        # Branch security
         user = request.user
 
-        if user.role != "Admin" and not user.is_superuser:
+        # =====================================================
+        # BRANCH SECURITY
+        # =====================================================
+
+        if (
+            user.role != "Admin"
+            and not user.is_superuser
+        ):
+
             if not user.branch_id:
+
                 return Response(
-                    {"error": "No branch assigned."},
+                    {
+                        "error":
+                        "No branch assigned."
+                    },
                     status=status.HTTP_403_FORBIDDEN
                 )
 
-            if order.customer.branch_id != user.branch_id:
+            if (
+                order.customer.branch_id
+                != user.branch_id
+            ):
+
                 return Response(
-                    {"error": "You cannot update this order."},
+                    {
+                        "error":
+                        "You cannot update this order."
+                    },
                     status=status.HTTP_403_FORBIDDEN
                 )
 
-        new_status = request.data.get("status")
+        # =====================================================
+        # STATUS VALIDATION
+        # =====================================================
 
-        # Preserve original status-update behavior
-        if new_status:
-            allowed_statuses = [
-                "Pending",
-                "Cutting",
-                "Stitching",
-                "Ready",
-                "Delivery",
-                "Delivered",
-            ]
+        new_status = request.data.get(
+            "status"
+        )
 
-            if new_status not in allowed_statuses:
-                return Response(
-                    {"error": "Invalid status."},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
+        allowed_statuses = [
+            "Pending",
+            "Ready",
+            "Delivered",
+            "Cancel",
+        ]
 
-            order.status = new_status
+        if (
+            new_status
+            and new_status not in allowed_statuses
+        ):
 
-            if new_status == "Delivered":
-                from django.utils import timezone
+            return Response(
+                {
+                    "error":
+                    "Invalid status. Allowed statuses are: "
+                    "Pending, Ready, Delivered, Cancel."
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
-                order.delivered_date = timezone.now()
-                order.delivered_by = request.user
-            else:
-                order.delivered_date = None
-                order.delivered_by = None
+        # =====================================================
+        # SERIALIZER UPDATE
+        # =====================================================
 
-            order.save()
+        partial = kwargs.pop(
+            "partial",
+            False
+        )
 
-        serializer = self.get_serializer(order)
+        serializer = self.get_serializer(
+            order,
+            data=request.data,
+            partial=partial
+        )
 
-        return Response(serializer.data)
+        serializer.is_valid(
+            raise_exception=True
+        )
+
+        updated_order = serializer.save()
+
+        # =====================================================
+        # DELIVERY INFORMATION
+        # =====================================================
+
+        if new_status == "Delivered":
+
+            from django.utils import timezone
+
+            updated_order.delivered_date = timezone.now()
+
+            updated_order.delivered_by = request.user
+
+            updated_order.save(
+                update_fields=[
+                    "delivered_date",
+                    "delivered_by",
+                ]
+            )
+
+        elif new_status:
+
+            updated_order.delivered_date = None
+
+            updated_order.delivered_by = None
+
+            updated_order.save(
+                update_fields=[
+                    "delivered_date",
+                    "delivered_by",
+                ]
+            )
+
+        # =====================================================
+        # RESPONSE
+        # =====================================================
+
+        return Response(
+            self.get_serializer(
+                updated_order
+            ).data
+        )
+
         
 # ============================================================
 # PAYMENT API
@@ -2272,7 +2402,9 @@ class EmployeeProductRateViewSet(
 # ============================================================
 # ALTERATION API
 # ============================================================
-
+# ============================================================
+# ALTERATION API
+# ============================================================
 class AlterationViewSet(viewsets.ModelViewSet):
 
     queryset = Alteration.objects.select_related(
@@ -2287,9 +2419,9 @@ class AlterationViewSet(viewsets.ModelViewSet):
     serializer_class = AlterationSerializer
     permission_classes = [IsAuthenticated]
 
-    # --------------------------------------------------------
+    # ========================================================
     # LIST / FILTER
-    # --------------------------------------------------------
+    # ========================================================
 
     def get_queryset(self):
 
@@ -2297,26 +2429,38 @@ class AlterationViewSet(viewsets.ModelViewSet):
 
         user = self.request.user
 
-        # Admin → all alterations
+        # ----------------------------------------------------
+        # ADMIN → ALL BRANCHES
+        # ----------------------------------------------------
+
         if user.role == "Admin" or user.is_superuser:
             pass
 
-        # Branch → own branch only
+        # ----------------------------------------------------
+        # BRANCH USER → OWN BRANCH ONLY
+        # ----------------------------------------------------
+
         elif user.branch_id:
+
             queryset = queryset.filter(
                 branch_id=user.branch_id
             )
 
         else:
+
             return queryset.none()
 
-        # Search
+        # ----------------------------------------------------
+        # SEARCH
+        # ----------------------------------------------------
+
         search = self.request.query_params.get(
             "search",
             ""
         ).strip()
 
         if search:
+
             queryset = queryset.filter(
                 Q(customer_name__icontains=search)
                 | Q(phone__icontains=search)
@@ -2324,12 +2468,18 @@ class AlterationViewSet(viewsets.ModelViewSet):
                 | Q(item_name__icontains=search)
             )
 
-        # Month filter
-        month = self.request.query_params.get("month")
+        # ----------------------------------------------------
+        # MONTH FILTER
+        # ----------------------------------------------------
+
+        month = self.request.query_params.get(
+            "month"
+        )
 
         if month:
 
             try:
+
                 year, month_number = month.split("-")
 
                 queryset = queryset.filter(
@@ -2337,31 +2487,54 @@ class AlterationViewSet(viewsets.ModelViewSet):
                     alteration_date__month=int(month_number),
                 )
 
-            except (ValueError, TypeError):
+            except (
+                ValueError,
+                TypeError
+            ):
+
                 pass
 
-        # Employee filter
+        # ----------------------------------------------------
+        # STATUS FILTER
+        # ----------------------------------------------------
+
+        status_filter = self.request.query_params.get(
+            "status"
+        )
+
+        if status_filter:
+
+            queryset = queryset.filter(
+                status=status_filter
+            )
+
+        # ----------------------------------------------------
+        # EMPLOYEE FILTER
+        # ----------------------------------------------------
+
         employee_id = self.request.query_params.get(
             "assigned_employee"
         )
 
         if employee_id:
+
             queryset = queryset.filter(
                 assigned_employee_id=employee_id
             )
 
         return queryset
 
-    # --------------------------------------------------------
+    # ========================================================
     # CREATE
-    # --------------------------------------------------------
+    # ========================================================
 
+    @transaction.atomic
     def perform_create(self, serializer):
 
         user = self.request.user
 
         # ----------------------------------------------------
-        # ADMIN
+        # DETERMINE BRANCH
         # ----------------------------------------------------
 
         if user.role == "Admin" or user.is_superuser:
@@ -2371,14 +2544,10 @@ class AlterationViewSet(viewsets.ModelViewSet):
             )
 
             if not branch:
-                raise serializers.ValidationError({
-                    "branch":
-                    "Branch is required."
-                })
 
-        # ----------------------------------------------------
-        # BRANCH USER
-        # ----------------------------------------------------
+                raise serializers.ValidationError({
+                    "branch": "Branch is required."
+                })
 
         else:
 
@@ -2409,51 +2578,110 @@ class AlterationViewSet(viewsets.ModelViewSet):
 
                 raise serializers.ValidationError({
                     "assigned_employee":
-                    "Employee must belong to the selected branch."
+                    "Employee must belong to this branch."
                 })
 
         # ----------------------------------------------------
-        # SAVE
+        # AMOUNT VALIDATION
+        # ----------------------------------------------------
+
+        total_amount = serializer.validated_data.get(
+            "total_amount",
+            Decimal("0")
+        )
+
+        advance_amount = serializer.validated_data.get(
+            "advance_amount",
+            Decimal("0")
+        )
+
+        if total_amount < 0:
+
+            raise serializers.ValidationError({
+                "total_amount":
+                "Total amount cannot be negative."
+            })
+
+        if advance_amount < 0:
+
+            raise serializers.ValidationError({
+                "advance_amount":
+                "Advance amount cannot be negative."
+            })
+
+        if advance_amount > total_amount:
+
+            raise serializers.ValidationError({
+                "advance_amount":
+                "Advance cannot be greater than total amount."
+            })
+
+        # ----------------------------------------------------
+        # SAVE ALTERATION
         # ----------------------------------------------------
 
         alteration = serializer.save(
-            branch=branch
+            branch=branch,
+            delivered_amount=Decimal("0"),
+            status="Pending",
         )
 
         # ----------------------------------------------------
-        # ALTERATION ADVANCE → DAY BOOK
+        # ADVANCE → DAY BOOK
         # ----------------------------------------------------
 
-        advance_amount = (
-            alteration.advance_amount or 0
-        )
-
-        if advance_amount > 0:
+        if alteration.advance_amount > 0:
 
             DayBook.objects.create(
+
                 branch=alteration.branch,
+
                 date=alteration.alteration_date,
+
                 transaction_type="Income",
+
                 category="Alteration Advance",
+
                 payment_mode=(
                     alteration.advance_payment_mode
                 ),
+
                 description=(
                     f"Alteration #{alteration.id} - "
                     f"{alteration.customer_name}"
                 ),
-                amount=advance_amount,
+
+                amount=alteration.advance_amount,
             )
 
-    # --------------------------------------------------------
+    # ========================================================
     # UPDATE
-    # --------------------------------------------------------
+    # ========================================================
 
+    @transaction.atomic
     def perform_update(self, serializer):
 
         user = self.request.user
 
         alteration = self.get_object()
+
+        # ----------------------------------------------------
+        # DO NOT EDIT CANCELLED / DELIVERY RECORD
+        # ----------------------------------------------------
+
+        if alteration.status == "Delivery":
+
+            raise serializers.ValidationError({
+                "status":
+                "Delivered alterations cannot be edited."
+            })
+
+        if alteration.status == "Cancel":
+
+            raise serializers.ValidationError({
+                "status":
+                "Cancelled alterations cannot be edited."
+            })
 
         # ----------------------------------------------------
         # DETERMINE BRANCH
@@ -2503,8 +2731,43 @@ class AlterationViewSet(viewsets.ModelViewSet):
 
                 raise serializers.ValidationError({
                     "assigned_employee":
-                    "Employee must belong to the selected branch."
+                    "Employee must belong to this branch."
                 })
+
+        # ----------------------------------------------------
+        # AMOUNT CHECK
+        # ----------------------------------------------------
+
+        total_amount = serializer.validated_data.get(
+            "total_amount",
+            alteration.total_amount
+        )
+
+        advance_amount = serializer.validated_data.get(
+            "advance_amount",
+            alteration.advance_amount
+        )
+
+        if total_amount < 0:
+
+            raise serializers.ValidationError({
+                "total_amount":
+                "Total amount cannot be negative."
+            })
+
+        if advance_amount < 0:
+
+            raise serializers.ValidationError({
+                "advance_amount":
+                "Advance cannot be negative."
+            })
+
+        if advance_amount > total_amount:
+
+            raise serializers.ValidationError({
+                "advance_amount":
+                "Advance cannot be greater than total amount."
+            })
 
         # ----------------------------------------------------
         # SAVE
@@ -2513,6 +2776,338 @@ class AlterationViewSet(viewsets.ModelViewSet):
         serializer.save(
             branch=branch
         )
+
+    # ========================================================
+    # DELIVER ALTERATION
+    # ========================================================
+
+    @action(
+        detail=True,
+        methods=["post"],
+        url_path="deliver"
+    )
+    @transaction.atomic
+    def deliver(self, request, pk=None):
+
+        alteration = self.get_object()
+
+        user = request.user
+
+        # ----------------------------------------------------
+        # BRANCH SECURITY
+        # ----------------------------------------------------
+
+        if (
+            user.role != "Admin"
+            and not user.is_superuser
+        ):
+
+            if alteration.branch_id != user.branch_id:
+
+                return Response(
+                    {
+                        "error":
+                        "You cannot deliver an alteration "
+                        "from another branch."
+                    },
+                    status=status.HTTP_403_FORBIDDEN
+                )
+
+        # ----------------------------------------------------
+        # ALREADY DELIVERY
+        # ----------------------------------------------------
+
+        if alteration.status == "Delivery":
+
+            return Response(
+                {
+                    "error":
+                    "This alteration is already delivered."
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # ----------------------------------------------------
+        # CANCELLED
+        # ----------------------------------------------------
+
+        if alteration.status == "Cancel":
+
+            return Response(
+                {
+                    "error":
+                    "Cancelled alteration cannot be delivered."
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # ----------------------------------------------------
+        # CURRENT BALANCE
+        # ----------------------------------------------------
+
+        current_balance = (
+            alteration.total_amount
+            - alteration.advance_amount
+            - alteration.delivered_amount
+        )
+
+        if current_balance < 0:
+
+            current_balance = Decimal("0")
+
+        # ----------------------------------------------------
+        # DELIVERY AMOUNT
+        # ----------------------------------------------------
+
+        delivered_amount = request.data.get(
+            "delivered_amount"
+        )
+
+        if delivered_amount in [
+            None,
+            "",
+        ]:
+
+            delivered_amount = current_balance
+
+        try:
+
+            delivered_amount = Decimal(
+                str(delivered_amount)
+            )
+
+        except (
+            InvalidOperation,
+            ValueError,
+            TypeError
+        ):
+
+            return Response(
+                {
+                    "error":
+                    "Invalid delivery amount."
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # ----------------------------------------------------
+        # NEGATIVE CHECK
+        # ----------------------------------------------------
+
+        if delivered_amount < 0:
+
+            return Response(
+                {
+                    "error":
+                    "Delivery amount cannot be negative."
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # ----------------------------------------------------
+        # FULL BALANCE REQUIRED
+        # ----------------------------------------------------
+
+        if delivered_amount != current_balance:
+
+            return Response(
+                {
+                    "error":
+                    "The full balance amount must be "
+                    "received before delivery.",
+                    "balance_due":
+                    str(current_balance),
+                    "entered_amount":
+                    str(delivered_amount),
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # ----------------------------------------------------
+        # PAYMENT MODE
+        # ----------------------------------------------------
+
+        payment_mode = request.data.get(
+            "delivery_payment_mode",
+            "Cash"
+        )
+
+        valid_payment_modes = [
+            choice[0]
+            for choice in Alteration.PAYMENT_CHOICES
+        ]
+
+        if payment_mode not in valid_payment_modes:
+
+            return Response(
+                {
+                    "error":
+                    "Invalid delivery payment mode."
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # ----------------------------------------------------
+        # DELIVERY DATE
+        # ----------------------------------------------------
+
+        delivery_date = request.data.get(
+            "delivery_date"
+        )
+
+        if delivery_date:
+
+            try:
+
+                from datetime import datetime
+
+                delivery_date = datetime.strptime(
+                    delivery_date,
+                    "%Y-%m-%d"
+                ).date()
+
+            except ValueError:
+
+                return Response(
+                    {
+                        "error":
+                        "Invalid delivery date. "
+                        "Use YYYY-MM-DD."
+                    },
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+        else:
+
+            delivery_date = timezone.localdate()
+
+        # ----------------------------------------------------
+        # DELIVERY TIME
+        # ----------------------------------------------------
+
+        delivery_time = request.data.get(
+            "delivery_time"
+        )
+
+        if delivery_time:
+
+            try:
+
+                delivery_time = time.fromisoformat(
+                    delivery_time
+                )
+
+            except ValueError:
+
+                return Response(
+                    {
+                        "error":
+                        "Invalid delivery time. "
+                        "Use HH:MM or HH:MM:SS."
+                    },
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+        else:
+
+            delivery_time = timezone.localtime().time()
+
+        # ----------------------------------------------------
+        # UPDATE ALTERATION
+        # ----------------------------------------------------
+
+        alteration.delivered_amount = (
+            delivered_amount
+        )
+
+        alteration.delivery_payment_mode = (
+            payment_mode
+        )
+
+        alteration.delivery_date = (
+            delivery_date
+        )
+
+        alteration.delivery_time = (
+            delivery_time
+        )
+
+        alteration.delivered_at = (
+            timezone.now()
+        )
+
+        alteration.status = "Delivery"
+
+        alteration.save()
+
+        # ----------------------------------------------------
+        # BALANCE PAYMENT → DAY BOOK
+        # ----------------------------------------------------
+
+        if delivered_amount > 0:
+
+            DayBook.objects.create(
+
+                branch=alteration.branch,
+
+                date=delivery_date,
+
+                transaction_type="Income",
+
+                category="Balance Payment",
+
+                payment_mode=payment_mode,
+
+                description=(
+                    f"Alteration #{alteration.id} "
+                    f"Balance Payment - "
+                    f"{alteration.customer_name}"
+                ),
+
+                amount=delivered_amount,
+            )
+
+        # ----------------------------------------------------
+        # RESPONSE
+        # ----------------------------------------------------
+
+        return Response(
+            {
+                "success": True,
+
+                "message":
+                "Alteration delivered successfully.",
+
+                "alteration_id":
+                alteration.id,
+
+                "total_amount":
+                str(alteration.total_amount),
+
+                "advance_amount":
+                str(alteration.advance_amount),
+
+                "delivered_amount":
+                str(alteration.delivered_amount),
+
+                "balance_amount":
+                str(alteration.balance_amount),
+
+                "delivery_payment_mode":
+                alteration.delivery_payment_mode,
+
+                "delivery_date":
+                alteration.delivery_date,
+
+                "delivery_time":
+                alteration.delivery_time,
+
+                "status":
+                alteration.status,
+            },
+            status=status.HTTP_200_OK
+        )
+     
 class ProductCategoryViewSet(viewsets.ModelViewSet):
     queryset = ProductCategory.objects.all().order_by("name")
     serializer_class = ProductCategorySerializer
@@ -3690,4 +4285,421 @@ class StockProcessingViewSet(viewsets.ModelViewSet):
                     serializer.data,
             },
             status=status.HTTP_200_OK
+        )
+# ============================================================
+# PRODUCTION JOB API
+# ============================================================
+
+class ProductionJobViewSet(viewsets.ModelViewSet):
+
+    queryset = ProductionJob.objects.select_related(
+        "branch",
+        "customer",
+    ).prefetch_related(
+        "purchases__product",
+        "payments",
+    ).all().order_by(
+        "-job_date",
+        "-id",
+    )
+
+    serializer_class = ProductionJobSerializer
+
+    permission_classes = [
+        IsAuthenticated
+    ]
+
+    # --------------------------------------------------------
+    # LIST / FILTER
+    # --------------------------------------------------------
+
+    def get_queryset(self):
+
+        queryset = super().get_queryset()
+
+        user = self.request.user
+
+        # ADMIN → all branches
+        if user.role == "Admin" or user.is_superuser:
+            pass
+
+        # BRANCH USER → own branch only
+        elif user.branch_id:
+
+            queryset = queryset.filter(
+                branch_id=user.branch_id
+            )
+
+        else:
+
+            return queryset.none()
+
+        # Optional status filter
+
+        status_filter = self.request.query_params.get(
+            "status"
+        )
+
+        if status_filter:
+
+            queryset = queryset.filter(
+                status=status_filter
+            )
+
+        # Optional customer filter
+
+        customer_id = self.request.query_params.get(
+            "customer"
+        )
+
+        if customer_id:
+
+            queryset = queryset.filter(
+                customer_id=customer_id
+            )
+
+        return queryset
+
+    # --------------------------------------------------------
+    # CREATE
+    # --------------------------------------------------------
+
+    @transaction.atomic
+    def perform_create(self, serializer):
+
+        user = self.request.user
+
+        # ---------------------------------------------
+        # ADMIN
+        # ---------------------------------------------
+
+        if user.role == "Admin" or user.is_superuser:
+
+            branch = serializer.validated_data.get(
+                "branch"
+            )
+
+            if not branch:
+
+                raise serializers.ValidationError({
+                    "branch":
+                    "Branch is required."
+                })
+
+        # ---------------------------------------------
+        # BRANCH USER
+        # ---------------------------------------------
+
+        else:
+
+            if not user.branch_id:
+
+                raise PermissionDenied(
+                    "User is not assigned to a branch."
+                )
+
+            # IMPORTANT:
+            # Ignore any branch sent from frontend
+
+            branch = user.branch
+
+        # ---------------------------------------------
+        # CUSTOMER
+        # ---------------------------------------------
+
+        customer = serializer.validated_data.get(
+            "customer"
+        )
+
+        if not customer:
+
+            raise serializers.ValidationError({
+                "customer":
+                "Customer is required."
+            })
+
+        # Branch user can only use own branch customers
+
+        if (
+            user.role != "Admin"
+            and not user.is_superuser
+        ):
+
+            if customer.branch_id != user.branch_id:
+
+                raise PermissionDenied(
+                    "You cannot use a customer "
+                    "from another branch."
+                )
+
+        # ---------------------------------------------
+        # SAVE JOB
+        # ---------------------------------------------
+
+        serializer.save(
+            branch=branch
+        )
+# ============================================================
+# JOB PURCHASE API
+# ============================================================
+
+class JobPurchaseViewSet(viewsets.ModelViewSet):
+
+    queryset = JobPurchase.objects.select_related(
+        "job",
+        "job__branch",
+        "job__customer",
+        "product",
+    ).all().order_by(
+        "-purchase_date",
+        "-id",
+    )
+
+    serializer_class = JobPurchaseSerializer
+
+    permission_classes = [
+        IsAuthenticated
+    ]
+
+    def get_queryset(self):
+
+        queryset = super().get_queryset()
+
+        user = self.request.user
+
+        if user.role == "Admin" or user.is_superuser:
+
+            pass
+
+        elif user.branch_id:
+
+            queryset = queryset.filter(
+                job__branch_id=user.branch_id
+            )
+
+        else:
+
+            return queryset.none()
+
+        return queryset
+
+    @transaction.atomic
+    def perform_create(self, serializer):
+
+        user = self.request.user
+
+        job = serializer.validated_data.get(
+            "job"
+        )
+
+        if not job:
+
+            raise serializers.ValidationError({
+                "job":
+                "Production job is required."
+            })
+
+        # ---------------------------------------------
+        # BRANCH SECURITY
+        # ---------------------------------------------
+
+        if (
+            user.role != "Admin"
+            and not user.is_superuser
+        ):
+
+            if job.branch_id != user.branch_id:
+
+                raise PermissionDenied(
+                    "You cannot add a purchase "
+                    "to another branch's job."
+                )
+
+        # ---------------------------------------------
+        # CREATE PURCHASE
+        # ---------------------------------------------
+
+        purchase = serializer.save()
+
+        # ---------------------------------------------
+        # DAY BOOK EXPENSE
+        # ---------------------------------------------
+
+        DayBook.objects.create(
+
+            branch=job.branch,
+
+            date=purchase.purchase_date,
+
+            transaction_type="Expense",
+
+            category="Purchase",
+
+            payment_mode=purchase.payment_mode,
+
+            description=(
+                f"Purchase for Job #{job.id} - "
+                f"{purchase.product.name}"
+            ),
+
+            amount=purchase.total,
+        )
+# ============================================================
+# JOB PAYMENT API
+# ============================================================
+
+class JobPaymentViewSet(viewsets.ModelViewSet):
+
+    queryset = JobPayment.objects.select_related(
+        "job",
+        "job__branch",
+        "job__customer",
+    ).all().order_by(
+        "-payment_date",
+        "-id",
+    )
+
+    serializer_class = JobPaymentSerializer
+
+    permission_classes = [
+        IsAuthenticated
+    ]
+
+    def get_queryset(self):
+
+        queryset = super().get_queryset()
+
+        user = self.request.user
+
+        if user.role == "Admin" or user.is_superuser:
+
+            pass
+
+        elif user.branch_id:
+
+            queryset = queryset.filter(
+                job__branch_id=user.branch_id
+            )
+
+        else:
+
+            return queryset.none()
+
+        return queryset
+
+    @transaction.atomic
+    def perform_create(self, serializer):
+
+        user = self.request.user
+
+        job = serializer.validated_data.get(
+            "job"
+        )
+
+        amount = serializer.validated_data.get(
+            "amount"
+        )
+
+        payment_type = serializer.validated_data.get(
+            "payment_type"
+        )
+
+        # ---------------------------------------------
+        # JOB REQUIRED
+        # ---------------------------------------------
+
+        if not job:
+
+            raise serializers.ValidationError({
+                "job":
+                "Production job is required."
+            })
+
+        # ---------------------------------------------
+        # BRANCH SECURITY
+        # ---------------------------------------------
+
+        if (
+            user.role != "Admin"
+            and not user.is_superuser
+        ):
+
+            if job.branch_id != user.branch_id:
+
+                raise PermissionDenied(
+                    "You cannot add payment "
+                    "to another branch's job."
+                )
+
+        # ---------------------------------------------
+        # PAYMENT VALIDATION
+        # ---------------------------------------------
+
+        if amount <= 0:
+
+            raise serializers.ValidationError({
+                "amount":
+                "Payment amount must be greater than zero."
+            })
+
+        # ---------------------------------------------
+        # CHECK TOTAL
+        # ---------------------------------------------
+
+        current_received = sum(
+            payment.amount
+            for payment in job.payments.all()
+        )
+
+        if (
+            current_received + amount
+            > job.total_amount
+        ):
+
+            raise serializers.ValidationError({
+                "amount":
+                "Payment cannot exceed "
+                "the remaining balance."
+            })
+
+        # ---------------------------------------------
+        # CREATE PAYMENT
+        # ---------------------------------------------
+
+        payment = serializer.save()
+
+        # ---------------------------------------------
+        # UPDATE JOB PAYMENT TOTAL
+        # ---------------------------------------------
+
+        if payment.payment_type == "Advance":
+
+            job.advance += payment.amount
+
+        job.save()
+
+        # ---------------------------------------------
+        # DAY BOOK
+        # ---------------------------------------------
+
+        category = payment.payment_type
+
+        DayBook.objects.create(
+
+            branch=job.branch,
+
+            date=payment.payment_date,
+
+            transaction_type="Income",
+
+            category=category,
+
+            payment_mode=payment.payment_mode,
+
+            description=(
+                f"{payment.payment_type} "
+                f"for Job #{job.id}"
+            ),
+
+            amount=payment.amount,
         )

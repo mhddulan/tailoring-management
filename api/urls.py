@@ -30,6 +30,10 @@ from .views import (
     BranchProductViewSet,
     StockTransferViewSet,
     StockProcessingViewSet,
+    ProductionJobViewSet,
+    JobPurchaseViewSet,
+    JobPaymentViewSet,
+    
 )
 from accounts.password_reset_views import forgot_password
 from .views import current_user
@@ -84,7 +88,23 @@ router.register(
 # ============================================================
 # BRANCHES
 # ============================================================
+router.register(
+    "production-jobs",
+    ProductionJobViewSet,
+    basename="production-job"
+)
 
+router.register(
+    "job-purchases",
+    JobPurchaseViewSet,
+    basename="job-purchase"
+)
+
+router.register(
+    "job-payments",
+    JobPaymentViewSet,
+    basename="job-payment"
+)
 router.register(
     "branches",
     BranchViewSet,

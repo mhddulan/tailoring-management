@@ -13,6 +13,7 @@ function OrderEdit() {
     const [customer, setCustomer] = useState("");
     const [orderDate, setOrderDate] = useState("");
     const [deliveryDate, setDeliveryDate] = useState("");
+    const [deliveryTime, setDeliveryTime] = useState("");
     const [status, setStatus] = useState("Pending");
     const [paymentMode, setPaymentMode] = useState("Cash");
 
@@ -22,13 +23,13 @@ function OrderEdit() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
 
+    // =========================================================
+    // LOAD DATA
+    // =========================================================
+
     useEffect(() => {
         loadData();
     }, [id]);
-
-    // =========================================================
-    // LOAD ORDER + CUSTOMERS + PRODUCTS
-    // =========================================================
 
     const loadData = async () => {
         try {
@@ -47,11 +48,8 @@ function OrderEdit() {
 
             const order = orderResponse.data;
 
-            const customerData =
-                customerResponse.data;
-
-            const productData =
-                productResponse.data;
+            const customerData = customerResponse.data;
+            const productData = productResponse.data;
 
             setCustomers(
                 Array.isArray(customerData)
@@ -65,54 +63,47 @@ function OrderEdit() {
                     : productData.results || []
             );
 
-            setCustomer(
-                order.customer || ""
-            );
+            // Customer
+            setCustomer(order.customer || "");
 
-            setOrderDate(
-                order.order_date || ""
-            );
+            // Order date
+            setOrderDate(order.order_date || "");
 
-            setDeliveryDate(
-                order.delivery_date || ""
-            );
+            // Expected delivery date
+            setDeliveryDate(order.delivery_date || "");
 
-            setStatus(
-                order.status || "Pending"
-            );
+            // Expected delivery time
+            setDeliveryTime(order.delivery_time || "");
 
+            // Status
+            setStatus(order.status || "Pending");
+
+            // Payment mode
             setPaymentMode(
                 order.advance_payment_mode || "Cash"
             );
 
-            const orderItems =
-                Array.isArray(order.items)
-                    ? order.items
-                    : [];
+            // Order items
+            const orderItems = Array.isArray(order.items)
+                ? order.items
+                : [];
 
             if (orderItems.length > 0) {
                 setItems(
                     orderItems.map((item) => ({
                         id: item.id,
                         product: item.product || "",
-                        quantity: Number(
-                            item.quantity || 1
-                        ),
-                        rate: Number(
-                            item.rate || 0
-                        ),
+                        quantity: Number(item.quantity || 1),
+                        rate: Number(item.rate || 0),
                         amount:
-                            Number(
-                                item.quantity || 0
-                            ) *
-                            Number(
-                                item.rate || 0
-                            ),
+                            Number(item.quantity || 0) *
+                            Number(item.rate || 0),
                     }))
                 );
             } else {
                 setItems([
                     {
+                        id: null,
                         product: "",
                         quantity: 1,
                         rate: 0,
@@ -151,6 +142,7 @@ function OrderEdit() {
                 product: "",
                 rate: 0,
             });
+
             return;
         }
 
@@ -158,6 +150,7 @@ function OrderEdit() {
             setError(
                 "Please select a customer first."
             );
+
             return;
         }
 
@@ -216,12 +209,8 @@ function OrderEdit() {
                 };
 
                 updated.amount =
-                    Number(
-                        updated.quantity || 0
-                    ) *
-                    Number(
-                        updated.rate || 0
-                    );
+                    Number(updated.quantity || 0) *
+                    Number(updated.rate || 0);
 
                 return updated;
             })
@@ -267,8 +256,7 @@ function OrderEdit() {
 
     const total = items.reduce(
         (sum, item) =>
-            sum +
-            Number(item.amount || 0),
+            sum + Number(item.amount || 0),
         0
     );
 
@@ -285,6 +273,31 @@ function OrderEdit() {
             setError(
                 "Please select a customer."
             );
+
+            return;
+        }
+
+        if (!orderDate) {
+            setError(
+                "Please select order date."
+            );
+
+            return;
+        }
+
+        if (!deliveryDate) {
+            setError(
+                "Please select expected delivery date."
+            );
+
+            return;
+        }
+
+        if (!deliveryTime) {
+            setError(
+                "Please select expected delivery time."
+            );
+
             return;
         }
 
@@ -297,6 +310,7 @@ function OrderEdit() {
             setError(
                 "Please add at least one product."
             );
+
             return;
         }
 
@@ -309,6 +323,7 @@ function OrderEdit() {
             setError(
                 "Quantity must be greater than zero."
             );
+
             return;
         }
 
@@ -321,27 +336,30 @@ function OrderEdit() {
             setError(
                 "Rate cannot be negative."
             );
+
             return;
         }
 
         try {
             setLoading(true);
 
-            // -------------------------------------------------
+            // =================================================
             // UPDATE ORDER
-            // -------------------------------------------------
+            // =================================================
 
             await api.patch(
                 `orders/${id}/`,
                 {
-                    customer:
-                        Number(customer),
+                    customer: Number(customer),
 
                     order_date:
                         orderDate,
 
                     delivery_date:
                         deliveryDate,
+
+                    delivery_time:
+                        deliveryTime,
 
                     advance_payment_mode:
                         paymentMode,
@@ -350,9 +368,9 @@ function OrderEdit() {
                 }
             );
 
-            // -------------------------------------------------
+            // =================================================
             // EXISTING + NEW ITEMS
-            // -------------------------------------------------
+            // =================================================
 
             const existingItems =
                 validItems.filter(
@@ -364,9 +382,9 @@ function OrderEdit() {
                     (item) => !item.id
                 );
 
-            // -------------------------------------------------
+            // =================================================
             // UPDATE EXISTING ITEMS
-            // -------------------------------------------------
+            // =================================================
 
             for (
                 const item
@@ -401,9 +419,9 @@ function OrderEdit() {
                 );
             }
 
-            // -------------------------------------------------
+            // =================================================
             // CREATE NEW ITEMS
-            // -------------------------------------------------
+            // =================================================
 
             for (
                 const item
@@ -438,9 +456,9 @@ function OrderEdit() {
                 );
             }
 
-            // -------------------------------------------------
+            // =================================================
             // FIND CURRENT ITEMS
-            // -------------------------------------------------
+            // =================================================
 
             const currentItemsResponse =
                 await api.get(
@@ -464,9 +482,9 @@ function OrderEdit() {
                             Number(item.id)
                     );
 
-            // -------------------------------------------------
+            // =================================================
             // DELETE REMOVED ITEMS
-            // -------------------------------------------------
+            // =================================================
 
             for (
                 const item
@@ -492,6 +510,10 @@ function OrderEdit() {
                 }
             }
 
+            // =================================================
+            // SUCCESS
+            // =================================================
+
             navigate(
                 `/orders/${id}`
             );
@@ -513,6 +535,7 @@ function OrderEdit() {
                 data?.items?.[0] ||
                 "Unable to update order."
             );
+
         } finally {
             setLoading(false);
         }
@@ -546,7 +569,9 @@ function OrderEdit() {
     return (
         <div className="order-create-page">
 
-            {/* HEADER */}
+            {/* =================================================
+                HEADER
+            ================================================= */}
 
             <div className="order-create-header">
 
@@ -600,7 +625,9 @@ function OrderEdit() {
 
             </div>
 
-            {/* ERROR */}
+            {/* =================================================
+                ERROR
+            ================================================= */}
 
             {error && (
                 <div className="alert alert-danger">
@@ -734,12 +761,12 @@ function OrderEdit() {
 
                         </div>
 
-                        {/* DELIVERY DATE */}
+                        {/* EXPECTED DELIVERY DATE */}
 
                         <div className="col-md-4">
 
                             <label className="form-label">
-                                Delivery Date
+                                Expected Delivery Date
                             </label>
 
                             <input
@@ -750,6 +777,30 @@ function OrderEdit() {
                                 }
                                 onChange={(e) =>
                                     setDeliveryDate(
+                                        e.target.value
+                                    )
+                                }
+                                required
+                            />
+
+                        </div>
+
+                        {/* EXPECTED DELIVERY TIME */}
+
+                        <div className="col-md-4">
+
+                            <label className="form-label">
+                                Expected Delivery Time
+                            </label>
+
+                            <input
+                                type="time"
+                                className="form-control"
+                                value={
+                                    deliveryTime
+                                }
+                                onChange={(e) =>
+                                    setDeliveryTime(
                                         e.target.value
                                     )
                                 }
@@ -824,24 +875,16 @@ function OrderEdit() {
                                     Pending
                                 </option>
 
-                                <option value="Cutting">
-                                    Cutting
-                                </option>
-
-                                <option value="Stitching">
-                                    Stitching
-                                </option>
-
                                 <option value="Ready">
                                     Ready
                                 </option>
 
-                                <option value="Delivery">
-                                    Delivery
-                                </option>
-
                                 <option value="Delivered">
                                     Delivered
+                                </option>
+
+                                <option value="Cancel">
+                                    Cancel
                                 </option>
 
                             </select>
@@ -1000,9 +1043,7 @@ function OrderEdit() {
                                                             {
                                                                 quantity:
                                                                     Number(
-                                                                        e
-                                                                            .target
-                                                                            .value
+                                                                        e.target.value
                                                                     ),
                                                             }
                                                         )
@@ -1030,9 +1071,7 @@ function OrderEdit() {
                                                             {
                                                                 rate:
                                                                     Number(
-                                                                        e
-                                                                            .target
-                                                                            .value
+                                                                        e.target.value
                                                                     ),
                                                             }
                                                         )
@@ -1138,7 +1177,9 @@ function OrderEdit() {
                             loading
                         }
                     >
+
                         Cancel
+
                     </button>
 
                     <button
@@ -1152,11 +1193,13 @@ function OrderEdit() {
                         {loading ? (
                             <>
                                 <span className="spinner-border spinner-border-sm me-2"></span>
+
                                 Saving...
                             </>
                         ) : (
                             <>
                                 <i className="bi bi-check-lg me-2"></i>
+
                                 Update Order
                             </>
                         )}

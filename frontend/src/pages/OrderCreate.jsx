@@ -12,6 +12,8 @@ function OrderCreate() {
     const [customer, setCustomer] = useState("");
     const [orderDate, setOrderDate] = useState("");
     const [deliveryDate, setDeliveryDate] = useState("");
+    const [deliveryTime, setDeliveryTime] = useState("17:00");
+
     const [status, setStatus] = useState("Pending");
 
     const [paymentMode, setPaymentMode] = useState("Cash");
@@ -50,6 +52,9 @@ function OrderCreate() {
             setOrderDate(today);
             setDeliveryDate(today);
 
+            // Default expected delivery time: 5:00 PM
+            setDeliveryTime("17:00");
+
             const [
                 customerResponse,
                 productResponse,
@@ -87,6 +92,7 @@ function OrderCreate() {
                 err.response?.data?.error ||
                 "Unable to load customers and products."
             );
+
         } finally {
             setPageLoading(false);
         }
@@ -101,15 +107,19 @@ function OrderCreate() {
         customerId,
         index
     ) => {
+
         if (!productId) {
+
             updateItem(index, {
                 product: "",
                 rate: 0,
             });
+
             return;
         }
 
         if (!customerId) {
+
             updateItem(index, {
                 product: productId,
                 rate: 0,
@@ -123,6 +133,7 @@ function OrderCreate() {
         }
 
         try {
+
             setError("");
 
             const response = await api.get(
@@ -139,6 +150,7 @@ function OrderCreate() {
             });
 
         } catch (err) {
+
             console.error(
                 "Unable to load product price:",
                 err
@@ -165,6 +177,7 @@ function OrderCreate() {
         index,
         changes
     ) => {
+
         setItems((current) =>
             current.map((item, i) => {
 
@@ -195,8 +208,10 @@ function OrderCreate() {
     // ---------------------------------------------------------
 
     const addItem = () => {
+
         setItems((current) => [
             ...current,
+
             {
                 product: "",
                 quantity: 1,
@@ -245,32 +260,72 @@ function OrderCreate() {
     // ---------------------------------------------------------
 
     const handleSubmit = async (e) => {
+
         e.preventDefault();
 
         setError("");
 
+        // -----------------------------------------------------
         // CUSTOMER
+        // -----------------------------------------------------
+
         if (!customer) {
+
             setError(
                 "Please select a customer."
             );
+
             return;
         }
 
+        // -----------------------------------------------------
+        // DELIVERY DATE
+        // -----------------------------------------------------
+
+        if (!deliveryDate) {
+
+            setError(
+                "Please select expected delivery date."
+            );
+
+            return;
+        }
+
+        // -----------------------------------------------------
+        // DELIVERY TIME
+        // -----------------------------------------------------
+
+        if (!deliveryTime) {
+
+            setError(
+                "Please select expected delivery time."
+            );
+
+            return;
+        }
+
+        // -----------------------------------------------------
         // VALID ITEMS
+        // -----------------------------------------------------
+
         const validItems =
             items.filter(
                 (item) => item.product
             );
 
         if (validItems.length === 0) {
+
             setError(
                 "Please add at least one product."
             );
+
             return;
         }
 
+        // -----------------------------------------------------
         // QUANTITY
+        // -----------------------------------------------------
+
         if (
             validItems.some(
                 (item) =>
@@ -279,13 +334,18 @@ function OrderCreate() {
                     ) <= 0
             )
         ) {
+
             setError(
                 "Quantity must be greater than zero."
             );
+
             return;
         }
 
+        // -----------------------------------------------------
         // RATE
+        // -----------------------------------------------------
+
         if (
             validItems.some(
                 (item) =>
@@ -294,33 +354,46 @@ function OrderCreate() {
                     ) < 0
             )
         ) {
+
             setError(
                 "Rate cannot be negative."
             );
+
             return;
         }
 
+        // -----------------------------------------------------
         // ADVANCE
+        // -----------------------------------------------------
+
         if (advanceAmount < 0) {
+
             setError(
                 "Advance amount cannot be negative."
             );
+
             return;
         }
 
+        // -----------------------------------------------------
         // ADVANCE > TOTAL
+        // -----------------------------------------------------
+
         if (advanceAmount > total) {
+
             setError(
                 "Advance cannot exceed the order total."
             );
+
             return;
         }
 
         try {
+
             setLoading(true);
 
             // -------------------------------------------------
-            // CREATE ORDER + ITEMS + ADVANCE
+            // CREATE ORDER
             // -------------------------------------------------
 
             const response =
@@ -333,15 +406,23 @@ function OrderCreate() {
                         order_date:
                             orderDate,
 
+                        // Expected delivery date
                         delivery_date:
                             deliveryDate,
+
+                        // Expected delivery time
+                        delivery_time:
+                            deliveryTime,
 
                         advance_payment_mode:
                             paymentMode,
 
                         status,
 
+                        // -------------------------------------------------
                         // ORDER ITEMS
+                        // -------------------------------------------------
+
                         items:
                             validItems.map(
                                 (item) => ({
@@ -362,7 +443,10 @@ function OrderCreate() {
                                 })
                             ),
 
+                        // -------------------------------------------------
                         // ADVANCE PAYMENT
+                        // -------------------------------------------------
+
                         advance_amount:
                             advanceAmount,
                     }
@@ -376,12 +460,16 @@ function OrderCreate() {
                 createdOrder.pk;
 
             if (!orderId) {
+
                 throw new Error(
                     "Order was created but no order ID was returned."
                 );
             }
 
+            // -------------------------------------------------
             // GO TO ORDER DETAIL
+            // -------------------------------------------------
+
             navigate(
                 `/orders/${orderId}`
             );
@@ -403,10 +491,12 @@ function OrderCreate() {
                 data?.customer?.[0] ||
                 data?.items?.[0] ||
                 data?.advance_amount?.[0] ||
+                data?.delivery_time?.[0] ||
                 "Unable to create order."
             );
 
         } finally {
+
             setLoading(false);
         }
     };
@@ -416,6 +506,7 @@ function OrderCreate() {
     // ---------------------------------------------------------
 
     if (pageLoading) {
+
         return (
             <div className="order-create-loading">
 
@@ -545,7 +636,7 @@ function OrderCreate() {
 
                         {/* CUSTOMER */}
 
-                        <div className="col-md-4">
+                        <div className="col-md-3">
 
                             <label className="form-label">
                                 Customer
@@ -563,9 +654,7 @@ function OrderCreate() {
                                     setItems(
                                         (current) =>
                                             current.map(
-                                                (
-                                                    item
-                                                ) => ({
+                                                (item) => ({
                                                     ...item,
                                                     rate: 0,
                                                     amount: 0,
@@ -612,7 +701,7 @@ function OrderCreate() {
 
                         {/* ORDER DATE */}
 
-                        <div className="col-md-4">
+                        <div className="col-md-3">
 
                             <label className="form-label">
                                 Order Date
@@ -632,12 +721,12 @@ function OrderCreate() {
 
                         </div>
 
-                        {/* DELIVERY DATE */}
+                        {/* EXPECTED DELIVERY DATE */}
 
-                        <div className="col-md-4">
+                        <div className="col-md-3">
 
                             <label className="form-label">
-                                Delivery Date
+                                Expected Delivery Date
                             </label>
 
                             <input
@@ -656,9 +745,33 @@ function OrderCreate() {
 
                         </div>
 
+                        {/* EXPECTED DELIVERY TIME */}
+
+                        <div className="col-md-3">
+
+                            <label className="form-label">
+                                Expected Delivery Time
+                            </label>
+
+                            <input
+                                type="time"
+                                className="form-control"
+                                value={
+                                    deliveryTime
+                                }
+                                onChange={(e) =>
+                                    setDeliveryTime(
+                                        e.target.value
+                                    )
+                                }
+                                required
+                            />
+
+                        </div>
+
                         {/* PAYMENT MODE */}
 
-                        <div className="col-md-4">
+                        <div className="col-md-3">
 
                             <label className="form-label">
                                 Advance Payment Mode
@@ -702,7 +815,7 @@ function OrderCreate() {
 
                         {/* STATUS */}
 
-                        <div className="col-md-4">
+                        <div className="col-md-3">
 
                             <label className="form-label">
                                 Initial Status
@@ -722,24 +835,16 @@ function OrderCreate() {
                                     Pending
                                 </option>
 
-                                <option value="Cutting">
-                                    Cutting
-                                </option>
-
-                                <option value="Stitching">
-                                    Stitching
-                                </option>
-
                                 <option value="Ready">
                                     Ready
                                 </option>
 
-                                <option value="Delivery">
-                                    Delivery
-                                </option>
-
                                 <option value="Delivered">
                                     Delivered
+                                </option>
+
+                                <option value="Cancel">
+                                    Cancel
                                 </option>
 
                             </select>
@@ -749,6 +854,7 @@ function OrderCreate() {
                     </div>
 
                 </div>
+
 
                 {/* =================================================
                     ORDER ITEMS
@@ -901,9 +1007,7 @@ function OrderCreate() {
                                                             {
                                                                 quantity:
                                                                     Number(
-                                                                        e
-                                                                            .target
-                                                                            .value
+                                                                        e.target.value
                                                                     ),
                                                             }
                                                         )
@@ -933,9 +1037,7 @@ function OrderCreate() {
                                                             {
                                                                 rate:
                                                                     Number(
-                                                                        e
-                                                                            .target
-                                                                            .value
+                                                                        e.target.value
                                                                     ),
                                                             }
                                                         )
@@ -1025,6 +1127,7 @@ function OrderCreate() {
 
                 </div>
 
+
                 {/* =================================================
                     ORDER SUMMARY
                 ================================================= */}
@@ -1048,10 +1151,12 @@ function OrderCreate() {
                                 </span>
 
                                 <strong className="text-dark fs-5">
+
                                     SAR{" "}
                                     {total.toFixed(
                                         2
                                     )}
+
                                 </strong>
 
                             </div>
@@ -1063,10 +1168,12 @@ function OrderCreate() {
                                 </span>
 
                                 <strong className="text-success">
+
                                     SAR{" "}
                                     {advanceAmount.toFixed(
                                         2
                                     )}
+
                                 </strong>
 
                             </div>
@@ -1098,6 +1205,7 @@ function OrderCreate() {
                     </div>
 
                 </div>
+
 
                 {/* =================================================
                     ADVANCE PAYMENT
@@ -1224,6 +1332,7 @@ function OrderCreate() {
                     </div>
 
                 </div>
+
 
                 {/* =================================================
                     ACTIONS

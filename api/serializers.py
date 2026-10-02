@@ -14,6 +14,11 @@ from products.models import (
     StockTransfer,
     StockProcessing,
 )
+from production_jobs.models import (
+    ProductionJob,
+    JobPurchase,
+    JobPayment,
+)
 
 from alterations.models import Alteration
 
@@ -110,7 +115,6 @@ class PaymentSerializer(serializers.ModelSerializer):
 # ============================================================
 # ORDER
 # ============================================================
-
 class OrderSerializer(serializers.ModelSerializer):
 
     customer_name = serializers.CharField(
@@ -143,35 +147,66 @@ class OrderSerializer(serializers.ModelSerializer):
 
         fields = [
             "id",
+
+            # Customer
             "customer",
             "customer_name",
             "customer_mobile",
 
+            # Order
             "order_date",
-            "delivery_date",
 
+            # Expected Delivery
+            "delivery_date",
+            "delivery_time",
+
+            # Payment
             "advance_payment_mode",
 
+            # Status
             "status",
+
+            # Actual Delivery
             "delivered_date",
             "delivered_by",
 
+            # Payment Summary
             "total_amount",
             "total_received",
             "advance_received",
             "balance_due",
 
+            # Details
             "items",
             "payments",
         ]
 
+    # =========================================================
+    # TOTAL ORDER AMOUNT
+    # =========================================================
+
     def get_total_amount(self, obj):
-        return float(obj.total_amount())
+
+        return float(
+            obj.total_amount()
+        )
+
+    # =========================================================
+    # TOTAL RECEIVED
+    # =========================================================
 
     def get_total_received(self, obj):
-        return float(obj.total_received())
+
+        return float(
+            obj.total_received()
+        )
+
+    # =========================================================
+    # ADVANCE RECEIVED
+    # =========================================================
 
     def get_advance_received(self, obj):
+
         return float(
             sum(
                 payment.amount
@@ -180,13 +215,17 @@ class OrderSerializer(serializers.ModelSerializer):
             )
         )
 
+    # =========================================================
+    # BALANCE DUE
+    # =========================================================
+
     def get_balance_due(self, obj):
+
         return float(
             obj.total_amount()
             - obj.total_received()
         )
-
-
+    
 # ============================================================
 # DAY BOOK
 # ============================================================
@@ -309,6 +348,9 @@ class ProductSerializer(serializers.ModelSerializer):
 # ============================================================
 # STOCK PROCESSING / PRODUCTION
 # ============================================================
+# ============================================================
+# STOCK PROCESSING
+# ============================================================
 
 class StockProcessingSerializer(serializers.ModelSerializer):
 
@@ -317,15 +359,9 @@ class StockProcessingSerializer(serializers.ModelSerializer):
         read_only=True
     )
 
-    input_product_name = serializers.CharField(
-        source="input_product.name",
+    product_name = serializers.CharField(
+        source="product.name",
         read_only=True
-    )
-
-    output_product_name = serializers.CharField(
-        source="output_product.name",
-        read_only=True,
-        allow_null=True
     )
 
     employee_name = serializers.CharField(
@@ -344,94 +380,100 @@ class StockProcessingSerializer(serializers.ModelSerializer):
         read_only=True
     )
 
-    remaining_to_issue = serializers.IntegerField(
-        read_only=True
-    )
-
-    pending_quantity = serializers.IntegerField(
-        read_only=True
-    )
-
-    is_fully_issued = serializers.BooleanField(
-        read_only=True
-    )
-
-    is_fully_returned = serializers.BooleanField(
-        read_only=True
-    )
-
     class Meta:
         model = StockProcessing
 
         fields = [
             "id",
 
-            # Branch
+            # ------------------------------------------------
+            # BRANCH
+            # ------------------------------------------------
             "branch",
             "branch_name",
 
-            # Processing
+            # ------------------------------------------------
+            # STOCK
+            # ------------------------------------------------
+            "product",
+            "product_name",
+            "purchase_date",
+            "quantity",
+
+            # ------------------------------------------------
+            # SELLING PRICE
+            # ------------------------------------------------
+            "selling_price",
+
+            # ------------------------------------------------
+            # PROCESS
+            # ------------------------------------------------
             "process_type",
             "process_type_display",
-            "status",
-            "status_display",
 
-            # Input
-            "input_product",
-            "input_product_name",
-            "input_quantity",
-            "issued_quantity",
-            "remaining_to_issue",
-
-            # Output
-            "output_product",
-            "output_product_name",
-            "output_quantity",
-            "returned_quantity",
-            "pending_quantity",
-
-            # Employee
+            # ------------------------------------------------
+            # EMPLOYEE
+            # ------------------------------------------------
             "employee",
             "employee_name",
 
-            # Dates
-            "issue_date",
+            # ------------------------------------------------
+            # EXPECTED DELIVERY
+            # ------------------------------------------------
             "expected_date",
-            "completed_date",
+            "expected_time",
 
-            # Notes
+            # ------------------------------------------------
+            # STATUS
+            # ------------------------------------------------
+            "status",
+            "status_display",
+
+            # ------------------------------------------------
+            # NOTES
+            # ------------------------------------------------
             "remarks",
 
-            # System
+            # ------------------------------------------------
+            # SYSTEM
+            # ------------------------------------------------
             "created_at",
             "updated_at",
-
-            # Calculated
-            "is_fully_issued",
-            "is_fully_returned",
         ]
 
         read_only_fields = [
-            "issued_quantity",
-            "returned_quantity",
-            "remaining_to_issue",
-            "pending_quantity",
-            "is_fully_issued",
-            "is_fully_returned",
-            "issue_date",
-            "completed_date",
+            "id",
+            "branch_name",
+            "product_name",
+            "employee_name",
+            "process_type_display",
+            "status_display",
             "created_at",
             "updated_at",
         ]
 
-    def validate_input_quantity(self, value):
+    # ========================================================
+    # VALIDATION
+    # ========================================================
+
+    def validate_quantity(self, value):
 
         if value <= 0:
             raise serializers.ValidationError(
-                "Input quantity must be greater than 0."
+                "Quantity must be greater than 0."
             )
 
         return value
+
+    def validate_selling_price(self, value):
+
+        if value < 0:
+            raise serializers.ValidationError(
+                "Selling price cannot be negative."
+            )
+
+        return value
+
 # ============================================================
 # EMPLOYEE
 # ============================================================
@@ -546,6 +588,12 @@ class EmployeeProductRateSerializer(serializers.ModelSerializer):
 # ============================================================
 # ALTERATION
 # ============================================================
+# ============================================================
+# ALTERATION
+# ============================================================
+# ============================================================
+# ALTERATION
+# ============================================================
 
 class AlterationSerializer(serializers.ModelSerializer):
 
@@ -568,6 +616,9 @@ class AlterationSerializer(serializers.ModelSerializer):
         model = Alteration
 
         fields = [
+            # ------------------------------------------------
+            # BASIC
+            # ------------------------------------------------
             "id",
 
             "branch",
@@ -578,22 +629,134 @@ class AlterationSerializer(serializers.ModelSerializer):
 
             "alteration_date",
 
+            # ------------------------------------------------
+            # EXPECTED DELIVERY
+            # ------------------------------------------------
+            "expected_delivery_date",
+            "expected_delivery_time",
+
+            # ------------------------------------------------
+            # PRODUCT
+            # ------------------------------------------------
             "product",
             "product_name",
 
             "item_name",
 
+            # ------------------------------------------------
+            # ALTERATION DETAILS
+            # ------------------------------------------------
             "custom_size",
-
             "notes",
 
-            "advance_amount",
-            "advance_payment_mode",
-
+            # ------------------------------------------------
+            # EMPLOYEE
+            # ------------------------------------------------
             "assigned_employee",
             "assigned_employee_name",
+
+            # ------------------------------------------------
+            # AMOUNTS
+            # ------------------------------------------------
+            "total_amount",
+            "advance_amount",
+            "advance_payment_mode",
+            "balance_amount",
+
+            # ------------------------------------------------
+            # DELIVERY PAYMENT
+            # ------------------------------------------------
+            "delivered_amount",
+            "delivery_payment_mode",
+
+            # ------------------------------------------------
+            # ACTUAL DELIVERY
+            # ------------------------------------------------
+            "delivery_date",
+            "delivery_time",
+            "delivered_at",
+
+            # ------------------------------------------------
+            # STATUS
+            # ------------------------------------------------
+            "status",
+
+            # ------------------------------------------------
+            # SYSTEM
+            # ------------------------------------------------
+            "created_at",
+            "updated_at",
         ]
 
+        read_only_fields = [
+            "id",
+            "branch_name",
+            "product_name",
+            "assigned_employee_name",
+
+            # Automatically calculated
+            "balance_amount",
+
+            # System generated
+            "delivered_at",
+            "created_at",
+            "updated_at",
+        ]
+
+    # ========================================================
+    # VALIDATION
+    # ========================================================
+
+    def validate(self, attrs):
+
+        total_amount = attrs.get(
+            "total_amount",
+            getattr(self.instance, "total_amount", 0)
+        )
+
+        advance_amount = attrs.get(
+            "advance_amount",
+            getattr(self.instance, "advance_amount", 0)
+        )
+
+        delivered_amount = attrs.get(
+            "delivered_amount",
+            getattr(self.instance, "delivered_amount", 0)
+        )
+
+        # -----------------------------------------------
+        # Negative amount validation
+        # -----------------------------------------------
+
+        if total_amount < 0:
+            raise serializers.ValidationError({
+                "total_amount": "Total amount cannot be negative."
+            })
+
+        if advance_amount < 0:
+            raise serializers.ValidationError({
+                "advance_amount": "Advance amount cannot be negative."
+            })
+
+        if delivered_amount < 0:
+            raise serializers.ValidationError({
+                "delivered_amount": "Delivered amount cannot be negative."
+            })
+
+        # -----------------------------------------------
+        # Payment cannot exceed total
+        # -----------------------------------------------
+
+        if advance_amount + delivered_amount > total_amount:
+            raise serializers.ValidationError({
+                "advance_amount": (
+                    "Advance + delivered amount "
+                    "cannot exceed total amount."
+                )
+            })
+
+        return attrs
+    
 class BranchProductSerializer(serializers.ModelSerializer):
     branch_name = serializers.CharField(
         source="branch.name",
@@ -661,3 +824,143 @@ class StockTransferSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ["created_at"]
 
+# ============================================================
+# PRODUCTION JOB
+# ============================================================
+
+class JobPurchaseSerializer(serializers.ModelSerializer):
+
+    product_name = serializers.CharField(
+        source="product.name",
+        read_only=True
+    )
+
+    class Meta:
+        model = JobPurchase
+
+        fields = [
+            "id",
+            "job",
+            "product",
+            "product_name",
+            "quantity",
+            "rate",
+            "total",
+            "supplier",
+            "purchase_date",
+            "payment_mode",
+            "created_at",
+        ]
+
+        read_only_fields = [
+            "total",
+            "product_name",
+            "created_at",
+        ]
+
+
+class JobPaymentSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = JobPayment
+
+        fields = [
+            "id",
+            "job",
+            "amount",
+            "payment_type",
+            "payment_mode",
+            "payment_date",
+            "remarks",
+            "created_at",
+        ]
+
+        read_only_fields = [
+            "created_at",
+        ]
+
+
+class ProductionJobSerializer(serializers.ModelSerializer):
+
+    branch_name = serializers.CharField(
+        source="branch.name",
+        read_only=True
+    )
+
+    customer_name = serializers.CharField(
+        source="customer.name",
+        read_only=True
+    )
+
+    customer_mobile = serializers.CharField(
+        source="customer.mobile",
+        read_only=True
+    )
+
+    status_display = serializers.CharField(
+        source="get_status_display",
+        read_only=True
+    )
+
+    purchases = JobPurchaseSerializer(
+        many=True,
+        read_only=True
+    )
+
+    payments = JobPaymentSerializer(
+        many=True,
+        read_only=True
+    )
+
+    class Meta:
+        model = ProductionJob
+
+        fields = [
+            "id",
+
+            "branch",
+            "branch_name",
+
+            "customer",
+            "customer_name",
+            "customer_mobile",
+
+            "job_type",
+            "job_date",
+            "expected_delivery",
+
+            "quantity",
+
+            "total_amount",
+            "advance",
+            "balance",
+
+            "status",
+            "status_display",
+
+            "remarks",
+
+            "purchases",
+            "payments",
+
+            "created_at",
+            "updated_at",
+        ]
+
+        read_only_fields = [
+            "branch",
+            "branch_name",
+
+            "customer_name",
+            "customer_mobile",
+
+            "balance",
+
+            "status_display",
+
+            "purchases",
+            "payments",
+
+            "created_at",
+            "updated_at",
+        ]

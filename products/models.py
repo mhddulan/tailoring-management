@@ -1,6 +1,7 @@
 from django.db import models
 from branches.models import Branch
 from customers.models import Customer
+from django.utils import timezone
 
 
 # =========================================================
@@ -87,7 +88,7 @@ class Product(models.Model):
 
 
 # =========================================================
-# BRANCH PRODUCT
+# BRANCH PRODUCT / STOCK
 # =========================================================
 
 class BranchProduct(models.Model):
@@ -210,7 +211,10 @@ class SaleItem(models.Model):
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"{self.branch_product.product.name} - {self.quantity}"
+        return (
+            f"{self.branch_product.product.name} - "
+            f"{self.quantity}"
+        )
 
 
 # =========================================================
@@ -245,19 +249,46 @@ class StockTransfer(models.Model):
     )
 
     def __str__(self):
-        return f"{self.product.name} -> {self.branch.name}"
+        return (
+            f"{self.product.name} -> "
+            f"{self.branch.name}"
+        )
+
+
 # =========================================================
-# STOCK PROCESSING / PRODUCTION
+# STOCK PROCESSING / STOCK PURCHASE
 # =========================================================
 
 class StockProcessing(models.Model):
 
+    # =====================================================
+    # PROCESS TYPES
+    # =====================================================
+
     PROCESS_TYPE_CHOICES = [
-        ("STITCHING", "Stitching"),
+        ("PURCHASE", "Purchase"),
         ("EMBROIDERY", "Embroidery"),
+        ("PRINTING", "Printing"),
+        ("STITCHING", "Stitching"),
         ("ALTERATION", "Alteration"),
         ("OTHER", "Other"),
     ]
+
+    # =====================================================
+    # PAYMENT MODES
+    # =====================================================
+
+    PAYMENT_MODES = [
+        ("Cash", "Cash"),
+        ("Bank", "Bank"),
+        ("Online", "Online"),
+        ("Cheque", "Cheque"),
+        ("POS", "POS"),
+    ]
+
+    # =====================================================
+    # STATUS
+    # =====================================================
 
     STATUS_CHOICES = [
         ("PENDING", "Pending"),
@@ -266,9 +297,9 @@ class StockProcessing(models.Model):
         ("CANCELLED", "Cancelled"),
     ]
 
-    # -----------------------------------------------------
-    # BASIC DETAILS
-    # -----------------------------------------------------
+    # =====================================================
+    # BRANCH
+    # =====================================================
 
     branch = models.ForeignKey(
         Branch,
@@ -276,54 +307,67 @@ class StockProcessing(models.Model):
         related_name="stock_processings"
     )
 
+    # =====================================================
+    # PRODUCT
+    # =====================================================
+
+    product = models.ForeignKey(
+    Product,
+    on_delete=models.PROTECT,
+    related_name="stock_processings",
+    null=True,
+    blank=True
+    )
+
+    # =====================================================
+    # PURCHASE DATE
+    # =====================================================
+
+    purchase_date = models.DateField(
+        default=timezone.now
+    )
+
+    # =====================================================
+    # QUANTITY
+    # =====================================================
+
+    quantity = models.PositiveIntegerField(
+        default=1
+    )
+
+    # =====================================================
+    # PURCHASE PRICE
+    # =====================================================
+
+    purchase_price = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0
+    )
+
+    # =====================================================
+    # TOTAL PURCHASE AMOUNT
+    # =====================================================
+
+    total_amount = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=0
+    )
+
+    # =====================================================
+    # PROCESS TYPE
+    # =====================================================
+
     process_type = models.CharField(
         max_length=20,
-        choices=PROCESS_TYPE_CHOICES
+        choices=PROCESS_TYPE_CHOICES,
+        default="PURCHASE"
     )
 
-    # -----------------------------------------------------
-    # INPUT PRODUCT
-    # -----------------------------------------------------
-
-    input_product = models.ForeignKey(
-        Product,
-        on_delete=models.PROTECT,
-        related_name="processing_inputs"
-    )
-
-    input_quantity = models.PositiveIntegerField(
-        default=0
-    )
-
-    # Actual quantity taken from branch stock
-    issued_quantity = models.PositiveIntegerField(
-        default=0
-    )
-
-    # -----------------------------------------------------
-    # OUTPUT PRODUCT
-    # -----------------------------------------------------
-
-    output_product = models.ForeignKey(
-        Product,
-        on_delete=models.PROTECT,
-        related_name="processing_outputs",
-        null=True,
-        blank=True
-    )
-
-    output_quantity = models.PositiveIntegerField(
-        default=0
-    )
-
-    # Actual quantity returned to branch stock
-    returned_quantity = models.PositiveIntegerField(
-        default=0
-    )
-
-    # -----------------------------------------------------
-    # EMPLOYEE
-    # -----------------------------------------------------
+    # =====================================================
+    # EMPLOYEE / VENDOR
+    # =====================================================
 
     employee = models.ForeignKey(
         "employees.Employee",
@@ -333,9 +377,37 @@ class StockProcessing(models.Model):
         related_name="stock_processings"
     )
 
-    # -----------------------------------------------------
+    # =====================================================
+    # PAYMENT MODE
+    # =====================================================
+
+    payment_mode = models.CharField(
+        max_length=20,
+        choices=PAYMENT_MODES,
+        default="Cash"
+    )
+
+    # =====================================================
+    # EXPECTED DATE
+    # =====================================================
+
+    expected_date = models.DateField(
+        null=True,
+        blank=True
+    )
+
+    # =====================================================
+    # EXPECTED TIME
+    # =====================================================
+
+    expected_time = models.TimeField(
+        null=True,
+        blank=True
+    )
+
+    # =====================================================
     # STATUS
-    # -----------------------------------------------------
+    # =====================================================
 
     status = models.CharField(
         max_length=20,
@@ -343,35 +415,17 @@ class StockProcessing(models.Model):
         default="PENDING"
     )
 
-    # -----------------------------------------------------
-    # DATES
-    # -----------------------------------------------------
-
-    issue_date = models.DateTimeField(
-        auto_now_add=True
-    )
-
-    expected_date = models.DateTimeField(
-        null=True,
-        blank=True
-    )
-
-    completed_date = models.DateTimeField(
-        null=True,
-        blank=True
-    )
-
-    # -----------------------------------------------------
-    # NOTES
-    # -----------------------------------------------------
+    # =====================================================
+    # REMARKS
+    # =====================================================
 
     remarks = models.TextField(
         blank=True
     )
 
-    # -----------------------------------------------------
-    # SYSTEM
-    # -----------------------------------------------------
+    # =====================================================
+    # SYSTEM DATES
+    # =====================================================
 
     created_at = models.DateTimeField(
         auto_now_add=True
@@ -382,43 +436,25 @@ class StockProcessing(models.Model):
     )
 
     # =====================================================
-    # CALCULATED VALUES
+    # AUTO CALCULATE TOTAL
     # =====================================================
 
-    @property
-    def remaining_to_issue(self):
+    def save(self, *args, **kwargs):
 
-        return max(
-            self.input_quantity - self.issued_quantity,
-            0
+        self.total_amount = (
+            self.quantity *
+            self.purchase_price
         )
 
-    @property
-    def pending_quantity(self):
-
-        return max(
-            self.issued_quantity - self.returned_quantity,
-            0
-        )
-
-    @property
-    def is_fully_issued(self):
-
-        return self.issued_quantity >= self.input_quantity
-
-    @property
-    def is_fully_returned(self):
-
-        return self.returned_quantity >= self.output_quantity
+        super().save(*args, **kwargs)
 
     # =====================================================
-    # DISPLAY
+    # STRING
     # =====================================================
 
     def __str__(self):
 
         return (
-            f"{self.get_process_type_display()} - "
-            f"{self.input_product.name} - "
-            f"{self.input_quantity}"
+            f"{self.product.name} - "
+            f"{self.quantity}"
         )
