@@ -236,11 +236,24 @@ class OrderSerializer(serializers.ModelSerializer):
 # DAY BOOK
 # ============================================================
 
+# ============================================================
+# DAY BOOK
+# ============================================================
+
 class DayBookSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = DayBook
+
         fields = "__all__"
+
+        extra_kwargs = {
+            "branch": {
+                "required": False,
+                "allow_null": True,
+            },
+
+        }
 
 
 # ============================================================
