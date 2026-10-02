@@ -101,184 +101,93 @@ def customer_list(request):
 @login_required
 def customer_create(request):
 
-    # =========================================================
-    # POST
-    # =========================================================
-
     if request.method == "POST":
 
-        customer_form = CustomerForm(
-            request.POST,
-            user=request.user
-        )
+        form = CustomerForm(request.POST)
 
-        measurement_form = MeasurementForm(
-            request.POST
-        )
+        # -----------------------------------------
+        # BRANCH USER
+        # -----------------------------------------
+        if request.user.role != "Admin":
 
-        if (
-            customer_form.is_valid()
-            and measurement_form.is_valid()
-        ):
+            if not request.user.branch:
+                messages.error(
+                    request,
+                    "You are not assigned to a branch."
+                )
+                return redirect("customer_create")
 
-            customer = customer_form.save(
-                commit=False
+            # Branch user can only use their own branch
+            form.fields["branch"].queryset = Branch.objects.filter(
+                id=request.user.branch.id
             )
 
-            # =================================================
-            # BRANCH MANAGER
-            # =================================================
+        # -----------------------------------------
+        # VALIDATE FORM
+        # -----------------------------------------
+        if form.is_valid():
 
-            if request.user.role == "Branch Manager":
+            customer = form.save(commit=False)
 
-                if not request.user.branch:
+            # -----------------------------------------
+            # ADMIN
+            # -----------------------------------------
+            if request.user.role == "Admin":
 
+                if not customer.branch:
                     messages.error(
                         request,
-                        "Your account is not assigned to a branch."
-                    )
-
-                    return redirect(
-                        "customer_list"
-                    )
-
-                # Automatically assign manager's branch
-                customer.branch = request.user.branch
-
-
-            # =================================================
-            # ADMIN
-            # =================================================
-
-            elif request.user.role == "Admin":
-
-                # Admin must select a branch
-                if not customer.branch:
-
-                    customer_form.add_error(
-                        "branch",
                         "Please select a branch."
                     )
-
                     return render(
                         request,
                         "customers/customer_form.html",
-                        {
-                            "customer_form": customer_form,
-                            "measurement_form": measurement_form,
-                        }
+                        {"form": form}
                     )
 
-
-            # =================================================
-            # SAVE CUSTOMER
-            # =================================================
+            # -----------------------------------------
+            # BRANCH USER
+            # -----------------------------------------
+            else:
+                customer.branch = request.user.branch
 
             customer.save()
 
-
-            # =================================================
-            # SAVE MEASUREMENTS
-            # =================================================
-
-            measurement = measurement_form.save(
-                commit=False
-            )
-
-            measurement.customer = customer
-
-            measurement.save()
-
-
-            # =================================================
-            # ACTIVITY LOG
-            # =================================================
-
-            log_activity(
-                request,
-                f"Added Customer: {customer.name}",
-                "Customer",
-                customer.id
-            )
-
-
-            # =================================================
-            # SUCCESS
-            # =================================================
-
             messages.success(
                 request,
-                "Customer and measurements added successfully."
+                "Customer added successfully."
             )
 
+            return redirect("customer_list")
 
-            return redirect(
-                "customer_detail",
-                customer.id
+    else:
+
+        form = CustomerForm()
+
+        # -----------------------------------------
+        # BRANCH USER
+        # -----------------------------------------
+        if request.user.role != "Admin":
+
+            if not request.user.branch:
+                messages.error(
+                    request,
+                    "You are not assigned to a branch."
+                )
+                return redirect("customer_list")
+
+            form.fields["branch"].queryset = Branch.objects.filter(
+                id=request.user.branch.id
             )
 
-
-        # =====================================================
-        # FORM INVALID
-        # =====================================================
-
-        return render(
-            request,
-            "customers/customer_form.html",
-            {
-                "customer_form": customer_form,
-                "measurement_form": measurement_form,
-            }
-        )
-
-
-    # =========================================================
-    # GET
-    # =========================================================
-
-    customer_form = CustomerForm(
-        user=request.user
-    )
-
-    measurement_form = MeasurementForm()
-
-
-    # =========================================================
-    # BRANCH MANAGER
-    # =========================================================
-
-    if request.user.role == "Branch Manager":
-
-        if not request.user.branch:
-
-            messages.error(
-                request,
-                "Your account is not assigned to a branch."
-            )
-
-            return redirect(
-                "customer_list"
-            )
-
-        customer_form.fields[
-            "branch"
-        ].initial = request.user.branch
-
-        customer_form.fields[
-            "branch"
-        ].disabled = True
-
-
-    # =========================================================
-    # RETURN PAGE
-    # =========================================================
+            # Automatically select user's branch
+            form.initial["branch"] = request.user.branch.id
 
     return render(
         request,
         "customers/customer_form.html",
         {
-            "customer_form": customer_form,
-            "measurement_form": measurement_form,
+            "form": form
         }
     )
 
