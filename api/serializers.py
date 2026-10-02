@@ -51,6 +51,12 @@ class CustomerSerializer(serializers.ModelSerializer):
         read_only=True
     )
 
+    branch = serializers.PrimaryKeyRelatedField(
+        queryset=Branch.objects.all(),
+        required=False,
+        allow_null=True
+    )
+
     class Meta:
         model = Customer
 
