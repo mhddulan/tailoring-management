@@ -341,7 +341,7 @@ class CustomerViewSet(viewsets.ModelViewSet):
         serializer.save(
             branch_id=user.branch_id
         )
-        
+
 class MeasurementViewSet(viewsets.ModelViewSet):
     queryset = Measurement.objects.select_related("customer").all()
     serializer_class = MeasurementSerializer
@@ -593,11 +593,13 @@ def dashboard_data(request):
         from_date = today - timedelta(
             days=today.weekday()
         )
+
         to_date = today
 
     elif filter_type == "month":
 
         from_date = today.replace(day=1)
+
         to_date = today
 
     elif filter_type == "custom":
@@ -611,24 +613,33 @@ def dashboard_data(request):
         )
 
         if from_date_string:
+
             try:
+
                 from_date = datetime.strptime(
                     from_date_string,
                     "%Y-%m-%d"
                 ).date()
+
             except ValueError:
+
                 from_date = today
 
         if to_date_string:
+
             try:
+
                 to_date = datetime.strptime(
                     to_date_string,
                     "%Y-%m-%d"
                 ).date()
+
             except ValueError:
+
                 to_date = today
 
         if from_date > to_date:
+
             from_date, to_date = (
                 to_date,
                 from_date
@@ -638,6 +649,7 @@ def dashboard_data(request):
     # QUERYSETS
     # =====================================================
 
+    # Normal tailoring order payments
     payments = Payment.objects.filter(
         payment_date__range=[
             from_date,
@@ -645,6 +657,7 @@ def dashboard_data(request):
         ]
     )
 
+    # Tailoring orders
     orders = Order.objects.filter(
         order_date__range=[
             from_date,
@@ -652,6 +665,15 @@ def dashboard_data(request):
         ]
     )
 
+    # Ready-made sales
+    sales = Sale.objects.filter(
+        sale_date__range=[
+            from_date,
+            to_date
+        ]
+    )
+
+    # DayBook
     daybooks = DayBook.objects.filter(
         date__range=[
             from_date,
@@ -664,20 +686,53 @@ def dashboard_data(request):
     # =====================================================
 
     if not is_admin:
+
         if not user.branch_id:
+
             payments = payments.none()
+
             orders = orders.none()
+
+            sales = sales.none()
+
             daybooks = daybooks.none()
+
             total_branches = 0
+
             total_customers = 0
+
         else:
-            payments = payments.filter(order__customer__branch_id=user.branch_id)
-            orders = orders.filter(customer__branch_id=user.branch_id)
-            daybooks = daybooks.filter(branch_id=user.branch_id)
+
+            # Tailoring order payments
+            payments = payments.filter(
+                order__customer__branch_id=user.branch_id
+            )
+
+            # Tailoring orders
+            orders = orders.filter(
+                customer__branch_id=user.branch_id
+            )
+
+            # Ready-made sales
+            sales = sales.filter(
+                branch_id=user.branch_id
+            )
+
+            # DayBook
+            daybooks = daybooks.filter(
+                branch_id=user.branch_id
+            )
+
             total_branches = 1
-            total_customers = Customer.objects.filter(branch_id=user.branch_id).count()
+
+            total_customers = Customer.objects.filter(
+                branch_id=user.branch_id
+            ).count()
+
     else:
+
         total_branches = Branch.objects.count()
+
         total_customers = Customer.objects.count()
 
     total_orders = orders.count()
@@ -714,10 +769,26 @@ def dashboard_data(request):
     # SALES
     # =====================================================
 
-    total_sales = (
-        payments.aggregate(
+    # Tailoring order payments
+    order_sales = (
+        payments
+        .aggregate(
             total=Sum("amount")
         )["total"] or 0
+    )
+
+    # Ready-made sales
+    ready_made_sales = (
+        sales
+        .aggregate(
+            total=Sum("total")
+        )["total"] or 0
+    )
+
+    # Total sales = Order payments + Ready-made sales
+    total_sales = (
+        order_sales +
+        ready_made_sales
     )
 
     # =====================================================
@@ -725,7 +796,8 @@ def dashboard_data(request):
     # =====================================================
 
     total_advance = (
-        payments.filter(
+        payments
+        .filter(
             payment_type="Advance"
         )
         .aggregate(
@@ -738,7 +810,8 @@ def dashboard_data(request):
     # =====================================================
 
     total_balance_payment = (
-        payments.filter(
+        payments
+        .filter(
             payment_type="Balance Payment"
         )
         .aggregate(
@@ -750,8 +823,15 @@ def dashboard_data(request):
     # INCOME
     # =====================================================
 
+    # IMPORTANT:
+    # Ready-made Sale already creates DayBook Income.
+    # Therefore DO NOT add Sale total here again.
+    #
+    # Otherwise income will be double counted.
+
     total_income = (
-        daybooks.filter(
+        daybooks
+        .filter(
             transaction_type="Income"
         )
         .aggregate(
@@ -764,7 +844,8 @@ def dashboard_data(request):
     # =====================================================
 
     total_purchase = (
-        daybooks.filter(
+        daybooks
+        .filter(
             transaction_type="Expense",
             category="Purchase"
         )
@@ -778,7 +859,8 @@ def dashboard_data(request):
     # =====================================================
 
     total_expense = (
-        daybooks.filter(
+        daybooks
+        .filter(
             transaction_type="Expense"
         )
         .exclude(
@@ -808,8 +890,11 @@ def dashboard_data(request):
     # =====================================================
 
     def payment_total(mode):
-        return (
-            payments.filter(
+
+        # Tailoring order payments
+        order_total = (
+            payments
+            .filter(
                 payment_mode=mode
             )
             .aggregate(
@@ -817,10 +902,30 @@ def dashboard_data(request):
             )["total"] or 0
         )
 
+        # Ready-made sales
+        ready_made_total = (
+            sales
+            .filter(
+                payment_mode=mode
+            )
+            .aggregate(
+                total=Sum("total")
+            )["total"] or 0
+        )
+
+        return (
+            order_total +
+            ready_made_total
+        )
+
     cash = payment_total("Cash")
+
     bank = payment_total("Bank")
+
     online = payment_total("Online")
+
     cheque = payment_total("Cheque")
+
     pos = payment_total("POS")
 
     # =====================================================
@@ -835,22 +940,54 @@ def dashboard_data(request):
         )
     )
 
-    total_billed = sum(
+    # Total tailoring order billing
+    order_billed = sum(
         order.total_amount()
         for order in filtered_orders
     )
 
-    total_received = sum(
+    # Total ready-made billing
+    ready_made_billed = (
+        sales
+        .aggregate(
+            total=Sum("total")
+        )["total"] or 0
+    )
+
+    # Total billed
+    total_billed = (
+        order_billed +
+        ready_made_billed
+    )
+
+    # Total tailoring payments received
+    order_received = sum(
         payment.amount
         for payment in payments
     )
 
+    # Ready-made sales are paid at sale time
+    ready_made_received = (
+        sales
+        .aggregate(
+            total=Sum("total")
+        )["total"] or 0
+    )
+
+    # Total received
+    total_received = (
+        order_received +
+        ready_made_received
+    )
+
+    # Outstanding balance
     outstanding_balance = (
         total_billed -
         total_received
     )
 
     if outstanding_balance < 0:
+
         outstanding_balance = 0
 
     # =====================================================
@@ -859,8 +996,12 @@ def dashboard_data(request):
 
     recent_orders = (
         orders
-        .select_related("customer")
-        .prefetch_related("items")
+        .select_related(
+            "customer"
+        )
+        .prefetch_related(
+            "items"
+        )
         .order_by("-id")[:10]
     )
 
@@ -868,49 +1009,132 @@ def dashboard_data(request):
     # RECENT PAYMENTS
     # =====================================================
 
-    recent_payments = (
+    # Tailoring payments
+    recent_order_payments = (
         payments
         .select_related(
             "order",
             "order__customer"
         )
-        .order_by("-id")[:10]
+        .order_by(
+            "-payment_date",
+            "-id"
+        )[:10]
+    )
+
+    # Ready-made sales
+    recent_ready_made_sales = (
+        sales
+        .select_related(
+            "customer"
+        )
+        .order_by(
+            "-sale_date",
+            "-id"
+        )[:10]
     )
 
     # =====================================================
     # SALES CHART
     # =====================================================
 
-    monthly_sales = (
+    # Tailoring payment monthly data
+    payment_monthly = (
         payments
         .annotate(
             month=TruncMonth(
                 "payment_date"
             )
         )
-        .values("month")
+        .values(
+            "month"
+        )
         .annotate(
             total=Sum("amount")
         )
         .order_by("month")
     )
 
-    months = []
-    sales = []
+    # Ready-made monthly data
+    sale_monthly = (
+        sales
+        .annotate(
+            month=TruncMonth(
+                "sale_date"
+            )
+        )
+        .values(
+            "month"
+        )
+        .annotate(
+            total=Sum("total")
+        )
+        .order_by("month")
+    )
 
-    for row in monthly_sales:
+    # Combine both sources
+    monthly_totals = {}
+
+    for row in payment_monthly:
 
         if row["month"]:
 
-            months.append(
-                row["month"].strftime(
-                    "%b %Y"
+            month_key = row["month"].strftime(
+                "%Y-%m"
+            )
+
+            monthly_totals[month_key] = (
+                monthly_totals.get(
+                    month_key,
+                    0
+                )
+                +
+                float(
+                    row["total"] or 0
                 )
             )
 
-            sales.append(
-                float(row["total"])
+    for row in sale_monthly:
+
+        if row["month"]:
+
+            month_key = row["month"].strftime(
+                "%Y-%m"
             )
+
+            monthly_totals[month_key] = (
+                monthly_totals.get(
+                    month_key,
+                    0
+                )
+                +
+                float(
+                    row["total"] or 0
+                )
+            )
+
+    months = []
+
+    sales_chart = []
+
+    for month_key in sorted(
+        monthly_totals.keys()
+    ):
+
+        month_date = datetime.strptime(
+            month_key,
+            "%Y-%m"
+        )
+
+        months.append(
+            month_date.strftime(
+                "%b %Y"
+            )
+        )
+
+        sales_chart.append(
+            monthly_totals[month_key]
+        )
 
     # =====================================================
     # BRANCH PERFORMANCE
@@ -920,6 +1144,7 @@ def dashboard_data(request):
 
     for branch in Branch.objects.all():
 
+        # Tailoring order payments
         branch_payments = Payment.objects.filter(
             order__customer__branch=branch,
             payment_date__range=[
@@ -928,12 +1153,40 @@ def dashboard_data(request):
             ]
         )
 
-        branch_sales = (
+        # Ready-made sales
+        branch_ready_made_sales = Sale.objects.filter(
+            branch=branch,
+            sale_date__range=[
+                from_date,
+                to_date
+            ]
+        )
+
+        # Tailoring sales
+        branch_order_sales = (
             branch_payments
             .aggregate(
                 total=Sum("amount")
             )["total"] or 0
         )
+
+        # Ready-made sales
+        branch_ready_made_total = (
+            branch_ready_made_sales
+            .aggregate(
+                total=Sum("total")
+            )["total"] or 0
+        )
+
+        # Combined sales
+        branch_sales = (
+            branch_order_sales +
+            branch_ready_made_total
+        )
+
+        # =================================================
+        # BRANCH PURCHASE
+        # =================================================
 
         branch_purchase = (
             DayBook.objects.filter(
@@ -949,6 +1202,10 @@ def dashboard_data(request):
                 total=Sum("amount")
             )["total"] or 0
         )
+
+        # =================================================
+        # BRANCH OTHER EXPENSE
+        # =================================================
 
         branch_expense = (
             DayBook.objects.filter(
@@ -967,6 +1224,10 @@ def dashboard_data(request):
             )["total"] or 0
         )
 
+        # =================================================
+        # BRANCH ORDERS
+        # =================================================
+
         branch_orders = (
             Order.objects.filter(
                 customer__branch=branch,
@@ -978,12 +1239,20 @@ def dashboard_data(request):
             .count()
         )
 
+        # =================================================
+        # BRANCH CUSTOMERS
+        # =================================================
+
         branch_customers = (
             Customer.objects.filter(
                 branch=branch
             )
             .count()
         )
+
+        # =================================================
+        # BRANCH PROFIT
+        # =================================================
 
         branch_profit = (
             branch_sales -
@@ -992,12 +1261,23 @@ def dashboard_data(request):
         )
 
         branch_performance.append({
+
             "id": branch.id,
+
             "name": branch.name,
-            "sales": float(branch_sales),
+
+            "sales": float(
+                branch_sales
+            ),
+
             "orders": branch_orders,
+
             "customers": branch_customers,
-            "profit": float(branch_profit),
+
+            "profit": float(
+                branch_profit
+            ),
+
         })
 
     # =====================================================
@@ -1009,17 +1289,25 @@ def dashboard_data(request):
     for order in recent_orders:
 
         recent_orders_data.append({
+
             "id": order.id,
+
             "customer": (
                 order.customer.name
                 if order.customer
                 else ""
             ),
-            "date": str(order.order_date),
+
+            "date": str(
+                order.order_date
+            ),
+
             "status": order.status,
+
             "amount": float(
                 order.total_amount()
             ),
+
         })
 
     # =====================================================
@@ -1028,25 +1316,83 @@ def dashboard_data(request):
 
     recent_payments_data = []
 
-    for payment in recent_payments:
+    # -----------------------------------------------------
+    # NORMAL TAILORING PAYMENTS
+    # -----------------------------------------------------
+
+    for payment in recent_order_payments:
 
         recent_payments_data.append({
+
             "id": payment.id,
+
             "customer": (
                 payment.order.customer.name
                 if payment.order
                 and payment.order.customer
                 else ""
             ),
+
             "date": str(
                 payment.payment_date
             ),
+
             "mode": payment.payment_mode,
+
             "type": payment.payment_type,
+
             "amount": float(
                 payment.amount
             ),
+
+            "source": "Order",
+
         })
+
+    # -----------------------------------------------------
+    # READY-MADE SALES
+    # -----------------------------------------------------
+
+    for sale in recent_ready_made_sales:
+
+        recent_payments_data.append({
+
+            "id": sale.id,
+
+            "customer": (
+                sale.customer.name
+                if sale.customer
+                else "Walk-in Customer"
+            ),
+
+            "date": str(
+                sale.sale_date
+            ),
+
+            "mode": sale.payment_mode,
+
+            "type": "Ready Made Sale",
+
+            "amount": float(
+                sale.total
+            ),
+
+            "source": "Sale",
+
+        })
+
+    # -----------------------------------------------------
+    # SORT RECENT PAYMENTS
+    # -----------------------------------------------------
+
+    recent_payments_data.sort(
+        key=lambda x: x["date"],
+        reverse=True
+    )
+
+    recent_payments_data = (
+        recent_payments_data[:10]
+    )
 
     # =====================================================
     # RESPONSE
@@ -1056,23 +1402,49 @@ def dashboard_data(request):
 
         "success": True,
 
+        # =================================================
+        # PERIOD
+        # =================================================
+
         "period": {
+
             "filter": filter_type,
-            "from_date": str(from_date),
-            "to_date": str(to_date),
+
+            "from_date": str(
+                from_date
+            ),
+
+            "to_date": str(
+                to_date
+            ),
+
         },
+
+        # =================================================
+        # STATISTICS
+        # =================================================
 
         "statistics": {
 
-            "total_branches": total_branches,
+            "total_branches": (
+                total_branches
+            ),
 
-            "total_customers": total_customers,
+            "total_customers": (
+                total_customers
+            ),
 
-            "total_orders": total_orders,
+            "total_orders": (
+                total_orders
+            ),
 
-            "total_sales": float(total_sales),
+            "total_sales": float(
+                total_sales
+            ),
 
-            "total_income": float(total_income),
+            "total_income": float(
+                total_income
+            ),
 
             "total_purchase": float(
                 total_purchase
@@ -1092,17 +1464,31 @@ def dashboard_data(request):
 
         },
 
+        # =================================================
+        # PAYMENTS
+        # =================================================
+
         "payments": {
 
-            "cash": float(cash),
+            "cash": float(
+                cash
+            ),
 
-            "bank": float(bank),
+            "bank": float(
+                bank
+            ),
 
-            "online": float(online),
+            "online": float(
+                online
+            ),
 
-            "cheque": float(cheque),
+            "cheque": float(
+                cheque
+            ),
 
-            "pos": float(pos),
+            "pos": float(
+                pos
+            ),
 
             "total_advance": float(
                 total_advance
@@ -1126,37 +1512,69 @@ def dashboard_data(request):
 
         },
 
+        # =================================================
+        # ORDER STATUS
+        # =================================================
+
         "order_status": {
 
-            "pending": pending_orders,
+            "pending": (
+                pending_orders
+            ),
 
-            "cutting": cutting_orders,
+            "cutting": (
+                cutting_orders
+            ),
 
-            "stitching": stitching_orders,
+            "stitching": (
+                stitching_orders
+            ),
 
-            "ready": ready_orders,
+            "ready": (
+                ready_orders
+            ),
 
-            "delivery": delivery_orders,
+            "delivery": (
+                delivery_orders
+            ),
 
-            "delivered": delivered_orders,
+            "delivered": (
+                delivered_orders
+            ),
 
         },
+
+        # =================================================
+        # SALES CHART
+        # =================================================
 
         "chart": {
 
             "months": months,
 
-            "sales": sales,
+            "sales": sales_chart,
 
         },
+
+        # =================================================
+        # BRANCH PERFORMANCE
+        # =================================================
 
         "branch_performance": (
             branch_performance
         ),
 
+        # =================================================
+        # RECENT ORDERS
+        # =================================================
+
         "recent_orders": (
             recent_orders_data
         ),
+
+        # =================================================
+        # RECENT PAYMENTS
+        # =================================================
 
         "recent_payments": (
             recent_payments_data
@@ -3385,6 +3803,10 @@ def branch_dashboard_data(request):
     from_date = today
     to_date = today
 
+    # =====================================================
+    # DATE FILTER
+    # =====================================================
+
     if filter_type == "yesterday":
 
         from_date = today - timedelta(days=1)
@@ -3430,16 +3852,25 @@ def branch_dashboard_data(request):
     # BRANCH DATA
     # =====================================================
 
+    # Normal tailoring orders
     branch_orders = Order.objects.filter(
         customer__branch=branch,
         order_date__range=[from_date, to_date]
     )
 
+    # Normal order payments
     branch_payments = Payment.objects.filter(
         order__customer__branch=branch,
         payment_date__range=[from_date, to_date]
     )
 
+    # READY-MADE SALES
+    branch_sales = Sale.objects.filter(
+        branch=branch,
+        sale_date__range=[from_date, to_date]
+    )
+
+    # DayBook
     branch_daybook = DayBook.objects.filter(
         branch=branch,
         date__range=[from_date, to_date]
@@ -3483,11 +3914,38 @@ def branch_dashboard_data(request):
     # FINANCIAL
     # =====================================================
 
-    total_sales = (
+    # -----------------------------------------------------
+    # ORDER PAYMENTS
+    # -----------------------------------------------------
+
+    order_payment_sales = (
         branch_payments.aggregate(
             total=Sum("amount")
         )["total"] or 0
     )
+
+    # -----------------------------------------------------
+    # READY-MADE SALES
+    # -----------------------------------------------------
+
+    ready_made_sales = (
+        branch_sales.aggregate(
+            total=Sum("total")
+        )["total"] or 0
+    )
+
+    # -----------------------------------------------------
+    # TOTAL SALES
+    # -----------------------------------------------------
+
+    total_sales = (
+        order_payment_sales +
+        ready_made_sales
+    )
+
+    # =====================================================
+    # PURCHASE
+    # =====================================================
 
     total_purchase = (
         branch_daybook
@@ -3499,6 +3957,10 @@ def branch_dashboard_data(request):
             total=Sum("amount")
         )["total"] or 0
     )
+
+    # =====================================================
+    # OTHER EXPENSE
+    # =====================================================
 
     total_expense = (
         branch_daybook
@@ -3513,6 +3975,14 @@ def branch_dashboard_data(request):
         )["total"] or 0
     )
 
+    # =====================================================
+    # TOTAL INCOME
+    # =====================================================
+
+    # IMPORTANT:
+    # Ready-made Sale already creates a DayBook Income entry.
+    # Therefore we DO NOT add branch_sales here again.
+
     total_income = (
         branch_daybook
         .filter(
@@ -3523,12 +3993,22 @@ def branch_dashboard_data(request):
         )["total"] or 0
     )
 
+    # =====================================================
+    # TOTAL EXPENSE
+    # =====================================================
+
     total_expense_all = (
-        total_purchase + total_expense
+        total_purchase +
+        total_expense
     )
 
+    # =====================================================
+    # NET PROFIT
+    # =====================================================
+
     net_profit = (
-        total_income - total_expense_all
+        total_income -
+        total_expense_all
     )
 
     # =====================================================
@@ -3536,38 +4016,89 @@ def branch_dashboard_data(request):
     # =====================================================
 
     def payment_total(mode):
-        return (
+
+        # Normal tailoring order payments
+        order_total = (
             branch_payments
-            .filter(payment_mode=mode)
-            .aggregate(total=Sum("amount"))["total"] or 0
+            .filter(
+                payment_mode=mode
+            )
+            .aggregate(
+                total=Sum("amount")
+            )["total"] or 0
+        )
+
+        # Ready-made sales
+        sale_total = (
+            branch_sales
+            .filter(
+                payment_mode=mode
+            )
+            .aggregate(
+                total=Sum("total")
+            )["total"] or 0
+        )
+
+        return (
+            order_total +
+            sale_total
         )
 
     cash = payment_total("Cash")
+
     bank = payment_total("Bank")
+
     online = payment_total("Online")
+
     cheque = payment_total("Cheque")
+
     pos = payment_total("POS")
 
     # =====================================================
     # PAYMENT SUMMARY
     # =====================================================
 
+    # Normal tailoring order advances
     total_advance = (
         branch_payments
-        .filter(payment_type="Advance")
-        .aggregate(total=Sum("amount"))["total"] or 0
+        .filter(
+            payment_type="Advance"
+        )
+        .aggregate(
+            total=Sum("amount")
+        )["total"] or 0
     )
 
+    # Normal tailoring order balance payments
     total_balance_payment = (
         branch_payments
-        .filter(payment_type="Balance Payment")
-        .aggregate(total=Sum("amount"))["total"] or 0
+        .filter(
+            payment_type="Balance Payment"
+        )
+        .aggregate(
+            total=Sum("amount")
+        )["total"] or 0
     )
 
-    total_received = (
+    # -----------------------------------------------------
+    # TOTAL RECEIVED
+    # -----------------------------------------------------
+
+    order_received = (
         branch_payments.aggregate(
             total=Sum("amount")
         )["total"] or 0
+    )
+
+    sale_received = (
+        branch_sales.aggregate(
+            total=Sum("total")
+        )["total"] or 0
+    )
+
+    total_received = (
+        order_received +
+        sale_received
     )
 
     # =====================================================
@@ -3579,10 +4110,28 @@ def branch_dashboard_data(request):
         "payments"
     )
 
-    total_billed = sum(
+    # Normal tailoring order billing
+    order_billed = sum(
         order.total_amount()
         for order in filtered_orders
     )
+
+    # Ready-made sale billing
+    sale_billed = (
+        branch_sales.aggregate(
+            total=Sum("total")
+        )["total"] or 0
+    )
+
+    # Total billed
+    total_billed = (
+        order_billed +
+        sale_billed
+    )
+
+    # =====================================================
+    # OUTSTANDING BALANCE
+    # =====================================================
 
     outstanding_balance = max(
         total_billed - total_received,
@@ -3605,7 +4154,9 @@ def branch_dashboard_data(request):
             "customer": order.customer.name,
             "order_date": order.order_date,
             "status": order.status,
-            "total_amount": float(order.total_amount()),
+            "total_amount": float(
+                order.total_amount()
+            ),
         }
         for order in recent_orders
     ]
@@ -3614,7 +4165,8 @@ def branch_dashboard_data(request):
     # RECENT PAYMENTS
     # =====================================================
 
-    recent_payments = (
+    # Normal order payments
+    recent_order_payments = (
         branch_payments
         .select_related(
             "order",
@@ -3623,17 +4175,68 @@ def branch_dashboard_data(request):
         .order_by("-id")[:10]
     )
 
-    recent_payments_data = [
-        {
-            "id": payment.id,
-            "customer": payment.order.customer.name,
-            "payment_date": payment.payment_date,
-            "payment_mode": payment.payment_mode,
-            "payment_type": payment.payment_type,
-            "amount": float(payment.amount),
-        }
-        for payment in recent_payments
-    ]
+    recent_payments_data = []
+
+    for payment in recent_order_payments:
+
+        recent_payments_data.append(
+            {
+                "id": payment.id,
+                "customer": payment.order.customer.name,
+                "payment_date": payment.payment_date,
+                "payment_mode": payment.payment_mode,
+                "payment_type": payment.payment_type,
+                "amount": float(payment.amount),
+                "source": "Order",
+            }
+        )
+
+    # -----------------------------------------------------
+    # READY-MADE SALE PAYMENTS
+    # -----------------------------------------------------
+
+    recent_sales = (
+        branch_sales
+        .select_related(
+            "customer"
+        )
+        .order_by("-id")[:10]
+    )
+
+    for sale in recent_sales:
+
+        customer_name = "Walk-in Customer"
+
+        if sale.customer:
+            customer_name = sale.customer.name
+
+        recent_payments_data.append(
+            {
+                "id": f"sale-{sale.id}",
+                "customer": customer_name,
+                "payment_date": sale.sale_date,
+                "payment_mode": sale.payment_mode,
+                "payment_type": "Ready Made Sale",
+                "amount": float(sale.total),
+                "source": "Sale",
+            }
+        )
+
+    # -----------------------------------------------------
+    # SORT RECENT PAYMENTS
+    # -----------------------------------------------------
+
+    recent_payments_data = sorted(
+        recent_payments_data,
+        key=lambda x: str(
+            x["payment_date"]
+        ),
+        reverse=True
+    )[:10]
+
+    # =====================================================
+    # RESPONSE
+    # =====================================================
 
     return Response(
         {
@@ -3650,39 +4253,109 @@ def branch_dashboard_data(request):
                 "to_date": str(to_date),
             },
 
+            # =================================================
+            # COUNTS
+            # =================================================
+
             "counts": {
+
                 "customers": customers,
+
                 "orders": orders,
+
                 "pending": pending,
+
                 "cutting": cutting,
+
                 "stitching": stitching,
+
                 "ready": ready,
+
                 "delivery": delivery,
+
                 "delivered": delivered,
             },
 
+            # =================================================
+            # FINANCIAL
+            # =================================================
+
             "financial": {
-                "total_sales": float(total_sales),
-                "total_income": float(total_income),
-                "total_purchase": float(total_purchase),
-                "total_expense": float(total_expense),
-                "net_profit": float(net_profit),
+
+                "total_sales": float(
+                    total_sales
+                ),
+
+                "total_income": float(
+                    total_income
+                ),
+
+                "total_purchase": float(
+                    total_purchase
+                ),
+
+                "total_expense": float(
+                    total_expense
+                ),
+
+                "net_profit": float(
+                    net_profit
+                ),
             },
+
+            # =================================================
+            # PAYMENTS
+            # =================================================
 
             "payments": {
-                "cash": float(cash),
-                "bank": float(bank),
-                "online": float(online),
-                "cheque": float(cheque),
-                "pos": float(pos),
-                "total_advance": float(total_advance),
-                "total_balance_payment": float(total_balance_payment),
-                "total_received": float(total_received),
-                "total_billed": float(total_billed),
-                "outstanding_balance": float(outstanding_balance),
+
+                "cash": float(
+                    cash
+                ),
+
+                "bank": float(
+                    bank
+                ),
+
+                "online": float(
+                    online
+                ),
+
+                "cheque": float(
+                    cheque
+                ),
+
+                "pos": float(
+                    pos
+                ),
+
+                "total_advance": float(
+                    total_advance
+                ),
+
+                "total_balance_payment": float(
+                    total_balance_payment
+                ),
+
+                "total_received": float(
+                    total_received
+                ),
+
+                "total_billed": float(
+                    total_billed
+                ),
+
+                "outstanding_balance": float(
+                    outstanding_balance
+                ),
             },
 
+            # =================================================
+            # RECENT DATA
+            # =================================================
+
             "recent_orders": recent_orders_data,
+
             "recent_payments": recent_payments_data,
         }
     )
