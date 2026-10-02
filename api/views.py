@@ -229,7 +229,6 @@ def api_test(request):
         "message": "Tailoring Management API is working",
     })
 
-
 class CustomerViewSet(viewsets.ModelViewSet):
 
     queryset = Customer.objects.select_related(
@@ -237,10 +236,13 @@ class CustomerViewSet(viewsets.ModelViewSet):
     ).all()
 
     serializer_class = CustomerSerializer
-    permission_classes = [IsAuthenticated]
+
+    permission_classes = [
+        IsAuthenticated
+    ]
 
     # ========================================================
-    # LIST / FILTER CUSTOMERS
+    # LIST
     # ========================================================
 
     def get_queryset(self):
@@ -249,32 +251,23 @@ class CustomerViewSet(viewsets.ModelViewSet):
 
         user = self.request.user
 
-        # ----------------------------------------------------
         # ADMIN → ALL CUSTOMERS
-        # ----------------------------------------------------
-
         if user.role == "Admin" or user.is_superuser:
 
             return queryset.order_by("-id")
 
-        # ----------------------------------------------------
         # BRANCH USER → OWN BRANCH ONLY
-        # ----------------------------------------------------
-
         if user.branch_id:
 
             return queryset.filter(
                 branch_id=user.branch_id
             ).order_by("-id")
 
-        # ----------------------------------------------------
         # NO BRANCH → NO CUSTOMERS
-        # ----------------------------------------------------
-
         return queryset.none()
 
     # ========================================================
-    # CREATE CUSTOMER
+    # CREATE
     # ========================================================
 
     def perform_create(self, serializer):
@@ -283,7 +276,6 @@ class CustomerViewSet(viewsets.ModelViewSet):
 
         # ----------------------------------------------------
         # ADMIN
-        # Admin can select any branch
         # ----------------------------------------------------
 
         if user.role == "Admin" or user.is_superuser:
@@ -307,9 +299,38 @@ class CustomerViewSet(viewsets.ModelViewSet):
 
         # ----------------------------------------------------
         # BRANCH USER
-        # Automatically use logged-in user's branch
         # ----------------------------------------------------
 
+        if not user.branch_id:
+
+            raise serializers.ValidationError({
+                "branch":
+                "User is not assigned to a branch."
+            })
+
+        # Ignore whatever branch comes from frontend.
+        # Always use logged-in user's branch.
+
+        serializer.save(
+            branch_id=user.branch_id
+        )
+
+    # ========================================================
+    # UPDATE
+    # ========================================================
+
+    def perform_update(self, serializer):
+
+        user = self.request.user
+
+        # ADMIN
+        if user.role == "Admin" or user.is_superuser:
+
+            serializer.save()
+
+            return
+
+        # BRANCH USER
         if not user.branch_id:
 
             raise serializers.ValidationError({
@@ -320,7 +341,7 @@ class CustomerViewSet(viewsets.ModelViewSet):
         serializer.save(
             branch_id=user.branch_id
         )
-
+        
 class MeasurementViewSet(viewsets.ModelViewSet):
     queryset = Measurement.objects.select_related("customer").all()
     serializer_class = MeasurementSerializer
