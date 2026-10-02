@@ -181,31 +181,33 @@ def current_user(request):
     # RESPONSE
     # ============================================================
 
-    return Response({
-
+    return Response(
+    {
         "success": True,
+        "token": token.key,
 
         "user": {
+            "id": user.id,
+            "username": user.username,
+            "role": user.role,
 
-            "id":
-                user.id,
+            "branch_id": (
+                user.branch_id
+                if user.branch_id
+                else None
+            ),
 
-            "username":
-                user.username,
+            "branch_name": (
+                user.branch.name
+                if user.branch_id
+                else None
+            ),
 
-            "role":
-                user.role,
-
-            "branch_id":
-                branch_id,
-
-            "branch_name":
-                branch_name,
-
-            "dashboard":
-                dashboard,
+            "dashboard": dashboard,
         },
-    })
+    },
+    status=status.HTTP_200_OK,
+)
 from django.http import JsonResponse
 
 from rest_framework import viewsets

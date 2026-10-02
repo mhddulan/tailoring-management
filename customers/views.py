@@ -9,6 +9,7 @@ from .forms import CustomerForm, MeasurementForm
 
 from orders.models import Order
 from logs.utils import log_activity
+from branches.models import Branch
 
 
 # =========================================================
