@@ -199,24 +199,87 @@ class CustomerViewSet(viewsets.ModelViewSet):
     serializer_class = CustomerSerializer
     permission_classes = [IsAuthenticated]
 
+    # ========================================================
+    # LIST / FILTER CUSTOMERS
+    # ========================================================
+
     def get_queryset(self):
 
         queryset = super().get_queryset()
 
         user = self.request.user
 
-        # Admin → all customers
+        # ----------------------------------------------------
+        # ADMIN → ALL CUSTOMERS
+        # ----------------------------------------------------
+
         if user.role == "Admin" or user.is_superuser:
+
             return queryset.order_by("-id")
 
-        # Branch → own branch customers only
+        # ----------------------------------------------------
+        # BRANCH USER → OWN BRANCH ONLY
+        # ----------------------------------------------------
+
         if user.branch_id:
+
             return queryset.filter(
                 branch_id=user.branch_id
             ).order_by("-id")
 
+        # ----------------------------------------------------
+        # NO BRANCH → NO CUSTOMERS
+        # ----------------------------------------------------
+
         return queryset.none()
 
+    # ========================================================
+    # CREATE CUSTOMER
+    # ========================================================
+
+    def perform_create(self, serializer):
+
+        user = self.request.user
+
+        # ----------------------------------------------------
+        # ADMIN
+        # Admin can select any branch
+        # ----------------------------------------------------
+
+        if user.role == "Admin" or user.is_superuser:
+
+            branch = serializer.validated_data.get(
+                "branch"
+            )
+
+            if not branch:
+
+                raise serializers.ValidationError({
+                    "branch":
+                    "Branch is required."
+                })
+
+            serializer.save(
+                branch=branch
+            )
+
+            return
+
+        # ----------------------------------------------------
+        # BRANCH USER
+        # Automatically use logged-in user's branch
+        # ----------------------------------------------------
+
+        if not user.branch_id:
+
+            raise serializers.ValidationError({
+                "branch":
+                "User is not assigned to a branch."
+            })
+
+        serializer.save(
+            branch_id=user.branch_id
+        )
 
 class MeasurementViewSet(viewsets.ModelViewSet):
     queryset = Measurement.objects.select_related("customer").all()
