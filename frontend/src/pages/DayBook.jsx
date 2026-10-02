@@ -35,6 +35,17 @@ const getUser = () => {
 export default function DayBook() {
     const user = getUser();
 
+    const isAdmin =
+        String(user.role || "")
+            .trim()
+            .toLowerCase() === "admin"
+        || user.is_superuser === true;
+
+    const userBranch =
+        user.branch_id ||
+        user.branch ||
+        "";
+
     const [entries, setEntries] = useState([]);
     const [branches, setBranches] = useState([]);
     const [openingBalances, setOpeningBalances] = useState([]);
@@ -280,7 +291,7 @@ export default function DayBook() {
          *
          * Admin + selected branch:
          */
-        if (user.role === "Admin" && filters.branch) {
+        if (isAdmin && filters.branch) {
             const record = openingBalances.find(
                 (item) =>
                     String(item.branch) ===
@@ -296,11 +307,11 @@ export default function DayBook() {
         /*
          * Branch user:
          */
-        if (user.role !== "Admin" && user.branch) {
+        if (!isAdmin && userBranch) {
             const record = openingBalances.find(
                 (item) =>
                     String(item.branch) ===
-                    String(user.branch)
+                    String(userBranch)
             );
 
             if (record) {
@@ -312,7 +323,7 @@ export default function DayBook() {
         /*
          * Admin with all branches:
          */
-        if (user.role === "Admin" && !filters.branch) {
+        if (isAdmin && !filters.branch) {
             openingBalances.forEach((record) => {
                 cash += Number(record.opening_cash || 0);
                 bank += Number(record.opening_bank || 0);
@@ -328,8 +339,8 @@ export default function DayBook() {
         openingBalances,
         filters.from_date,
         filters.branch,
-        user.role,
-        user.branch,
+        isAdmin,
+        userBranch,
     ]);
 
     const closingCash =
@@ -430,9 +441,9 @@ export default function DayBook() {
         setForm({
             branch:
                 filters.branch ||
-                (user.role === "Admin"
+                (isAdmin
                     ? ""
-                    : user.branch || ""),
+                    : userBranch),
             date: todayString(),
             transaction_type: "Income",
             category: "",
@@ -476,10 +487,7 @@ export default function DayBook() {
             return;
         }
 
-        if (
-            user.role === "Admin" &&
-            !form.branch
-        ) {
+        if (isAdmin && !form.branch) {
             alert("Please select a branch.");
             return;
         }
@@ -489,25 +497,28 @@ export default function DayBook() {
         try {
             const payload = {
                 date: form.date,
-                transaction_type:
-                    form.transaction_type,
+                transaction_type: form.transaction_type,
                 category: form.category,
-                payment_mode:
-                    form.payment_mode,
-                description:
-                    form.description,
+                payment_mode: form.payment_mode,
+                description: form.description,
                 amount: form.amount,
             };
 
-            /*
-             * Admin sends branch.
-             *
-             * Branch users are assigned automatically
-             * by Django backend.
-             */
-            if (user.role === "Admin") {
+            // Admin sends the selected branch.
+            // Branch users send their assigned branch.
+            if (isAdmin) {
                 payload.branch = form.branch;
+            } else {
+                if (!userBranch) {
+                    alert("Your account is not assigned to a branch.");
+                    setSaving(false);
+                    return;
+                }
+
+                payload.branch = userBranch;
             }
+
+            console.log("DAYBOOK PAYLOAD:", payload);
 
             if (editingId) {
                 await api.put(
@@ -523,16 +534,14 @@ export default function DayBook() {
 
             setShowModal(false);
             setEditingId(null);
-
             await loadData();
         } catch (err) {
-            console.error(err);
+            console.error("DAYBOOK SAVE ERROR:", err);
+            console.error("SERVER RESPONSE:", err?.response?.data);
 
             alert(
                 typeof err?.response?.data === "object"
-                    ? JSON.stringify(
-                          err.response.data
-                      )
+                    ? JSON.stringify(err.response.data)
                     : "Unable to save Day Book entry."
             );
         } finally {
@@ -571,7 +580,7 @@ export default function DayBook() {
        ====================================================== */
 
     const openOpeningBalance = () => {
-        if (user.role !== "Admin") {
+        if (!isAdmin) {
             alert(
                 "Only Admin can manage opening balances."
             );
@@ -1059,7 +1068,7 @@ export default function DayBook() {
                         Print
                     </button>
 
-                    {user.role === "Admin" && (
+                    {isAdmin && (
                         <button
                             style={{
                                 ...styles.button,
@@ -1288,7 +1297,7 @@ export default function DayBook() {
                         }
                     />
 
-                    {user.role === "Admin" && (
+                    {isAdmin && (
                         <select
                             style={styles.input}
                             value={
