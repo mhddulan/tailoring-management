@@ -132,18 +132,32 @@ def api_login(request):
         )
 
     return Response(
-        {
-            "success": True,
-            "token": token.key,
-            "user": {
-                "id": user.id,
-                "username": user.username,
-                "role": user.role,
-                "dashboard": dashboard,
-            },
+    {
+        "success": True,
+        "token": token.key,
+
+        "user": {
+            "id": user.id,
+            "username": user.username,
+            "role": user.role,
+
+            "branch_id": (
+                user.branch_id
+                if user.branch_id
+                else None
+            ),
+
+            "branch_name": (
+                user.branch.name
+                if user.branch_id
+                else None
+            ),
+
+            "dashboard": dashboard,
         },
-        status=status.HTTP_200_OK,
-    )
+    },
+    status=status.HTTP_200_OK,
+)
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def current_user(request):
