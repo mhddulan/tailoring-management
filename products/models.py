@@ -220,8 +220,18 @@ class SaleItem(models.Model):
 # =========================================================
 # STOCK TRANSFER
 # =========================================================
+# =========================================================
+# STOCK TRANSFER / STOCK MOVEMENT HISTORY
+# =========================================================
 
 class StockTransfer(models.Model):
+
+    MOVEMENT_TYPE_CHOICES = [
+        ("TRANSFER", "Stock Transfer"),
+        ("PRODUCTION", "Production"),
+        ("SALE", "Sale"),
+        ("ADJUSTMENT", "Adjustment"),
+    ]
 
     product = models.ForeignKey(
         Product,
@@ -235,7 +245,21 @@ class StockTransfer(models.Model):
         related_name="stock_transfers"
     )
 
+    employee = models.ForeignKey(
+        "employees.Employee",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="stock_movements"
+    )
+
     quantity = models.PositiveIntegerField()
+
+    movement_type = models.CharField(
+        max_length=20,
+        choices=MOVEMENT_TYPE_CHOICES,
+        default="TRANSFER"
+    )
 
     transfer_date = models.DateField()
 
@@ -249,12 +273,19 @@ class StockTransfer(models.Model):
     )
 
     def __str__(self):
-        return (
-            f"{self.product.name} -> "
-            f"{self.branch.name}"
+        employee_name = (
+            self.employee.name
+            if self.employee
+            else "System"
         )
 
-
+        return (
+            f"{self.movement_type} - "
+            f"{self.product.name} - "
+            f"{self.branch.name} - "
+            f"{employee_name} - "
+            f"{self.quantity}"
+        )
 # =========================================================
 # STOCK PROCESSING / STOCK PURCHASE
 # =========================================================

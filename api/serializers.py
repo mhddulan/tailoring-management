@@ -816,8 +816,12 @@ class BranchProductSerializer(serializers.ModelSerializer):
             "selling_price",
             "total_value",
         ]
+# ============================================================
+# STOCK TRANSFER / STOCK MOVEMENT
+# ============================================================
 
 class StockTransferSerializer(serializers.ModelSerializer):
+
     product_name = serializers.CharField(
         source="product.name",
         read_only=True
@@ -828,20 +832,58 @@ class StockTransferSerializer(serializers.ModelSerializer):
         read_only=True
     )
 
+    employee_name = serializers.CharField(
+        source="employee.name",
+        read_only=True,
+        allow_null=True
+    )
+
+    movement_type_display = serializers.CharField(
+        source="get_movement_type_display",
+        read_only=True
+    )
+
     class Meta:
         model = StockTransfer
+
         fields = [
             "id",
+
+            # Product
             "product",
             "product_name",
+
+            # Branch
             "branch",
             "branch_name",
+
+            # Employee
+            "employee",
+            "employee_name",
+
+            # Movement
+            "movement_type",
+            "movement_type_display",
+
+            # Quantity / Date
             "quantity",
             "transfer_date",
+
+            # Notes
             "remarks",
+
+            # System
             "created_at",
         ]
-        read_only_fields = ["created_at"]
+
+        read_only_fields = [
+            "id",
+            "product_name",
+            "branch_name",
+            "employee_name",
+            "movement_type_display",
+            "created_at",
+        ]
 
 # ============================================================
 # PRODUCTION JOB
