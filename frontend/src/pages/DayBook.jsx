@@ -3,6 +3,18 @@ import api from "../api/axios";
 
 const BANK_MODES = ["Bank", "Online", "POS"];
 
+const INCOME_CATEGORIES = [
+    "Sales",
+    "Advance",
+    "Balance Payment",
+    "Other Income",
+];
+
+const EXPENSE_CATEGORIES = [
+    "Purchase",
+    "Other Expense",
+];
+
 const money = (value) =>
     Number(value || 0).toLocaleString("en-IN", {
         minimumFractionDigits: 2,
@@ -429,10 +441,20 @@ export default function DayBook() {
     const handleFormChange = (e) => {
         const { name, value } = e.target;
 
-        setForm((previous) => ({
-            ...previous,
-            [name]: value,
-        }));
+        setForm((previous) => {
+            if (name === "transaction_type") {
+                return {
+                    ...previous,
+                    transaction_type: value,
+                    category: "",
+                };
+            }
+
+            return {
+                ...previous,
+                [name]: value,
+            };
+        });
     };
 
     const openAdd = () => {
@@ -1897,8 +1919,7 @@ export default function DayBook() {
 
                                 <label>
                                     Category
-                                    <input
-                                        type="text"
+                                    <select
                                         name="category"
                                         value={
                                             form.category
@@ -1906,12 +1927,37 @@ export default function DayBook() {
                                         onChange={
                                             handleFormChange
                                         }
-                                        placeholder="Category"
                                         style={
                                             styles.input
                                         }
                                         required
-                                    />
+                                    >
+                                        <option value="">
+                                            Select Category
+                                        </option>
+
+                                        {(
+                                            form.transaction_type ===
+                                            "Expense"
+                                                ? EXPENSE_CATEGORIES
+                                                : INCOME_CATEGORIES
+                                        ).map(
+                                            (category) => (
+                                                <option
+                                                    key={
+                                                        category
+                                                    }
+                                                    value={
+                                                        category
+                                                    }
+                                                >
+                                                    {
+                                                        category
+                                                    }
+                                                </option>
+                                            )
+                                        )}
+                                    </select>
                                 </label>
 
                                 <label>
