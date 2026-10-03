@@ -187,8 +187,8 @@ def current_user(request):
     branch_id = None
     branch_name = None
 
-    if user.branch:
-        branch_id = user.branch.id
+    if user.branch_id:
+        branch_id = user.branch_id
         branch_name = user.branch.name
 
     # ============================================================
@@ -196,32 +196,22 @@ def current_user(request):
     # ============================================================
 
     return Response(
-    {
-        "success": True,
-        "token": token.key,
+        {
+            "success": True,
 
-        "user": {
-            "id": user.id,
-            "username": user.username,
-            "role": user.role,
+            "user": {
+                "id": user.id,
+                "username": user.username,
+                "role": user.role,
 
-            "branch_id": (
-                user.branch_id
-                if user.branch_id
-                else None
-            ),
+                "branch_id": branch_id,
+                "branch_name": branch_name,
 
-            "branch_name": (
-                user.branch.name
-                if user.branch_id
-                else None
-            ),
-
-            "dashboard": dashboard,
+                "dashboard": dashboard,
+            },
         },
-    },
-    status=status.HTTP_200_OK,
-)
+        status=status.HTTP_200_OK,
+    )
 from django.http import JsonResponse
 
 from rest_framework import viewsets
