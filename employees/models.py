@@ -1,7 +1,10 @@
 from django.core.exceptions import ValidationError
-from django.db import models
+from django.db import models , transaction
 from branches.models import Branch
-from products.models import Product
+from products.models import Product 
+from django.utils import timezone
+import datetime
+
 
 
 class Employee(models.Model):
@@ -94,10 +97,17 @@ class DailyProduction(models.Model):
         auto_now_add=True
     )
 
+    # ========================================================
+    # SAVE
+    # ========================================================
+
     def save(self, *args, **kwargs):
 
         from products.models import BranchProduct, StockTransfer
-        from django.db import transaction
+
+        # ----------------------------------------------------
+        # CALCULATE TOTAL
+        # ----------------------------------------------------
 
         self.total_amount = (
             self.quantity * self.rate_per_piece
@@ -111,36 +121,49 @@ class DailyProduction(models.Model):
 
             if not self.pk:
 
+                # Save production first
                 super().save(*args, **kwargs)
 
-                # Get EXISTING branch stock
+                # ---------------------------------------------
+                # GET / CREATE BRANCH STOCK
+                # ---------------------------------------------
+
                 branch_stock, created = (
                     BranchProduct.objects.get_or_create(
                         branch=self.branch,
                         product=self.product,
                         defaults={
-                            "stock": 0
+                            "stock": 0,
+                            "selling_price": (
+                                self.product.purchase_price
+                            )
                         }
                     )
                 )
 
-                # ADD production to existing stock
+                # ---------------------------------------------
+                # ADD PRODUCTION ONCE
+                # ---------------------------------------------
+
                 branch_stock.stock += self.quantity
 
                 branch_stock.save(
                     update_fields=["stock"]
                 )
 
-                # Create production history
+                # ---------------------------------------------
+                # STOCK HISTORY ONLY
+                # IMPORTANT:
+                # This does NOT update stock.
+                # ---------------------------------------------
+
                 StockTransfer.objects.create(
                     product=self.product,
                     branch=self.branch,
-                    employee=self.employee,
                     quantity=self.quantity,
-                    movement_type="PRODUCTION",
                     transfer_date=self.production_date,
                     remarks=(
-                        f"Production by "
+                        f"Daily Production #{self.id} - "
                         f"{self.employee.name}"
                     )
                 )
@@ -153,30 +176,37 @@ class DailyProduction(models.Model):
 
             old_production = (
                 DailyProduction.objects
+                .select_related(
+                    "branch",
+                    "employee",
+                    "product"
+                )
                 .get(pk=self.pk)
             )
 
             old_quantity = old_production.quantity
-
-            # Save production
-            super().save(*args, **kwargs)
+            old_branch_id = old_production.branch_id
+            old_product_id = old_production.product_id
 
             # =================================================
-            # BRANCH OR PRODUCT CHANGED
+            # BRANCH / PRODUCT CHANGED
             # =================================================
 
             if (
-                old_production.branch_id != self.branch_id
+                old_branch_id != self.branch_id
                 or
-                old_production.product_id != self.product_id
+                old_product_id != self.product_id
             ):
 
-                # Remove OLD production quantity
+                # ---------------------------------------------
+                # REMOVE OLD STOCK
+                # ---------------------------------------------
+
                 old_stock = (
                     BranchProduct.objects
                     .filter(
-                        branch_id=old_production.branch_id,
-                        product_id=old_production.product_id
+                        branch_id=old_branch_id,
+                        product_id=old_product_id
                     )
                     .first()
                 )
@@ -192,13 +222,25 @@ class DailyProduction(models.Model):
                         update_fields=["stock"]
                     )
 
-                # Add NEW production quantity
+                # ---------------------------------------------
+                # SAVE PRODUCTION
+                # ---------------------------------------------
+
+                super().save(*args, **kwargs)
+
+                # ---------------------------------------------
+                # ADD NEW STOCK
+                # ---------------------------------------------
+
                 new_stock, created = (
                     BranchProduct.objects.get_or_create(
                         branch=self.branch,
                         product=self.product,
                         defaults={
-                            "stock": 0
+                            "stock": 0,
+                            "selling_price": (
+                                self.product.purchase_price
+                            )
                         }
                     )
                 )
@@ -209,71 +251,124 @@ class DailyProduction(models.Model):
                     update_fields=["stock"]
                 )
 
-                # History
+                # ---------------------------------------------
+                # DELETE OLD HISTORY
+                # ---------------------------------------------
+
+                StockTransfer.objects.filter(
+                    remarks__startswith=(
+                        f"Daily Production #{self.pk}"
+                    )
+                ).delete()
+
+                # ---------------------------------------------
+                # CREATE NEW HISTORY
+                # ---------------------------------------------
+
                 StockTransfer.objects.create(
                     product=self.product,
                     branch=self.branch,
-                    employee=self.employee,
                     quantity=self.quantity,
-                    movement_type="PRODUCTION",
                     transfer_date=self.production_date,
                     remarks=(
-                        f"Production updated by "
+                        f"Daily Production #{self.id} - "
                         f"{self.employee.name}"
                     )
                 )
 
+                return
+
             # =================================================
-            # ONLY QUANTITY CHANGED
+            # SAME BRANCH + SAME PRODUCT
             # =================================================
 
-            else:
+            difference = (
+                self.quantity - old_quantity
+            )
 
-                difference = (
-                    self.quantity - old_quantity
+            # ---------------------------------------------
+            # SAVE PRODUCTION
+            # ---------------------------------------------
+
+            super().save(*args, **kwargs)
+
+            # ---------------------------------------------
+            # QUANTITY CHANGED
+            # ---------------------------------------------
+
+            if difference != 0:
+
+                branch_stock = (
+                    BranchProduct.objects
+                    .filter(
+                        branch=self.branch,
+                        product=self.product
+                    )
+                    .first()
                 )
 
-                if difference != 0:
+                if not branch_stock:
 
                     branch_stock = (
-                        BranchProduct.objects.get(
+                        BranchProduct.objects.create(
                             branch=self.branch,
-                            product=self.product
+                            product=self.product,
+                            stock=0,
+                            selling_price=(
+                                self.product.purchase_price
+                            )
                         )
                     )
 
-                    # ADD or REMOVE ONLY THE DIFFERENCE
-                    branch_stock.stock += difference
+                # -----------------------------------------
+                # ADD OR REMOVE ONLY DIFFERENCE
+                # -----------------------------------------
 
-                    branch_stock.stock = max(
-                        0,
-                        branch_stock.stock
-                    )
+                branch_stock.stock = max(
+                    0,
+                    branch_stock.stock + difference
+                )
 
-                    branch_stock.save(
-                        update_fields=["stock"]
-                    )
+                branch_stock.save(
+                    update_fields=["stock"]
+                )
 
-                    StockTransfer.objects.create(
-                        product=self.product,
-                        branch=self.branch,
-                        employee=self.employee,
-                        quantity=abs(difference),
-                        movement_type="PRODUCTION",
-                        transfer_date=self.production_date,
-                        remarks=(
-                            f"Production quantity "
-                            f"adjustment by "
-                            f"{self.employee.name}"
-                        )
+                # -----------------------------------------
+                # HISTORY
+                # -----------------------------------------
+
+                movement = (
+                    "increased"
+                    if difference > 0
+                    else "decreased"
+                )
+
+                StockTransfer.objects.create(
+                    product=self.product,
+                    branch=self.branch,
+                    quantity=abs(difference),
+                    transfer_date=self.production_date,
+                    remarks=(
+                        f"Daily Production #{self.id} "
+                        f"quantity {movement} by "
+                        f"{self.employee.name} "
+                        f"(adjustment)"
                     )
+                )
+
+    # ========================================================
+    # DELETE
+    # ========================================================
 
     def delete(self, *args, **kwargs):
 
-        from products.models import BranchProduct
-        from django.db import transaction
+        from products.models import BranchProduct, StockTransfer
 
         with transaction.atomic():
+
+            # ---------------------------------------------
+            # GET CURRENT STOCK
+            # ---------------------------------------------
 
             branch_stock = (
                 BranchProduct.objects
@@ -283,6 +378,10 @@ class DailyProduction(models.Model):
                 )
                 .first()
             )
+
+            # ---------------------------------------------
+            # REMOVE PRODUCTION STOCK
+            # ---------------------------------------------
 
             if branch_stock:
 
@@ -295,7 +394,25 @@ class DailyProduction(models.Model):
                     update_fields=["stock"]
                 )
 
+            # ---------------------------------------------
+            # DELETE PRODUCTION HISTORY
+            # ---------------------------------------------
+
+            StockTransfer.objects.filter(
+                remarks__startswith=(
+                    f"Daily Production #{self.id}"
+                )
+            ).delete()
+
+            # ---------------------------------------------
+            # DELETE PRODUCTION
+            # ---------------------------------------------
+
             super().delete(*args, **kwargs)
+
+    # ========================================================
+    # STRING
+    # ========================================================
 
     def __str__(self):
 
@@ -303,6 +420,50 @@ class DailyProduction(models.Model):
             f"{self.employee.name} - "
             f"{self.product.name} - "
             f"{self.quantity}"
+        )
+
+
+# ============================================================
+# EMPLOYEE PRODUCT RATE
+# ============================================================
+
+class EmployeeProductRate(models.Model):
+
+    employee = models.ForeignKey(
+        Employee,
+        on_delete=models.CASCADE,
+        related_name="product_rates"
+    )
+
+    product = models.ForeignKey(
+        Product,
+        on_delete=models.CASCADE,
+        related_name="employee_rates"
+    )
+
+    rate_per_piece = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0
+    )
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=[
+                    "employee",
+                    "product"
+                ],
+                name="unique_employee_product_rate"
+            )
+        ]
+
+    def __str__(self):
+
+        return (
+            f"{self.employee.name} - "
+            f"{self.product.name} - "
+            f"SAR{self.rate_per_piece}"
         )
     
 # ============================================================
