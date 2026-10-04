@@ -50,6 +50,7 @@ class Employee(models.Model):
 
     def __str__(self):
         return f"{self.name} - {self.branch.name}"
+    
 class DailyProduction(models.Model):
 
     branch = models.ForeignKey(
@@ -72,9 +73,7 @@ class DailyProduction(models.Model):
 
     production_date = models.DateField()
 
-    quantity = models.PositiveIntegerField(
-        default=0
-    )
+    quantity = models.PositiveIntegerField(default=0)
 
     rate_per_piece = models.DecimalField(
         max_digits=10,
@@ -93,9 +92,7 @@ class DailyProduction(models.Model):
         blank=True
     )
 
-    created_at = models.DateTimeField(
-        auto_now_add=True
-    )
+    created_at = models.DateTimeField(auto_now_add=True)
 
     # ========================================================
     # SAVE
@@ -103,12 +100,9 @@ class DailyProduction(models.Model):
 
     def save(self, *args, **kwargs):
 
-        from products.models import BranchProduct, StockTransfer
+        from products.models import BranchProduct
 
-        # ----------------------------------------------------
-        # CALCULATE TOTAL
-        # ----------------------------------------------------
-
+        # Calculate total
         self.total_amount = (
             self.quantity * self.rate_per_piece
         )
@@ -121,12 +115,7 @@ class DailyProduction(models.Model):
 
             if not self.pk:
 
-                # Save production first
                 super().save(*args, **kwargs)
-
-                # ---------------------------------------------
-                # GET / CREATE BRANCH STOCK
-                # ---------------------------------------------
 
                 branch_stock, created = (
                     BranchProduct.objects.get_or_create(
@@ -141,31 +130,11 @@ class DailyProduction(models.Model):
                     )
                 )
 
-                # ---------------------------------------------
-                # ADD PRODUCTION ONCE
-                # ---------------------------------------------
-
+                # Add production quantity ONCE
                 branch_stock.stock += self.quantity
 
                 branch_stock.save(
                     update_fields=["stock"]
-                )
-
-                # ---------------------------------------------
-                # STOCK HISTORY ONLY
-                # IMPORTANT:
-                # This does NOT update stock.
-                # ---------------------------------------------
-
-                StockTransfer.objects.create(
-                    product=self.product,
-                    branch=self.branch,
-                    quantity=self.quantity,
-                    transfer_date=self.production_date,
-                    remarks=(
-                        f"Daily Production #{self.id} - "
-                        f"{self.employee.name}"
-                    )
                 )
 
                 return
@@ -223,7 +192,7 @@ class DailyProduction(models.Model):
                     )
 
                 # ---------------------------------------------
-                # SAVE PRODUCTION
+                # SAVE UPDATED PRODUCTION
                 # ---------------------------------------------
 
                 super().save(*args, **kwargs)
@@ -251,31 +220,6 @@ class DailyProduction(models.Model):
                     update_fields=["stock"]
                 )
 
-                # ---------------------------------------------
-                # DELETE OLD HISTORY
-                # ---------------------------------------------
-
-                StockTransfer.objects.filter(
-                    remarks__startswith=(
-                        f"Daily Production #{self.pk}"
-                    )
-                ).delete()
-
-                # ---------------------------------------------
-                # CREATE NEW HISTORY
-                # ---------------------------------------------
-
-                StockTransfer.objects.create(
-                    product=self.product,
-                    branch=self.branch,
-                    quantity=self.quantity,
-                    transfer_date=self.production_date,
-                    remarks=(
-                        f"Daily Production #{self.id} - "
-                        f"{self.employee.name}"
-                    )
-                )
-
                 return
 
             # =================================================
@@ -286,14 +230,11 @@ class DailyProduction(models.Model):
                 self.quantity - old_quantity
             )
 
-            # ---------------------------------------------
-            # SAVE PRODUCTION
-            # ---------------------------------------------
-
+            # Save production
             super().save(*args, **kwargs)
 
             # ---------------------------------------------
-            # QUANTITY CHANGED
+            # UPDATE ONLY THE DIFFERENCE
             # ---------------------------------------------
 
             if difference != 0:
@@ -320,10 +261,6 @@ class DailyProduction(models.Model):
                         )
                     )
 
-                # -----------------------------------------
-                # ADD OR REMOVE ONLY DIFFERENCE
-                # -----------------------------------------
-
                 branch_stock.stock = max(
                     0,
                     branch_stock.stock + difference
@@ -333,42 +270,15 @@ class DailyProduction(models.Model):
                     update_fields=["stock"]
                 )
 
-                # -----------------------------------------
-                # HISTORY
-                # -----------------------------------------
-
-                movement = (
-                    "increased"
-                    if difference > 0
-                    else "decreased"
-                )
-
-                StockTransfer.objects.create(
-                    product=self.product,
-                    branch=self.branch,
-                    quantity=abs(difference),
-                    transfer_date=self.production_date,
-                    remarks=(
-                        f"Daily Production #{self.id} "
-                        f"quantity {movement} by "
-                        f"{self.employee.name} "
-                        f"(adjustment)"
-                    )
-                )
-
     # ========================================================
     # DELETE
     # ========================================================
 
     def delete(self, *args, **kwargs):
 
-        from products.models import BranchProduct, StockTransfer
+        from products.models import BranchProduct
 
         with transaction.atomic():
-
-            # ---------------------------------------------
-            # GET CURRENT STOCK
-            # ---------------------------------------------
 
             branch_stock = (
                 BranchProduct.objects
@@ -378,10 +288,6 @@ class DailyProduction(models.Model):
                 )
                 .first()
             )
-
-            # ---------------------------------------------
-            # REMOVE PRODUCTION STOCK
-            # ---------------------------------------------
 
             if branch_stock:
 
@@ -393,20 +299,6 @@ class DailyProduction(models.Model):
                 branch_stock.save(
                     update_fields=["stock"]
                 )
-
-            # ---------------------------------------------
-            # DELETE PRODUCTION HISTORY
-            # ---------------------------------------------
-
-            StockTransfer.objects.filter(
-                remarks__startswith=(
-                    f"Daily Production #{self.id}"
-                )
-            ).delete()
-
-            # ---------------------------------------------
-            # DELETE PRODUCTION
-            # ---------------------------------------------
 
             super().delete(*args, **kwargs)
 
@@ -421,7 +313,7 @@ class DailyProduction(models.Model):
             f"{self.product.name} - "
             f"{self.quantity}"
         )
-
+    
 
 # ============================================================
 # EMPLOYEE PRODUCT RATE
@@ -466,40 +358,3 @@ class EmployeeProductRate(models.Model):
             f"SAR{self.rate_per_piece}"
         )
     
-# ============================================================
-# EMPLOYEE PRODUCT RATE
-# ============================================================
-class EmployeeProductRate(models.Model):
-
-    employee = models.ForeignKey(
-        Employee,
-        on_delete=models.CASCADE,
-        related_name="product_rates"
-    )
-
-    product = models.ForeignKey(
-        Product,
-        on_delete=models.CASCADE,
-        related_name="employee_rates"
-    )
-
-    rate_per_piece = models.DecimalField(
-        max_digits=10,
-        decimal_places=2,
-        default=0
-    )
-
-    class Meta:
-        constraints = [
-            models.UniqueConstraint(
-                fields=["employee", "product"],
-                name="unique_employee_product_rate"
-            )
-        ]
-
-    def __str__(self):
-        return (
-            f"{self.employee.name} - "
-            f"{self.product.name} - "
-            f"SAR{self.rate_per_piece}"
-        )

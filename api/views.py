@@ -2634,549 +2634,250 @@ class DailyProductionViewSet(viewsets.ModelViewSet):
     queryset = DailyProduction.objects.select_related(
         "branch",
         "employee",
-        "product",
-    ).all().order_by(
-        "-production_date",
-        "employee__name",
-        "product__name",
-    )
+        "product"
+    ).all()
 
     serializer_class = DailyProductionSerializer
+
     permission_classes = [IsAuthenticated]
 
-    # =========================================================
-    # LIST / FILTER
-    # =========================================================
+    # ========================================================
+    # QUERYSET
+    # ========================================================
 
     def get_queryset(self):
 
-        queryset = super().get_queryset()
         user = self.request.user
 
-        # -----------------------------------------------------
+        queryset = (
+            DailyProduction.objects
+            .select_related(
+                "branch",
+                "employee",
+                "product"
+            )
+            .all()
+            .order_by("-production_date", "-id")
+        )
+
+        # ----------------------------------------------------
         # ADMIN
-        # -----------------------------------------------------
+        # ----------------------------------------------------
 
-        if user.role == "Admin" or user.is_superuser:
-            pass
+        if getattr(user, "role", None) == "Admin":
+            return queryset
 
-        # -----------------------------------------------------
+        # ----------------------------------------------------
         # BRANCH USER
-        # -----------------------------------------------------
+        # ----------------------------------------------------
 
-        elif user.branch_id:
-
-            queryset = queryset.filter(
+        if getattr(user, "branch_id", None):
+            return queryset.filter(
                 branch_id=user.branch_id
             )
 
-        else:
+        return queryset.none()
 
-            return queryset.none()
+    # ========================================================
+    # CREATE
+    # ========================================================
 
-        # =====================================================
-        # FILTERS
-        # =====================================================
-
-        from_date = self.request.query_params.get(
-            "from_date"
-        )
-
-        to_date = self.request.query_params.get(
-            "to_date"
-        )
-
-        branch_id = self.request.query_params.get(
-            "branch"
-        )
-
-        employee_id = self.request.query_params.get(
-            "employee"
-        )
-
-        product_id = self.request.query_params.get(
-            "product"
-        )
-
-        # -----------------------------------------------------
-        # DATE
-        # -----------------------------------------------------
-
-        if from_date:
-
-            queryset = queryset.filter(
-                production_date__gte=from_date
-            )
-
-        if to_date:
-
-            queryset = queryset.filter(
-                production_date__lte=to_date
-            )
-
-        # -----------------------------------------------------
-        # BRANCH - ADMIN ONLY
-        # -----------------------------------------------------
-
-        if branch_id and (
-            user.role == "Admin"
-            or user.is_superuser
-        ):
-
-            queryset = queryset.filter(
-                branch_id=branch_id
-            )
-
-        # -----------------------------------------------------
-        # EMPLOYEE
-        # -----------------------------------------------------
-
-        if employee_id:
-
-            queryset = queryset.filter(
-                employee_id=employee_id
-            )
-
-        # -----------------------------------------------------
-        # PRODUCT
-        # -----------------------------------------------------
-
-        if product_id:
-
-            queryset = queryset.filter(
-                product_id=product_id
-            )
-
-        return queryset
-
-    # =========================================================
-    # CREATE PRODUCTION
-    # =========================================================
-
-    @transaction.atomic
     def perform_create(self, serializer):
 
         user = self.request.user
 
+        # ----------------------------------------------------
+        # ADMIN
+        # ----------------------------------------------------
+
+        if getattr(user, "role", None) == "Admin":
+
+            branch = serializer.validated_data.get("branch")
+
+            employee = serializer.validated_data.get("employee")
+
+            if not branch:
+                raise serializers.ValidationError({
+                    "branch": "Branch is required."
+                })
+
+            if not employee:
+                raise serializers.ValidationError({
+                    "employee": "Employee is required."
+                })
+
+            # Employee must belong to selected branch
+            if employee.branch_id != branch.id:
+                raise serializers.ValidationError({
+                    "employee": (
+                        "Selected employee does not belong "
+                        "to the selected branch."
+                    )
+                })
+
+            serializer.save(
+                branch=branch
+            )
+
+            return
+
+        # ----------------------------------------------------
+        # BRANCH USER
+        # ----------------------------------------------------
+
+        if not getattr(user, "branch_id", None):
+
+            raise serializers.ValidationError({
+                "branch": "User is not assigned to a branch."
+            })
+
+        branch = Branch.objects.get(
+            id=user.branch_id
+        )
+
         employee = serializer.validated_data.get(
             "employee"
         )
 
-        product = serializer.validated_data.get(
-            "product"
-        )
-
-        quantity = serializer.validated_data.get(
-            "quantity"
-        )
-
-        production_date = serializer.validated_data.get(
-            "production_date"
-        )
-
-        # =====================================================
-        # VALIDATION
-        # =====================================================
-
         if not employee:
 
             raise serializers.ValidationError({
                 "employee": "Employee is required."
             })
 
-        if not product:
+        # ----------------------------------------------------
+        # EMPLOYEE MUST BELONG TO USER'S BRANCH
+        # ----------------------------------------------------
+
+        if employee.branch_id != branch.id:
 
             raise serializers.ValidationError({
-                "product": "Product is required."
+                "employee": (
+                    "Selected employee does not belong "
+                    "to your branch."
+                )
             })
 
-        if not quantity or quantity <= 0:
+        # ----------------------------------------------------
+        # FORCE USER'S BRANCH
+        # ----------------------------------------------------
 
-            raise serializers.ValidationError({
-                "quantity": "Quantity must be greater than 0."
-            })
-
-        # =====================================================
-        # BRANCH USER VALIDATION
-        # =====================================================
-
-        if (
-            user.role != "Admin"
-            and not user.is_superuser
-        ):
-
-            if not user.branch_id:
-
-                raise serializers.ValidationError({
-                    "branch":
-                    "User is not assigned to a branch."
-                })
-
-            if employee.branch_id != user.branch_id:
-
-                raise serializers.ValidationError({
-                    "employee":
-                    "Employee does not belong to your branch."
-                })
-
-        # =====================================================
-        # BRANCH COMES FROM EMPLOYEE
-        # =====================================================
-
-        branch = employee.branch
-
-        # =====================================================
-        # CREATE DAILY PRODUCTION
-        # =====================================================
-
-        production = serializer.save(
+        serializer.save(
             branch=branch
         )
 
-        # =====================================================
-        # GET / CREATE BRANCH STOCK
-        #
-        # IMPORTANT:
-        # Lock this row so concurrent requests cannot
-        # update the same stock incorrectly.
-        # =====================================================
+    # ========================================================
+    # UPDATE
+    # ========================================================
 
-        branch_product, created = (
-            BranchProduct.objects.select_for_update().get_or_create(
-
-                branch=branch,
-
-                product=product,
-
-                defaults={
-                    "stock": 0,
-                    "selling_price": product.purchase_price,
-                },
-            )
-        )
-
-        # =====================================================
-        # ADD PRODUCTION STOCK - ONLY ONCE
-        # =====================================================
-
-        branch_product.stock = (
-            branch_product.stock + quantity
-        )
-
-        branch_product.save(
-            update_fields=["stock"]
-        )
-
-        # =====================================================
-        # CREATE STOCK HISTORY ONLY
-        #
-        # IMPORTANT:
-        # This does NOT update BranchProduct stock.
-        # It is only a history record.
-        # =====================================================
-
-        StockTransfer.objects.create(
-
-            product=product,
-
-            branch=branch,
-
-            quantity=quantity,
-
-            transfer_date=production_date,
-
-            remarks=(
-                f"Daily Production #{production.id} - "
-                f"{employee.name}"
-            ),
-        )
-
-    # =========================================================
-    # UPDATE PRODUCTION
-    # =========================================================
-
-    @transaction.atomic
     def perform_update(self, serializer):
 
         user = self.request.user
 
-        # -----------------------------------------------------
-        # OLD PRODUCTION
-        # -----------------------------------------------------
-
-        old_production = self.get_object()
-
-        old_employee = old_production.employee
-        old_product = old_production.product
-        old_branch = old_production.branch
-        old_quantity = old_production.quantity
-
-        # -----------------------------------------------------
-        # NEW VALUES
-        # -----------------------------------------------------
-
         employee = serializer.validated_data.get(
             "employee",
-            old_employee
+            serializer.instance.employee
         )
 
-        product = serializer.validated_data.get(
-            "product",
-            old_product
+        branch = serializer.validated_data.get(
+            "branch",
+            serializer.instance.branch
         )
 
-        quantity = serializer.validated_data.get(
-            "quantity",
-            old_quantity
-        )
+        # ----------------------------------------------------
+        # ADMIN
+        # ----------------------------------------------------
 
-        production_date = serializer.validated_data.get(
-            "production_date",
-            old_production.production_date
-        )
+        if getattr(user, "role", None) == "Admin":
 
-        # =====================================================
-        # VALIDATION
-        # =====================================================
-
-        if not employee:
-
-            raise serializers.ValidationError({
-                "employee": "Employee is required."
-            })
-
-        if not product:
-
-            raise serializers.ValidationError({
-                "product": "Product is required."
-            })
-
-        if not quantity or quantity <= 0:
-
-            raise serializers.ValidationError({
-                "quantity":
-                "Quantity must be greater than 0."
-            })
-
-        # =====================================================
-        # BRANCH USER VALIDATION
-        # =====================================================
-
-        if (
-            user.role != "Admin"
-            and not user.is_superuser
-        ):
-
-            if not user.branch_id:
+            if employee.branch_id != branch.id:
 
                 raise serializers.ValidationError({
-                    "branch":
-                    "User is not assigned to a branch."
+                    "employee": (
+                        "Selected employee does not belong "
+                        "to the selected branch."
+                    )
                 })
 
-            if employee.branch_id != user.branch_id:
-
-                raise serializers.ValidationError({
-                    "employee":
-                    "Employee does not belong to your branch."
-                })
-
-        # =====================================================
-        # NEW BRANCH
-        # =====================================================
-
-        new_branch = employee.branch
-
-        # =====================================================
-        # LOCK OLD STOCK
-        # =====================================================
-
-        old_branch_product = (
-            BranchProduct.objects.select_for_update().get(
-                branch=old_branch,
-                product=old_product,
+            serializer.save(
+                branch=branch
             )
-        )
 
-        # =====================================================
-        # REMOVE OLD PRODUCTION STOCK
-        # =====================================================
+            return
 
-        if old_branch_product.stock < old_quantity:
+        # ----------------------------------------------------
+        # BRANCH USER
+        # ----------------------------------------------------
+
+        if not getattr(user, "branch_id", None):
 
             raise serializers.ValidationError({
-                "quantity": (
-                    "Cannot update production because the "
-                    "previous production stock has already "
-                    "been used or sold."
+                "branch": "User is not assigned to a branch."
+            })
+
+        # Branch user cannot move production
+        # to another branch
+
+        if branch.id != user.branch_id:
+
+            raise serializers.ValidationError({
+                "branch": (
+                    "You can only manage production "
+                    "for your own branch."
                 )
             })
 
-        old_branch_product.stock -= old_quantity
+        # Employee must belong to same branch
 
-        old_branch_product.save(
-            update_fields=["stock"]
-        )
+        if employee.branch_id != user.branch_id:
 
-        # =====================================================
-        # SAVE UPDATED PRODUCTION
-        # =====================================================
-
-        production = serializer.save(
-            branch=new_branch
-        )
-
-        # =====================================================
-        # GET / CREATE NEW STOCK
-        # =====================================================
-
-        new_branch_product, created = (
-            BranchProduct.objects.select_for_update().get_or_create(
-
-                branch=new_branch,
-
-                product=product,
-
-                defaults={
-                    "stock": 0,
-                    "selling_price": product.purchase_price,
-                },
-            )
-        )
-
-        # =====================================================
-        # ADD NEW PRODUCTION STOCK
-        # =====================================================
-
-        new_branch_product.stock += quantity
-
-        new_branch_product.save(
-            update_fields=["stock"]
-        )
-
-        # =====================================================
-        # UPDATE PRODUCTION HISTORY
-        # =====================================================
-
-        stock_history = (
-            StockTransfer.objects
-            .filter(
-                remarks__startswith=(
-                    f"Daily Production #{production.id}"
+            raise serializers.ValidationError({
+                "employee": (
+                    "Selected employee does not belong "
+                    "to your branch."
                 )
-            )
-            .first()
+            })
+
+        serializer.save(
+            branch_id=user.branch_id
         )
 
-        if stock_history:
+    # ========================================================
+    # DELETE
+    # ========================================================
 
-            stock_history.product = product
-
-            stock_history.branch = new_branch
-
-            stock_history.quantity = quantity
-
-            stock_history.transfer_date = production_date
-
-            stock_history.remarks = (
-                f"Daily Production #{production.id} - "
-                f"{employee.name}"
-            )
-
-            stock_history.save()
-
-        else:
-
-            # -------------------------------------------------
-            # Safety fallback
-            # -------------------------------------------------
-
-            StockTransfer.objects.create(
-
-                product=product,
-
-                branch=new_branch,
-
-                quantity=quantity,
-
-                transfer_date=production_date,
-
-                remarks=(
-                    f"Daily Production #{production.id} - "
-                    f"{employee.name}"
-                ),
-            )
-
-    # =========================================================
-    # DELETE PRODUCTION
-    # =========================================================
-
-    @transaction.atomic
     def perform_destroy(self, instance):
 
-        branch = instance.branch
+        user = self.request.user
 
-        product = instance.product
+        # ----------------------------------------------------
+        # ADMIN
+        # ----------------------------------------------------
 
-        quantity = instance.quantity
+        if getattr(user, "role", None) == "Admin":
 
-        # =====================================================
-        # LOCK BRANCH STOCK
-        # =====================================================
+            instance.delete()
 
-        try:
+            return
 
-            branch_product = (
-                BranchProduct.objects.select_for_update().get(
-                    branch=branch,
-                    product=product,
-                )
-            )
+        # ----------------------------------------------------
+        # BRANCH USER
+        # ----------------------------------------------------
 
-        except BranchProduct.DoesNotExist:
+        if not getattr(user, "branch_id", None):
 
             raise serializers.ValidationError({
-                "stock":
-                "Branch stock record does not exist."
+                "branch": "User is not assigned to a branch."
             })
 
-        # =====================================================
-        # CHECK STOCK
-        # =====================================================
-
-        if branch_product.stock < quantity:
+        if instance.branch_id != user.branch_id:
 
             raise serializers.ValidationError({
-                "stock": (
-                    "Cannot delete this production because "
-                    "the produced stock has already been used "
-                    "or sold."
+                "detail": (
+                    "You can only delete production "
+                    "from your own branch."
                 )
             })
-
-        # =====================================================
-        # REMOVE PRODUCTION STOCK
-        # =====================================================
-
-        branch_product.stock -= quantity
-
-        branch_product.save(
-            update_fields=["stock"]
-        )
-
-        # =====================================================
-        # DELETE PRODUCTION HISTORY
-        # =====================================================
-
-        StockTransfer.objects.filter(
-            remarks__startswith=(
-                f"Daily Production #{instance.id}"
-            )
-        ).delete()
-
-        # =====================================================
-        # DELETE PRODUCTION
-        # =====================================================
 
         instance.delete()
 
