@@ -1587,6 +1587,478 @@ def dashboard_data(request):
         ),
 
     })
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def branch_performance_api(request, branch_id):
+
+    user = request.user
+
+    # ========================================================
+    # ADMIN ONLY
+    # ========================================================
+
+    if user.role != "Admin" and not user.is_superuser:
+        return Response(
+            {
+                "success": False,
+                "message": "Only Admin can view branch performance."
+            },
+            status=status.HTTP_403_FORBIDDEN
+        )
+
+    # ========================================================
+    # GET BRANCH
+    # ========================================================
+
+    try:
+        branch = Branch.objects.get(id=branch_id)
+    except Branch.DoesNotExist:
+        return Response(
+            {
+                "success": False,
+                "message": "Branch not found."
+            },
+            status=status.HTTP_404_NOT_FOUND
+        )
+
+    # ========================================================
+    # DATE FILTER
+    # ========================================================
+
+    from django.utils import timezone
+
+    today = timezone.localdate()
+
+    filter_type = request.GET.get(
+        "filter",
+        "today"
+    )
+
+    from_date = today
+    to_date = today
+
+    if filter_type == "today":
+
+        from_date = today
+        to_date = today
+
+    elif filter_type == "yesterday":
+
+        from_date = today - timedelta(days=1)
+        to_date = from_date
+
+    elif filter_type == "week":
+
+        from_date = today - timedelta(
+            days=today.weekday()
+        )
+        to_date = today
+
+    elif filter_type == "month":
+
+        from_date = today.replace(day=1)
+        to_date = today
+
+    elif filter_type == "custom":
+
+        from_date_string = request.GET.get(
+            "from_date"
+        )
+
+        to_date_string = request.GET.get(
+            "to_date"
+        )
+
+        try:
+            if from_date_string:
+                from datetime import datetime
+
+                from_date = datetime.strptime(
+                    from_date_string,
+                    "%Y-%m-%d"
+                ).date()
+
+            if to_date_string:
+                from datetime import datetime
+
+                to_date = datetime.strptime(
+                    to_date_string,
+                    "%Y-%m-%d"
+                ).date()
+
+        except ValueError:
+
+            return Response(
+                {
+                    "success": False,
+                    "message": "Invalid date format."
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if from_date > to_date:
+            from_date, to_date = (
+                to_date,
+                from_date
+            )
+
+    # ========================================================
+    # BASE QUERYSETS
+    # ========================================================
+
+    branch_orders = Order.objects.filter(
+        customer__branch=branch,
+        order_date__range=[
+            from_date,
+            to_date
+        ]
+    )
+
+    branch_payments = Payment.objects.filter(
+        order__customer__branch=branch,
+        payment_date__range=[
+            from_date,
+            to_date
+        ]
+    )
+
+    branch_daybook = DayBook.objects.filter(
+        branch=branch,
+        date__range=[
+            from_date,
+            to_date
+        ]
+    )
+
+    # ========================================================
+    # CUSTOMERS
+    # ========================================================
+
+    customers = Customer.objects.filter(
+        branch=branch
+    ).count()
+
+    # ========================================================
+    # ORDERS
+    # ========================================================
+
+    orders = branch_orders.count()
+
+    pending = branch_orders.filter(
+        status="Pending"
+    ).count()
+
+    cutting = branch_orders.filter(
+        status="Cutting"
+    ).count()
+
+    stitching = branch_orders.filter(
+        status="Stitching"
+    ).count()
+
+    ready = branch_orders.filter(
+        status="Ready"
+    ).count()
+
+    delivery = branch_orders.filter(
+        status="Delivery"
+    ).count()
+
+    delivered = branch_orders.filter(
+        status="Delivered"
+    ).count()
+
+    # ========================================================
+    # DAY BOOK
+    # ========================================================
+
+    total_income = (
+        branch_daybook
+        .filter(
+            transaction_type="Income"
+        )
+        .aggregate(
+            total=Sum("amount")
+        )["total"] or 0
+    )
+
+    total_purchase = (
+        branch_daybook
+        .filter(
+            transaction_type="Expense",
+            category="Purchase"
+        )
+        .aggregate(
+            total=Sum("amount")
+        )["total"] or 0
+    )
+
+    total_expense = (
+        branch_daybook
+        .filter(
+            transaction_type="Expense"
+        )
+        .exclude(
+            category="Purchase"
+        )
+        .aggregate(
+            total=Sum("amount")
+        )["total"] or 0
+    )
+
+    total_expense_all = (
+        total_purchase +
+        total_expense
+    )
+
+    net_profit = (
+        total_income -
+        total_expense_all
+    )
+
+    # ========================================================
+    # PAYMENTS
+    # ========================================================
+
+    total_received = (
+        branch_payments
+        .aggregate(
+            total=Sum("amount")
+        )["total"] or 0
+    )
+
+    total_advance = (
+        branch_payments
+        .filter(
+            payment_type="Advance"
+        )
+        .aggregate(
+            total=Sum("amount")
+        )["total"] or 0
+    )
+
+    total_balance_payment = (
+        branch_payments
+        .filter(
+            payment_type="Balance Payment"
+        )
+        .aggregate(
+            total=Sum("amount")
+        )["total"] or 0
+    )
+
+    # ========================================================
+    # PAYMENT MODES
+    # ========================================================
+
+    cash = (
+        branch_payments
+        .filter(
+            payment_mode="Cash"
+        )
+        .aggregate(
+            total=Sum("amount")
+        )["total"] or 0
+    )
+
+    bank = (
+        branch_payments
+        .filter(
+            payment_mode="Bank"
+        )
+        .aggregate(
+            total=Sum("amount")
+        )["total"] or 0
+    )
+
+    online = (
+        branch_payments
+        .filter(
+            payment_mode="Online"
+        )
+        .aggregate(
+            total=Sum("amount")
+        )["total"] or 0
+    )
+
+    cheque = (
+        branch_payments
+        .filter(
+            payment_mode="Cheque"
+        )
+        .aggregate(
+            total=Sum("amount")
+        )["total"] or 0
+    )
+
+    pos = (
+        branch_payments
+        .filter(
+            payment_mode="POS"
+        )
+        .aggregate(
+            total=Sum("amount")
+        )["total"] or 0
+    )
+
+    # ========================================================
+    # BILLING
+    # ========================================================
+
+    filtered_orders = (
+        branch_orders
+        .prefetch_related(
+            "items",
+            "payments"
+        )
+    )
+
+    total_billed = 0
+
+    for order in filtered_orders:
+
+        try:
+            total_billed += order.total_amount()
+        except Exception:
+            pass
+
+    outstanding = max(
+        total_billed - total_received,
+        0
+    )
+
+    # ========================================================
+    # EMPLOYEE PRODUCTION
+    # ========================================================
+
+    production = (
+        Employee.objects
+        .filter(
+            branch=branch,
+            active=True
+        )
+        .annotate(
+            total_pieces=Sum(
+                "productions__quantity",
+                filter=Q(
+                    productions__production_date__gte=from_date,
+                    productions__production_date__lte=to_date
+                )
+            )
+        )
+        .order_by(
+            "-total_pieces"
+        )
+    )
+
+    employee_production = []
+
+    for employee in production:
+
+        employee_production.append({
+            "id": employee.id,
+            "name": employee.name,
+            "pieces": employee.total_pieces or 0,
+        })
+
+    # ========================================================
+    # RESPONSE
+    # ========================================================
+
+    return Response({
+
+        "success": True,
+
+        "branch": {
+            "id": branch.id,
+            "name": branch.name,
+            "address": getattr(
+                branch,
+                "address",
+                ""
+            ),
+            "phone": getattr(
+                branch,
+                "phone",
+                ""
+            ),
+        },
+
+        "period": {
+            "filter": filter_type,
+            "from_date": from_date,
+            "to_date": to_date,
+        },
+
+        "stats": {
+
+            "customers": customers,
+            "orders": orders,
+
+            "sales_income": float(
+                total_income
+            ),
+
+            "net_profit": float(
+                net_profit
+            ),
+
+            "total_income": float(
+                total_income
+            ),
+
+            "purchase": float(
+                total_purchase
+            ),
+
+            "expense": float(
+                total_expense
+            ),
+
+            "advance": float(
+                total_advance
+            ),
+
+            "balance": float(
+                total_balance_payment
+            ),
+
+            "received": float(
+                total_received
+            ),
+
+            "billed": float(
+                total_billed
+            ),
+
+            "outstanding": float(
+                outstanding
+            ),
+        },
+
+        "order_status": {
+
+            "pending": pending,
+            "cutting": cutting,
+            "stitching": stitching,
+            "ready": ready,
+            "delivery": delivery,
+            "delivered": delivered,
+        },
+
+        "payment_modes": {
+
+            "cash": float(cash),
+            "bank": float(bank),
+            "online": float(online),
+            "cheque": float(cheque),
+            "pos": float(pos),
+        },
+
+        "employee_production":
+            employee_production,
+    })
 # ============================================================
 # ORDER API
 # ============================================================

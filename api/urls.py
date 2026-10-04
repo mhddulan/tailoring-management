@@ -5,6 +5,7 @@ from .views import (
     # API functions
     api_test,
     api_login,
+    branch_performance_api,
     dashboard_data,
     order_product_price,
     order_deliver,
@@ -33,7 +34,7 @@ from .views import (
     ProductionJobViewSet,
     JobPurchaseViewSet,
     JobPaymentViewSet,
-    
+
 )
 from accounts.password_reset_views import forgot_password
 from .views import current_user
@@ -348,4 +349,9 @@ path(
         include(router.urls)
     ),
     path("me/", current_user, name="current_user"),
+        path(
+        "branch-performance/<int:branch_id>/",
+        branch_performance_api,
+        name="branch-performance-api"
+    ),
 ]
