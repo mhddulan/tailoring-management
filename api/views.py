@@ -2848,29 +2848,25 @@ class DailyProductionViewSet(viewsets.ModelViewSet):
         # ADD STOCK ONCE
         # ----------------------------------------------------
 
-        branch_product.stock = (
-            branch_product.stock + quantity
+        production = serializer.save(branch=branch)
+
+        branch_product, created = BranchProduct.objects.get_or_create(
+            branch=branch,
+            product=product,
+            defaults={
+                "selling_price": product.purchase_price
+            }
         )
 
-        branch_product.save(
-            update_fields=[
-                "stock"
-            ]
-        )
-
-        # ====================================================
-        # STOCK HISTORY ONLY
-        # ====================================================
+        branch_product.stock += quantity
+        branch_product.save(update_fields=["stock"])
 
         StockTransfer.objects.create(
             product=product,
             branch=branch,
             quantity=quantity,
             transfer_date=production_date,
-            remarks=(
-                f"Daily Production #{production.id} - "
-                f"{employee.name}"
-            ),
+            remarks=f"Daily Production #{production.id} - {employee.name}"
         )
 
     # ========================================================
