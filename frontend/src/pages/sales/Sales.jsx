@@ -137,7 +137,7 @@ export default function Sales() {
                                             </td>
 
                                             <td className="fw-bold">
-                                                ₹{" "}
+                                                SAR{" "}
                                                 {Number(
                                                     sale.total || 0
                                                 ).toFixed(2)}

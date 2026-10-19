@@ -319,7 +319,7 @@ function BranchPerformance() {
                     <div>
                         <span>Sales Income</span>
                         <strong>
-                            ₹{stats.salesIncome.toLocaleString()}
+                            SAR{stats.salesIncome.toLocaleString()}
                         </strong>
                     </div>
                 </div>
@@ -332,7 +332,7 @@ function BranchPerformance() {
                     <div>
                         <span>Net Profit</span>
                         <strong>
-                            ₹{stats.netProfit.toLocaleString()}
+                            SAR{stats.netProfit.toLocaleString()}
                         </strong>
                     </div>
                 </div>
@@ -357,28 +357,28 @@ function BranchPerformance() {
                         <div>
                             <span>Total Income</span>
                             <strong>
-                                ₹{stats.totalIncome.toLocaleString()}
+                                SAR{stats.totalIncome.toLocaleString()}
                             </strong>
                         </div>
 
                         <div>
                             <span>Purchase</span>
                             <strong>
-                                ₹{stats.purchase.toLocaleString()}
+                                SAR{stats.purchase.toLocaleString()}
                             </strong>
                         </div>
 
                         <div>
                             <span>Other Expense</span>
                             <strong>
-                                ₹{stats.expense.toLocaleString()}
+                                SAR{stats.expense.toLocaleString()}
                             </strong>
                         </div>
 
                         <div className="profit-item">
                             <span>Net Profit</span>
                             <strong>
-                                ₹{stats.netProfit.toLocaleString()}
+                                SAR{stats.netProfit.toLocaleString()}
                             </strong>
                         </div>
 
@@ -400,28 +400,28 @@ function BranchPerformance() {
                         <div>
                             <span>Advance</span>
                             <strong>
-                                ₹{stats.advance.toLocaleString()}
+                                SAR{stats.advance.toLocaleString()}
                             </strong>
                         </div>
 
                         <div>
                             <span>Balance</span>
                             <strong>
-                                ₹{stats.balance.toLocaleString()}
+                                SAR{stats.balance.toLocaleString()}
                             </strong>
                         </div>
 
                         <div>
                             <span>Total Received</span>
                             <strong>
-                                ₹{stats.received.toLocaleString()}
+                                SAR{stats.received.toLocaleString()}
                             </strong>
                         </div>
 
                         <div>
                             <span>Outstanding</span>
                             <strong>
-                                ₹{stats.outstanding.toLocaleString()}
+                                SAR{stats.outstanding.toLocaleString()}
                             </strong>
                         </div>
 
@@ -470,7 +470,7 @@ function BranchPerformance() {
                                 </div>
 
                                 <strong>
-                                    ₹{(
+                                    SAR{(
                                         paymentModes[key] || 0
                                     ).toLocaleString()}
                                 </strong>

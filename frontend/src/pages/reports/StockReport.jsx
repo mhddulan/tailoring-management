@@ -144,7 +144,7 @@ export default function StockReport() {
                             </span>
 
                             <h2 className="fw-bold mt-2 mb-0">
-                                ₹ {totalValue.toFixed(2)}
+                                SAR {totalValue.toFixed(2)}
                             </h2>
 
                         </div>
@@ -321,14 +321,14 @@ export default function StockReport() {
                                                 </td>
 
                                                 <td>
-                                                    ₹{" "}
+                                                    SAR{" "}
                                                     {price.toFixed(
                                                         2
                                                     )}
                                                 </td>
 
                                                 <td className="fw-semibold">
-                                                    ₹{" "}
+                                                    SAR{" "}
                                                     {value.toFixed(
                                                         2
                                                     )}

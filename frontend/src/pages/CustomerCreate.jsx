@@ -3,6 +3,27 @@ import { useNavigate } from "react-router-dom";
 import api from "../services/api";
 import "./CustomerCreate.css";
 
+function MeasurementInput({ label, name, value, onChange }) {
+    return (
+        <div className="col-12 col-sm-6 col-md-4">
+            <label className="customer-form-label">
+                {label}
+            </label>
+
+            <input
+                type="number"
+                inputMode="decimal"
+                step="0.01"
+                name={name}
+                value={value ?? ""}
+                onChange={onChange}
+                className="form-control"
+                placeholder={`Enter ${label.toLowerCase()}`}
+            />
+        </div>
+    );
+}
+
 function CustomerCreate() {
     const navigate = useNavigate();
 
@@ -276,34 +297,6 @@ function CustomerCreate() {
     };
 
 
-    // =========================================================
-    // MEASUREMENT INPUT
-    // =========================================================
-
-    const MeasurementInput = ({
-        label,
-        name,
-    }) => (
-        <div className="col-12 col-sm-6 col-md-4">
-
-            <label className="customer-form-label">
-                {label}
-            </label>
-
-            <input
-                type="number"
-                step="0.01"
-                name={name}
-                value={form[name]}
-                onChange={handleChange}
-                className="form-control"
-                placeholder={`Enter ${label.toLowerCase()}`}
-            />
-
-        </div>
-    );
-
-
     return (
         <div className="customer-create-page">
 
@@ -496,31 +489,43 @@ function CustomerCreate() {
                             <MeasurementInput
                                 label="Length"
                                 name="top_length"
+                                value={form.top_length}
+                                onChange={handleChange}
                             />
 
                             <MeasurementInput
                                 label="Shoulder"
                                 name="shoulder"
+                                value={form.shoulder}
+                                onChange={handleChange}
                             />
 
                             <MeasurementInput
                                 label="Sleeve"
                                 name="sleeve"
+                                value={form.sleeve}
+                                onChange={handleChange}
                             />
 
                             <MeasurementInput
                                 label="Sleeve Down"
                                 name="sleeve_down"
+                                value={form.sleeve_down}
+                                onChange={handleChange}
                             />
 
                             <MeasurementInput
                                 label="Body"
                                 name="body"
+                                value={form.body}
+                                onChange={handleChange}
                             />
 
                             <MeasurementInput
                                 label="Collar"
                                 name="collar"
+                                value={form.collar}
+                                onChange={handleChange}
                             />
 
                         </div>
@@ -548,36 +553,50 @@ function CustomerCreate() {
                             <MeasurementInput
                                 label="Length"
                                 name="pant_length"
+                                value={form.pant_length}
+                                onChange={handleChange}
                             />
 
                             <MeasurementInput
                                 label="Band"
                                 name="band"
+                                value={form.band}
+                                onChange={handleChange}
                             />
 
                             <MeasurementInput
                                 label="Hip"
                                 name="hip"
+                                value={form.hip}
+                                onChange={handleChange}
                             />
 
                             <MeasurementInput
                                 label="Bell"
                                 name="bell"
+                                value={form.bell}
+                                onChange={handleChange}
                             />
 
                             <MeasurementInput
                                 label="Loose"
                                 name="loose"
+                                value={form.loose}
+                                onChange={handleChange}
                             />
 
                             <MeasurementInput
                                 label="Mutt"
                                 name="mutt"
+                                value={form.mutt}
+                                onChange={handleChange}
                             />
 
                             <MeasurementInput
                                 label="Play"
                                 name="play"
+                                value={form.play}
+                                onChange={handleChange}
                             />
 
                         </div>

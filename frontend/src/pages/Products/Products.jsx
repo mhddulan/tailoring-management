@@ -211,7 +211,7 @@ export default function Products() {
                                                 </td>
 
                                                 <td>
-                                                    ₹{" "}
+                                                    SAR{" "}
                                                     {Number(
                                                         product.purchase_price || 0
                                                     ).toFixed(2)}

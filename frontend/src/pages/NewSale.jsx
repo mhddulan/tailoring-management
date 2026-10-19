@@ -569,7 +569,7 @@ export default function NewSale() {
                                                         {" — Stock: "}
                                                         {product.stock ?? 0}
                                                         {" — "}
-                                                        ₹{" "}
+                                                        SAR{" "}
                                                         {Number(
                                                             product.selling_price || 0
                                                         ).toFixed(2)}
@@ -702,7 +702,7 @@ export default function NewSale() {
                                 </span>
 
                                 <h2 className="fw-bold text-success mb-0">
-                                    ₹ {total.toFixed(2)}
+                                    SAR {total.toFixed(2)}
                                 </h2>
 
                             </div>

@@ -439,7 +439,7 @@ function Alterations() {
 
                                                 <td>
 
-                                                    ₹
+                                                    SAR
                                                     {Number(
                                                         alteration.total_amount ||
                                                         0
@@ -452,7 +452,7 @@ function Alterations() {
 
                                                 <td>
 
-                                                    ₹
+                                                    SAR
                                                     {Number(
                                                         alteration.advance_amount ||
                                                         0
@@ -467,7 +467,7 @@ function Alterations() {
 
                                                     <strong>
 
-                                                        ₹
+                                                        SAR
                                                         {Number(
                                                             alteration.balance_amount ||
                                                             0
@@ -729,7 +729,7 @@ function Alterations() {
                                                 <input
                                                     type="text"
                                                     className="form-control"
-                                                    value={`₹${Number(
+                                                    value={`SAR${Number(
                                                         selectedAlteration.total_amount ||
                                                         0
                                                     ).toFixed(2)}`}
@@ -748,7 +748,7 @@ function Alterations() {
                                                 <input
                                                     type="text"
                                                     className="form-control"
-                                                    value={`₹${Number(
+                                                    value={`SAR${Number(
                                                         selectedAlteration.advance_amount ||
                                                         0
                                                     ).toFixed(2)}`}
@@ -767,7 +767,7 @@ function Alterations() {
                                                 <input
                                                     type="text"
                                                     className="form-control"
-                                                    value={`₹${Number(
+                                                    value={`SAR${Number(
                                                         selectedAlteration.balance_amount ||
                                                         0
                                                     ).toFixed(2)}`}

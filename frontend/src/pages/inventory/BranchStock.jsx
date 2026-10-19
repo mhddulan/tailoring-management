@@ -153,7 +153,7 @@ export default function BranchStock() {
                                             </td>
 
                                             <td>
-                                                ₹{" "}
+                                                SAR{" "}
                                                 {Number(
                                                     item.selling_price || 0
                                                 ).toFixed(2)}

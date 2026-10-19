@@ -1576,7 +1576,7 @@ function AlterationCreate() {
 
                                             <br />
 
-                                            ₹
+                                            SAR
                                             {totalAmount.toFixed(2)}
 
                                         </div>
@@ -1589,7 +1589,7 @@ function AlterationCreate() {
 
                                             <br />
 
-                                            ₹
+                                            SAR
                                             {advanceAmount.toFixed(2)}
 
                                         </div>
@@ -1602,7 +1602,7 @@ function AlterationCreate() {
 
                                             <br />
 
-                                            ₹
+                                            SAR
                                             {balanceAmount.toFixed(2)}
 
                                         </div>

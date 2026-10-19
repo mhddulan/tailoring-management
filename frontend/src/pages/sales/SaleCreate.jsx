@@ -891,7 +891,7 @@ export default function SaleCreate() {
                                                                     {product.stock ??
                                                                         0}
 
-                                                                    {" — ₹"}
+                                                                    {" — SAR"}
 
                                                                     {Number(
                                                                         getProductRate(
@@ -969,7 +969,7 @@ export default function SaleCreate() {
 
                                                 <td className="fw-bold">
 
-                                                    ₹{" "}
+                                                    SAR{" "}
 
                                                     {getSubtotal(
                                                         item
@@ -1038,7 +1038,7 @@ export default function SaleCreate() {
 
                                 <h2 className="fw-bold mb-0">
 
-                                    ₹{" "}
+                                    SAR{" "}
 
                                     {total.toFixed(
                                         2

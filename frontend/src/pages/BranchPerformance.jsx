@@ -562,7 +562,7 @@ function BranchPerformance() {
                         </span>
 
                         <strong>
-                            ₹{money(salesIncome)}
+                            SAR{money(salesIncome)}
                         </strong>
 
                     </div>
@@ -585,7 +585,7 @@ function BranchPerformance() {
                         </span>
 
                         <strong>
-                            ₹{money(netProfit)}
+                            SAR{money(netProfit)}
                         </strong>
 
                     </div>
@@ -629,7 +629,7 @@ function BranchPerformance() {
                             </span>
 
                             <strong>
-                                ₹{money(totalIncome)}
+                                SAR{money(totalIncome)}
                             </strong>
 
                         </div>
@@ -642,7 +642,7 @@ function BranchPerformance() {
                             </span>
 
                             <strong>
-                                ₹{money(purchase)}
+                                SAR{money(purchase)}
                             </strong>
 
                         </div>
@@ -655,7 +655,7 @@ function BranchPerformance() {
                             </span>
 
                             <strong>
-                                ₹{money(expense)}
+                                SAR{money(expense)}
                             </strong>
 
                         </div>
@@ -668,7 +668,7 @@ function BranchPerformance() {
                             </span>
 
                             <strong>
-                                ₹{money(netProfit)}
+                                SAR{money(netProfit)}
                             </strong>
 
                         </div>
@@ -705,7 +705,7 @@ function BranchPerformance() {
                             </span>
 
                             <strong>
-                                ₹{money(advance)}
+                                SAR{money(advance)}
                             </strong>
 
                         </div>
@@ -718,7 +718,7 @@ function BranchPerformance() {
                             </span>
 
                             <strong>
-                                ₹{money(balance)}
+                                SAR{money(balance)}
                             </strong>
 
                         </div>
@@ -731,7 +731,7 @@ function BranchPerformance() {
                             </span>
 
                             <strong>
-                                ₹{money(received)}
+                                SAR{money(received)}
                             </strong>
 
                         </div>
@@ -744,7 +744,7 @@ function BranchPerformance() {
                             </span>
 
                             <strong>
-                                ₹{money(outstanding)}
+                                SAR{money(outstanding)}
                             </strong>
 
                         </div>
@@ -810,7 +810,7 @@ function BranchPerformance() {
 
 
                                     <strong>
-                                        ₹{money(
+                                        SAR{money(
                                             paymentModes[key]
                                         )}
                                     </strong>
@@ -1213,7 +1213,7 @@ function BranchPerformance() {
                                     </div>
 
                                     <strong>
-                                        ₹{money(
+                                        SAR{money(
                                             chart.sales?.[index] ||
                                             0
                                         )}
@@ -1305,7 +1305,7 @@ function BranchPerformance() {
 
                                     <strong>
 
-                                        ₹{money(
+                                        SAR{money(
                                             order.amount ||
                                             order.total_amount ||
                                             0
@@ -1387,7 +1387,7 @@ function BranchPerformance() {
 
                                     <strong>
 
-                                        ₹{money(
+                                        SAR{money(
                                             payment.amount ||
                                             0
                                         )}

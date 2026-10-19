@@ -177,7 +177,7 @@ export default function SalesReport() {
                             </span>
 
                             <h2 className="fw-bold mt-2 mb-0">
-                                ₹ {totalRevenue.toFixed(2)}
+                                SAR {totalRevenue.toFixed(2)}
                             </h2>
                         </div>
                     </div>
@@ -191,7 +191,7 @@ export default function SalesReport() {
                             </span>
 
                             <h2 className="fw-bold mt-2 mb-0">
-                                ₹ {averageSale.toFixed(2)}
+                                SAR {averageSale.toFixed(2)}
                             </h2>
                         </div>
                     </div>
@@ -268,7 +268,7 @@ export default function SalesReport() {
                                             </td>
 
                                             <td className="fw-bold">
-                                                ₹{" "}
+                                                SAR{" "}
                                                 {Number(
                                                     sale.total || 0
                                                 ).toFixed(2)}
