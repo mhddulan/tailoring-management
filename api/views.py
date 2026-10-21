@@ -4842,6 +4842,85 @@ def branch_dashboard_data(request):
                 "source": "Order",
             }
         )
+    # =====================================================
+    # CASH IN HAND & CASH IN BANK
+    # =====================================================
+
+    opening = OpeningBalance.objects.filter(
+        branch=branch
+    ).first()
+
+    opening_date = opening.opening_date if opening else None
+
+    opening_cash = (
+        opening.opening_cash or 0
+    ) if opening else 0
+
+    opening_bank = (
+        opening.opening_bank or 0
+    ) if opening else 0
+
+    entries = DayBook.objects.filter(
+        branch=branch
+    )
+
+    # Calculate transactions after the opening balance date
+    if opening_date:
+        entries = entries.filter(
+            date__gte=opening_date
+        )
+
+    # -----------------------------
+    # CASH IN HAND
+    # -----------------------------
+
+    cash_entries = entries.filter(
+        payment_mode="Cash"
+    )
+
+    cash_income = cash_entries.filter(
+        transaction_type="Income"
+    ).aggregate(
+        total=Sum("amount")
+    )["total"] or 0
+
+    cash_expense = cash_entries.filter(
+        transaction_type="Expense"
+    ).aggregate(
+        total=Sum("amount")
+    )["total"] or 0
+
+    cash_in_hand = (
+        opening_cash
+        + cash_income
+        - cash_expense
+    )
+
+    # -----------------------------
+    # CASH IN BANK
+    # -----------------------------
+
+    bank_entries = entries.filter(
+        payment_mode__in=["Bank", "Online", "POS"]
+    )
+
+    bank_income = bank_entries.filter(
+        transaction_type="Income"
+    ).aggregate(
+        total=Sum("amount")
+    )["total"] or 0
+
+    bank_expense = bank_entries.filter(
+        transaction_type="Expense"
+    ).aggregate(
+        total=Sum("amount")
+    )["total"] or 0
+
+    cash_in_bank = (
+        opening_bank
+        + bank_income
+        - bank_expense
+    )
 
     # -----------------------------------------------------
     # READY-MADE SALE PAYMENTS
@@ -4897,6 +4976,10 @@ def branch_dashboard_data(request):
             "branch": {
                 "id": branch.id,
                 "name": branch.name,
+            },
+            "balances": {
+                "cash_in_hand": round(float(cash_in_hand), 2),
+                "cash_in_bank": round(float(cash_in_bank), 2),
             },
 
             "filter": {
