@@ -3,56 +3,37 @@ import { useNavigate } from "react-router-dom";
 import api from "../services/api";
 import "./CustomerCreate.css";
 
+
+
+
 function MeasurementInput({ label, name, value, onChange }) {
-const handleKeyDown = (e) => {
-if (e.key === "Enter") {
-e.preventDefault();
+    return (
+        <div className="col-12 col-sm-6 col-md-4">
+            <label
+                htmlFor={`measurement-${name}`}
+                className="customer-form-label"
+            >
+                {label}
+            </label>
 
-```
-        const inputs = Array.from(
-            document.querySelectorAll(
-                ".customer-measurement-input"
-            )
-        );
-
-        const currentIndex = inputs.indexOf(e.currentTarget);
-        const nextInput = inputs[currentIndex + 1];
-
-        if (nextInput) {
-            nextInput.focus();
-        } else {
-            e.currentTarget.blur();
-        }
-    }
-};
-
-return (
-    <div className="col-12 col-sm-6 col-md-4">
-        <label
-            htmlFor={`measurement-${name}`}
-            className="customer-form-label"
-        >
-            {label}
-        </label>
-
-        <input
-            id={`measurement-${name}`}
-            type="number"
-            inputMode="decimal"
-            step="0.01"
-            name={name}
-            value={value ?? ""}
-            onChange={onChange}
-            onKeyDown={handleKeyDown}
-            className="form-control customer-measurement-input"
-            placeholder={`Enter ${label.toLowerCase()}`}
-            autoComplete="off"
-        />
-    </div>
-);
-```
-
+            <input
+                id={`measurement-${name}`}
+                type="number"
+                step="0.01"
+                name={name}
+                value={value ?? ""}
+                onChange={onChange}
+                className="form-control"
+            />
+        </div>
+    );
 }
+
+
+
+
+
+
 
 
 function CustomerCreate() {
