@@ -224,8 +224,9 @@ from .serializers import (
 )
 from .serializers import (
     BranchSerializer,
-    CustomerSerializer,
+    CustomerSerializer,                                 
     MeasurementSerializer,
+    
 )
 
 
@@ -349,9 +350,55 @@ class CustomerViewSet(viewsets.ModelViewSet):
         )
 
 class MeasurementViewSet(viewsets.ModelViewSet):
-    queryset = Measurement.objects.select_related("customer").all()
+
     serializer_class = MeasurementSerializer
     permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+
+        queryset = Measurement.objects.select_related(
+            "customer",
+            "customer__branch"
+        )
+
+        if user.role == "Admin" or user.is_superuser:
+            return queryset.order_by("-id")
+
+        if user.branch_id:
+            return queryset.filter(
+                customer__branch_id=user.branch_id
+            ).order_by("-id")
+
+        return queryset.none()
+
+    def perform_create(self, serializer):
+        customer = serializer.validated_data.get("customer")
+        user = self.request.user
+
+        if not customer:
+            raise serializers.ValidationError({
+                "customer": "Customer is required."
+            })
+
+        # Admin can save measurements for any customer.
+        if user.role == "Admin" or user.is_superuser:
+            serializer.save()
+            return
+
+        # Branch users can save measurements only
+        # for customers belonging to their branch.
+        if not user.branch_id:
+            raise serializers.ValidationError({
+                "branch": "User is not assigned to a branch."
+            })
+
+        if customer.branch_id != user.branch_id:
+            raise serializers.ValidationError({
+                "customer": "Customer does not belong to your branch."
+            })
+
+        serializer.save()
 
 class BranchViewSet(viewsets.ModelViewSet):
 

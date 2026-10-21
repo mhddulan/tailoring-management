@@ -6,16 +6,28 @@ import "./CustomerCreate.css";
 function MeasurementInput({ label, name, value, onChange }) {
     return (
         <div className="col-12 col-sm-6 col-md-4">
-            <label className="customer-form-label">
+            <label
+                htmlFor={`measurement-${name}`}
+                className="customer-form-label"
+            >
                 {label}
             </label>
 
             <input
-                type="text"
+                id={`measurement-${name}`}
+                type="number"
                 inputMode="decimal"
+                step="0.01"
                 name={name}
                 value={value ?? ""}
                 onChange={onChange}
+                onKeyDown={(e) => {
+                    // Prevent Enter/Done from submitting the whole form.
+                    if (e.key === "Enter") {
+                        e.preventDefault();
+                        e.stopPropagation();
+                    }
+                }}
                 className="form-control"
                 placeholder={`Enter ${label.toLowerCase()}`}
                 autoComplete="off"
@@ -255,12 +267,26 @@ function CustomerCreate() {
                 );
 
             if (hasMeasurement) {
-                await api.post(
-                    "measurements/",
-                    measurementData
-                );
-            }
+                try {
+                    const measurementResponse = await api.post(
+                        "measurements/",
+                        measurementData
+                    );
 
+                    console.log(
+                        "Measurement saved successfully:",
+                        measurementResponse.data
+                    );
+                } catch (measurementError) {
+                    console.error(
+                        "Measurement save failed:",
+                        measurementError.response?.status,
+                        measurementError.response?.data
+                    );
+
+                    throw measurementError;
+                }
+            }
             // -------------------------------------------------
             // SUCCESS
             // -------------------------------------------------
