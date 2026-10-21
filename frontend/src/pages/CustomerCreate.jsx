@@ -11,14 +11,14 @@ function MeasurementInput({ label, name, value, onChange }) {
             </label>
 
             <input
-                type="number"
+                type="text"
                 inputMode="decimal"
-                step="0.01"
                 name={name}
                 value={value ?? ""}
                 onChange={onChange}
                 className="form-control"
                 placeholder={`Enter ${label.toLowerCase()}`}
+                autoComplete="off"
             />
         </div>
     );
