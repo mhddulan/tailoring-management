@@ -5,7 +5,6 @@ import "./CustomerCreate.css";
 
 
 
-
 function MeasurementInput({ label, name, value, onChange }) {
     return (
         <div className="col-12 col-sm-6 col-md-4">
@@ -28,8 +27,6 @@ function MeasurementInput({ label, name, value, onChange }) {
         </div>
     );
 }
-
-
 
 
 
