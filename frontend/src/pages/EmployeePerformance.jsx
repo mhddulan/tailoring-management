@@ -78,23 +78,13 @@ function EmployeePerformance() {
             setProductions(productionData);
             setRates(rateMap);
 
-            let pieces = 0;
-            let salary = 0;
-
-            productionData.forEach((item) => {
-
-                pieces += Number(
-                    item.quantity || 0
-                );
-
-                salary += Number(
-                    item.total_amount || 0
-                );
-
-            });
+            const pieces = productionData.reduce(
+                (sum, item) => sum + Number(item.quantity || 0),
+                0
+            );
 
             setTotalPieces(pieces);
-            setTotalSalary(salary);
+            // Salary is derived from production quantities and editable rates below.
 
         } catch (err) {
 
@@ -109,6 +99,24 @@ function EmployeePerformance() {
 
         }
     };
+
+    // Quantity produced for each product in the selected date range.
+    const getProductId = (item) =>
+        Number(item.product?.id ?? item.product_id ?? item.product ?? 0);
+
+    const getProductQuantity = (productId) =>
+        productions.reduce((sum, item) => {
+            return getProductId(item) === Number(productId)
+                ? sum + Number(item.quantity || 0)
+                : sum;
+        }, 0);
+
+    // Calculate salary using the current editable rates, so it updates live.
+    const calculatedSalary = products.reduce((sum, product) => {
+        const quantity = getProductQuantity(product.id);
+        const rate = Number(rates[product.id] ?? 0);
+        return sum + quantity * rate;
+    }, 0);
 
     useEffect(() => {
         loadData();
@@ -440,7 +448,7 @@ function EmployeePerformance() {
                             </div>
 
                             <h2 className="fw-bold mb-0">
-                                SAR {totalSalary.toFixed(2)}
+                                SAR {calculatedSalary.toFixed(2)}
                             </h2>
 
                         </div>
@@ -634,7 +642,15 @@ function EmployeePerformance() {
                                         </th>
 
                                         <th>
+                                            Total Quantity
+                                        </th>
+
+                                        <th>
                                             Rate / Piece
+                                        </th>
+
+                                        <th>
+                                            Total Amount
                                         </th>
 
                                     </tr>
@@ -648,7 +664,7 @@ function EmployeePerformance() {
                                         <tr>
 
                                             <td
-                                                colSpan="2"
+                                                colSpan="4"
                                                 className="text-center py-5 text-muted"
                                             >
                                                 No active products found.
@@ -664,6 +680,10 @@ function EmployeePerformance() {
 
                                                 <td className="px-4 fw-semibold">
                                                     {product.name}
+                                                </td>
+
+                                                <td>
+                                                    {getProductQuantity(product.id)}
                                                 </td>
 
                                                 <td style={{ maxWidth: "250px" }}>
@@ -694,6 +714,14 @@ function EmployeePerformance() {
 
                                                     </div>
 
+                                                </td>
+
+                                                <td className="fw-semibold">
+                                                    SAR{" "}
+                                                    {(
+                                                        getProductQuantity(product.id) *
+                                                        Number(rates[product.id] ?? 0)
+                                                    ).toFixed(2)}
                                                 </td>
 
                                             </tr>

@@ -10,6 +10,8 @@ function OrderCreate() {
     const [products, setProducts] = useState([]);
 
     const [customer, setCustomer] = useState("");
+    // Manually entered 4-digit bill number (kept as text to preserve leading zeros)
+    const [billNumber, setBillNumber] = useState("");
     const [orderDate, setOrderDate] = useState("");
     const [deliveryDate, setDeliveryDate] = useState("");
     const [deliveryTime, setDeliveryTime] = useState("17:00");
@@ -266,6 +268,15 @@ function OrderCreate() {
         setError("");
 
         // -----------------------------------------------------
+        // BILL NUMBER (exactly 4 digits)
+        // -----------------------------------------------------
+
+        if (!/^\d{4}$/.test(billNumber)) {
+            setError("Bill number must contain exactly 4 digits.");
+            return;
+        }
+
+        // -----------------------------------------------------
         // CUSTOMER
         // -----------------------------------------------------
 
@@ -400,6 +411,8 @@ function OrderCreate() {
                 await api.post(
                     "orders/",
                     {
+                        bill_number: billNumber,
+
                         customer:
                             Number(customer),
 
@@ -488,6 +501,7 @@ function OrderCreate() {
                 data?.detail ||
                 data?.error ||
                 data?.message ||
+                data?.bill_number?.[0] ||
                 data?.customer?.[0] ||
                 data?.items?.[0] ||
                 data?.advance_amount?.[0] ||
@@ -633,6 +647,39 @@ function OrderCreate() {
                     </div>
 
                     <div className="row g-3">
+
+                        {/* BILL NUMBER */}
+
+                        <div className="col-md-3">
+
+                            <label className="form-label">
+                                Bill Number (4 digits)
+                            </label>
+
+                            <input
+                                type="text"
+                                className="form-control"
+                                value={billNumber}
+                                onChange={(e) => {
+                                    const value = e.target.value;
+                                    if (/^\d{0,4}$/.test(value)) {
+                                        setBillNumber(value);
+                                    }
+                                    setError("");
+                                }}
+                                placeholder="e.g. 1025"
+                                maxLength={4}
+                                inputMode="numeric"
+                                pattern="[0-9]{4}"
+                                title="Enter exactly 4 digits"
+                                required
+                            />
+
+                            <small className="text-muted">
+                                Must be unique; leading zeros are allowed.
+                            </small>
+
+                        </div>
 
                         {/* CUSTOMER */}
 

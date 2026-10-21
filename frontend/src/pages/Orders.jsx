@@ -74,6 +74,10 @@ function Orders() {
                     order.id || ""
                 ).toLowerCase();
 
+                const billNumber = String(
+                    order.bill_number || ""
+                ).toLowerCase();
+
                 const customerName = String(
                     order.customer_name || ""
                 ).toLowerCase();
@@ -84,6 +88,7 @@ function Orders() {
 
                 return (
                     orderId.includes(searchValue) ||
+                    billNumber.includes(searchValue) ||
                     customerName.includes(searchValue) ||
                     mobile.includes(searchValue)
                 );
@@ -410,7 +415,7 @@ function Orders() {
                     <input
                         type="text"
                         className="form-control"
-                        placeholder="Search order, customer name or mobile..."
+                        placeholder="Search bill number, order ID, customer name or mobile..."
                         value={search}
                         onChange={(e) =>
                             setSearch(
@@ -595,7 +600,7 @@ function Orders() {
                             <tr>
 
                                 <th>
-                                    Order
+                                    Bill / Order
                                 </th>
 
                                 <th>
@@ -731,10 +736,9 @@ function Orders() {
                                                             )
                                                         }
                                                     >
-                                                        #
-                                                        {
-                                                            order.id
-                                                        }
+                                                        {order.bill_number
+                                                            ? `Bill #${order.bill_number}`
+                                                            : `Order #${order.id}`}
                                                     </button>
 
                                                 </td>

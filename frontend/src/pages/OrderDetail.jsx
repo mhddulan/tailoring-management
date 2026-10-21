@@ -326,14 +326,18 @@ function OrderDetail() {
                         <i className="bi bi-chevron-right"></i>
 
                         <span>
-                            Order #{order.id}
+                            Bill #{order.bill_number || order.id}
                         </span>
 
                     </div>
 
                     <h1>
-                        Order #{order.id}
+                        Bill #{order.bill_number || order.id}
                     </h1>
+
+                    <p className="text-muted mb-0">
+                        Internal Order ID: #{order.id}
+                    </p>
 
                     <p>
                         View complete order and

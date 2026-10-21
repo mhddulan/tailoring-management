@@ -4,7 +4,7 @@ from branches.models import Branch
 from customers.models import Customer, Measurement
 from orders.models import Order, OrderItem, Payment
 from daybook.models import DayBook, OpeningBalance
-
+from decimal import Decimal
 from products.models import (
     Sale,
     SaleItem,
@@ -27,7 +27,7 @@ from employees.models import (
     DailyProduction,
     EmployeeProductRate,
 )
-
+from django.utils import timezone
 
 # ============================================================
 # BRANCH
@@ -86,8 +86,13 @@ class MeasurementSerializer(serializers.ModelSerializer):
 # ORDER ITEM
 # ============================================================
 
-class OrderItemSerializer(serializers.ModelSerializer):
+from django.db import transaction
+from rest_framework import serializers
 
+from orders.models import Order, OrderItem, Payment
+
+
+class OrderItemSerializer(serializers.ModelSerializer):
     product_name = serializers.CharField(
         source="product.name",
         read_only=True
@@ -95,7 +100,6 @@ class OrderItemSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = OrderItem
-
         fields = [
             "id",
             "order",
@@ -105,22 +109,15 @@ class OrderItemSerializer(serializers.ModelSerializer):
             "rate",
             "amount",
         ]
+        read_only_fields = ["id", "amount", "order"]
 
-
-# ============================================================
-# PAYMENT
-# ============================================================
 
 class PaymentSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = Payment
         fields = "__all__"
 
 
-# ============================================================
-# ORDER
-# ============================================================
 class OrderSerializer(serializers.ModelSerializer):
 
     customer_name = serializers.CharField(
@@ -133,14 +130,30 @@ class OrderSerializer(serializers.ModelSerializer):
         read_only=True
     )
 
+    # Accept order items from React when creating an order.
     items = OrderItemSerializer(
         many=True,
-        read_only=True
+        required=False
     )
 
     payments = PaymentSerializer(
         many=True,
         read_only=True
+    )
+
+    # Initial advance sent by OrderCreate.jsx
+    advance_amount = serializers.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        required=False,
+        default=Decimal("0"),
+        write_only=True
+    )
+    bill_number = serializers.CharField(
+    max_length=4,
+    required=True,
+    allow_blank=False,
+    trim_whitespace=True,
     )
 
     total_amount = serializers.SerializerMethodField()
@@ -153,85 +166,145 @@ class OrderSerializer(serializers.ModelSerializer):
 
         fields = [
             "id",
-
-            # Customer
+            "bill_number",
             "customer",
             "customer_name",
             "customer_mobile",
-
-            # Order
             "order_date",
-
-            # Expected Delivery
             "delivery_date",
             "delivery_time",
-
-            # Payment
             "advance_payment_mode",
-
-            # Status
             "status",
-
-            # Actual Delivery
             "delivered_date",
             "delivered_by",
-
-            # Payment Summary
             "total_amount",
             "total_received",
             "advance_received",
             "balance_due",
-
-            # Details
             "items",
             "payments",
+            "advance_amount",
         ]
 
-    # =========================================================
-    # TOTAL ORDER AMOUNT
-    # =========================================================
+        read_only_fields = [
+            "id",
+            "delivered_date",
+            "delivered_by",
+        ]
+
+    def validate(self, attrs):
+        items = attrs.get("items", [])
+        advance = attrs.get(
+            "advance_amount",
+            Decimal("0")
+        )
+
+        if self.instance is None and not items:
+            raise serializers.ValidationError({
+                "items": "Add at least one item to the order."
+            })
+
+        item_total = sum(
+            (
+                item["quantity"] * item["rate"]
+                for item in items
+            ),
+            Decimal("0")
+        )
+
+        if advance < 0:
+            raise serializers.ValidationError({
+                "advance_amount": "Advance cannot be negative."
+            })
+
+        if self.instance is None and advance > item_total:
+            raise serializers.ValidationError({
+                "advance_amount":
+                    "Advance cannot exceed the order total."
+            })
+
+        return attrs
+
+    @transaction.atomic
+    def create(self, validated_data):
+
+        items_data = validated_data.pop("items", [])
+        advance_amount = validated_data.pop(
+            "advance_amount",
+            Decimal("0")
+        )
+
+        order = Order.objects.create(**validated_data)
+
+        # Create all order items.
+        for item_data in items_data:
+            OrderItem.objects.create(
+                order=order,
+                **item_data
+            )
+
+        # Record the initial advance as a payment.
+        if advance_amount > 0:
+            payment = Payment.objects.create(
+                order=order,
+                amount=advance_amount,
+                payment_mode=order.advance_payment_mode,
+                payment_type="Advance"
+            )
+
+            # Create matching Day Book income.
+            from daybook.models import DayBook
+
+            DayBook.objects.create(
+                branch=order.customer.branch,
+                date=timezone.now().date(),
+                transaction_type="Income",
+                category="Advance",
+                payment_mode=order.advance_payment_mode or "Cash",
+                amount=advance_amount,
+                description=f"Advance payment for Order #{order.id}",
+            )
+
+        return order
 
     def get_total_amount(self, obj):
-
-        return float(
-            obj.total_amount()
-        )
-
-    # =========================================================
-    # TOTAL RECEIVED
-    # =========================================================
+        return float(obj.total_amount())
 
     def get_total_received(self, obj):
-
-        return float(
-            obj.total_received()
-        )
-
-    # =========================================================
-    # ADVANCE RECEIVED
-    # =========================================================
+        return float(obj.total_received())
 
     def get_advance_received(self, obj):
-
-        return float(
-            sum(
-                payment.amount
-                for payment in obj.payments.all()
-                if payment.payment_type == "Advance"
-            )
-        )
-
-    # =========================================================
-    # BALANCE DUE
-    # =========================================================
+        return float(obj.advance_received())
 
     def get_balance_due(self, obj):
-
-        return float(
-            obj.total_amount()
-            - obj.total_received()
-        )
+        return float(obj.balance())
     
+    def validate_bill_number(self, value):
+        value = value.strip()
+
+        if not value.isdigit() or len(value) != 4:
+            raise serializers.ValidationError(
+                "Bill number must contain exactly 4 digits."
+            )
+
+        queryset = Order.objects.filter(bill_number=value)
+
+        if self.instance:
+            queryset = queryset.exclude(pk=self.instance.pk)
+
+        if queryset.exists():
+            raise serializers.ValidationError(
+                "This bill number already exists."
+            )
+
+        return value
+
+
+# ============================================================
+# PAYMENT
+# ============================================================
+
+
 # ============================================================
 # DAY BOOK
 # ============================================================

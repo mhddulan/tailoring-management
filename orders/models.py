@@ -29,6 +29,13 @@ class Order(models.Model):
         Customer,
         on_delete=models.CASCADE
     )
+    bill_number = models.CharField(
+    max_length=4,
+    unique=True,
+    null=True,
+    blank=True,
+    db_index=True,
+    )
 
     # =========================================================
     # ORDER DATE
