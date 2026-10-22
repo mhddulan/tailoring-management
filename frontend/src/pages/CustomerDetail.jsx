@@ -36,24 +36,31 @@ function CustomerDetail() {
 
             // Measurements
             try {
-                const measurementResponse = await api.get(
-                    `measurements/?customer=${id}`
-                );
-
-                const measurementData =
-                    measurementResponse.data;
-
-                if (Array.isArray(measurementData)) {
-                    setMeasurements(
-                        measurementData[0] || null
-                    );
-                } else if (
-                    Array.isArray(measurementData.results)
-                ) {
-                    setMeasurements(
-                        measurementData.results[0] || null
-                    );
+            const measurementResponse = await api.get(
+                "measurements/",
+                {
+                    params: {
+                        customer: id
+                    }
                 }
+            );
+
+            const measurementData = measurementResponse.data;
+
+            const measurementList = Array.isArray(measurementData)
+                ? measurementData
+                : Array.isArray(measurementData.results)
+                    ? measurementData.results
+                    : [];
+
+            // Match the requested customer explicitly.
+            const customerMeasurement = measurementList.find(
+                (measurement) =>
+                    Number(measurement.customer) === Number(id)
+            );
+
+            setMeasurements(customerMeasurement || null);
+                
             } catch (measurementError) {
                 console.log(
                     "Measurement loading error:",
