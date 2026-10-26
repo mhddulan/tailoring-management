@@ -817,6 +817,7 @@ def dashboard_data(request):
         total_branches = Branch.objects.count()
 
         # Customers created during the selected date range
+
         total_customers = Customer.objects.filter(
             created_at__date__range=[from_date, to_date]
         ).count()
@@ -4571,8 +4572,12 @@ def branch_dashboard_data(request):
     # COUNTS
     # =====================================================
 
+    # Count only customers created within the selected date range.
+    # This makes Today/Yesterday/This Week/This Month/Custom
+    # filters apply to the Customers card as well.
     customers = Customer.objects.filter(
-        branch=branch
+        branch=branch,
+        created_at__date__range=[from_date, to_date]
     ).count()
 
     orders = branch_orders.count()
