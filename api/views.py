@@ -765,27 +765,19 @@ def dashboard_data(request):
     )
 
     # =====================================================
-    # BRANCH FILTERING
+    # BRANCH FILTERING + DATE-FILTERED CUSTOMER COUNT
     # =====================================================
 
     if not is_admin:
-
         if not user.branch_id:
-
             payments = payments.none()
-
             orders = orders.none()
-
             sales = sales.none()
-
             daybooks = daybooks.none()
 
             total_branches = 0
-
-            total_customers = 0
-
+            
         else:
-
             # Tailoring order payments
             payments = payments.filter(
                 order__customer__branch_id=user.branch_id
@@ -808,15 +800,18 @@ def dashboard_data(request):
 
             total_branches = 1
 
+            # Count customers created within the selected date range.
             total_customers = Customer.objects.filter(
-                branch_id=user.branch_id
+                branch_id=user.branch_id,
+                created_at__date__range=[from_date, to_date]
             ).count()
-
     else:
-
         total_branches = Branch.objects.count()
 
-        total_customers = Customer.objects.count()
+        # Admin customer count also follows the selected date range.
+        total_customers = Customer.objects.filter(
+            created_at__date__range=[from_date, to_date]
+        ).count()
 
     total_orders = orders.count()
 
@@ -1513,8 +1508,8 @@ def dashboard_data(request):
                 total_branches
             ),
 
-            "total_customers": (
-                total_customers
+            "": (
+                
             ),
 
             "total_orders": (
