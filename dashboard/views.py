@@ -166,7 +166,9 @@ def home(request):
     total_branches = Branch.objects.count()
 
     # Current total customers
-    total_customers = Customer.objects.count()
+    total_customers = Customer.objects.filter(
+    created_at__date__range=[from_date, to_date]
+    ).count()
 
     # Orders in selected period
     total_orders = orders.count()
