@@ -8,6 +8,7 @@ export default function SaleCreate() {
     const [branches, setBranches] = useState([]);
     const [customers, setCustomers] = useState([]);
     const [products, setProducts] = useState([]);
+    const [branchProducts, setBranchProducts] = useState([]);
 
     const [form, setForm] = useState({
         branch: "",
@@ -18,7 +19,7 @@ export default function SaleCreate() {
 
     const [items, setItems] = useState([
         {
-            branch_product: "",
+            product: "",
             quantity: 1,
             rate: 0,
         },
@@ -43,9 +44,11 @@ export default function SaleCreate() {
                 branchesResponse,
                 customersResponse,
                 productsResponse,
+                branchProductsResponse,
             ] = await Promise.all([
                 api.get("branches/"),
                 api.get("customers/"),
+                api.get("products/"),
                 api.get("branch-products/"),
             ]);
 
@@ -67,13 +70,57 @@ export default function SaleCreate() {
                 ? productsResponse.data
                 : productsResponse.data.results || [];
 
+            const branchProductsData = Array.isArray(
+                branchProductsResponse.data
+            )
+                ? branchProductsResponse.data
+                : branchProductsResponse.data.results || [];
+
             console.log("Branches:", branchesData);
             console.log("Customers:", customersData);
-            console.log("Branch Products:", productsData);
+            console.log("Central Products:", productsData);
+            console.log("Branch Product Details:", branchProductsData);
 
             setBranches(branchesData);
             setCustomers(customersData);
             setProducts(productsData);
+            setBranchProducts(branchProductsData);
+
+            // Automatically select the logged-in branch user's assigned branch.
+            // Admin users can continue selecting a branch manually.
+            const loggedInUser = JSON.parse(
+                localStorage.getItem("user") || "{}"
+            );
+
+            if (loggedInUser.role === "Branch") {
+                const assignedBranchId =
+                    loggedInUser.branch_id ??
+                    loggedInUser.branch?.id ??
+                    loggedInUser.branch;
+
+                if (assignedBranchId) {
+                    const assignedBranchExists = branchesData.some(
+                        (branch) =>
+                            String(branch.id) === String(assignedBranchId)
+                    );
+
+                    if (assignedBranchExists) {
+                        setForm((previous) => ({
+                            ...previous,
+                            branch: String(assignedBranchId),
+                        }));
+                    } else {
+                        console.warn(
+                            "Assigned branch was not found in branches API:",
+                            assignedBranchId
+                        );
+                    }
+                } else {
+                    console.warn(
+                        "No branch_id found for the logged-in branch user."
+                    );
+                }
+            }
 
         } catch (error) {
             console.error(
@@ -120,36 +167,27 @@ export default function SaleCreate() {
         );
     };
 
-    const getProductBranchId = (product) => {
-        if (!product) {
-            return "";
-        }
-
-        if (product.branch !== undefined) {
-            return product.branch;
-        }
-
-        if (product.branch_id !== undefined) {
-            return product.branch_id;
-        }
-
-        if (product.branch?.id !== undefined) {
-            return product.branch.id;
-        }
-
-        return "";
+    const getBranchProduct = (productId, branchId = form.branch) => {
+        return branchProducts.find((item) =>
+            String(item.product) === String(productId) &&
+            String(item.branch) === String(branchId)
+        );
     };
 
     const getProductRate = (product) => {
-        if (!product) {
-            return 0;
-        }
-
-        return (
-            product.selling_price ||
-            product.price ||
+        if (!product) return 0;
+        const branchProduct = getBranchProduct(product.id);
+        return Number(
+            branchProduct?.selling_price ??
+            product.selling_price ??
+            product.price ??
             0
         );
+    };
+
+    const getProductStock = (product) => {
+        if (!product) return 0;
+        return Number(getBranchProduct(product.id)?.stock ?? 0);
     };
 
     /* ==============================
@@ -167,16 +205,12 @@ export default function SaleCreate() {
             [name]: value,
         }));
 
-        /*
-         * When branch changes,
-         * reset selected products because
-         * products are branch-specific.
-         */
+        /* Reset selected products when the sale branch changes. */
         if (name === "branch") {
             setItems((previous) =>
                 previous.map((item) => ({
                     ...item,
-                    branch_product: "",
+                    product: "",
                     rate: 0,
                 }))
             );
@@ -191,7 +225,7 @@ export default function SaleCreate() {
         setItems((previous) => [
             ...previous,
             {
-                branch_product: "",
+                product: "",
                 quantity: 1,
                 rate: 0,
             },
@@ -227,12 +261,10 @@ export default function SaleCreate() {
          * Automatically get selling price
          * when product is selected.
          */
-        if (field === "branch_product") {
+        if (field === "product") {
 
             const product = products.find(
-                (item) =>
-                    String(item.id) ===
-                    String(value)
+                (item) => String(item.id) === String(value)
             );
 
             if (product) {
@@ -297,7 +329,7 @@ export default function SaleCreate() {
 
         for (const item of items) {
 
-            if (!item.branch_product) {
+            if (!item.product) {
                 alert(
                     "Please select a product for every item."
                 );
@@ -324,33 +356,8 @@ export default function SaleCreate() {
                 return;
             }
 
-            /*
-             * Check stock before submitting.
-             */
-            const product = products.find(
-                (product) =>
-                    String(product.id) ===
-                    String(item.branch_product)
-            );
-
-            if (product) {
-
-                const availableStock =
-                    Number(product.stock || 0);
-
-                const requestedQuantity =
-                    Number(item.quantity);
-
-                if (
-                    requestedQuantity >
-                    availableStock
-                ) {
-                    alert(
-                        `${getProductName(product)} has only ${availableStock} items in stock.`
-                    );
-                    return;
-                }
-            }
+            // Stock is informational only. Sales are allowed even when
+            // available stock is zero or lower than the sale quantity.
         }
 
         try {
@@ -369,10 +376,8 @@ export default function SaleCreate() {
                     form.payment_mode,
 
                 items: items.map((item) => ({
-                    branch_product:
-                        Number(
-                            item.branch_product
-                        ),
+                    product:
+                        Number(item.product),
 
                     quantity:
                         Number(
@@ -404,9 +409,7 @@ export default function SaleCreate() {
 
         } catch (error) {
 
-            console.error(
-                "Sale creation failed:",
-                error
+            console.log("SALE ERROR RESPONSE:", error.response?.data
             );
 
             const errorMessage =
@@ -425,24 +428,9 @@ export default function SaleCreate() {
         }
     };
 
-    /* ==============================
-       FILTER PRODUCTS BY BRANCH
-    ============================== */
-
-    const branchProducts = products.filter(
-        (product) => {
-
-            if (!form.branch) {
-                return false;
-            }
-
-            return (
-                String(
-                    getProductBranchId(product)
-                ) ===
-                String(form.branch)
-            );
-        }
+    /* Central products are available to every selected branch. */
+    const availableProducts = products.filter(
+        (product) => product.active !== false
     );
 
     /* ==============================
@@ -497,8 +485,7 @@ export default function SaleCreate() {
 
                         <p className="text-muted mb-0">
 
-                            Create a ready-made
-                            product sale.
+                            Create a product sale. Stock availability will not block the sale.
 
                         </p>
 
@@ -758,25 +745,16 @@ export default function SaleCreate() {
 
                                 <i className="bi bi-info-circle me-2"></i>
 
-                                Select a branch first to
-                                view available products.
+                                Select a branch to create a sale. All active central products will be available; stock is shown for the selected branch.
 
                             </div>
                         )}
 
-                        {form.branch &&
-                            branchProducts.length ===
-                                0 && (
-                                <div className="alert alert-warning">
-
-                                    <i className="bi bi-exclamation-triangle me-2"></i>
-
-                                    No products are
-                                    available for this
-                                    branch.
-
-                                </div>
-                            )}
+                        {form.branch && availableProducts.length === 0 && (
+                            <div className="alert alert-warning">
+                                No active products found in the central Products list.
+                            </div>
+                        )}
 
                         <div className="table-responsive">
 
@@ -845,14 +823,14 @@ export default function SaleCreate() {
                                                     <select
                                                         className="form-select"
                                                         value={
-                                                            item.branch_product
+                                                            item.product
                                                         }
                                                         onChange={(
                                                             e
                                                         ) =>
                                                             handleItemChange(
                                                                 index,
-                                                                "branch_product",
+                                                                "product",
                                                                 e
                                                                     .target
                                                                     .value
@@ -868,7 +846,7 @@ export default function SaleCreate() {
                                                             Select Product
                                                         </option>
 
-                                                        {branchProducts.map(
+                                                        {availableProducts.map(
                                                             (
                                                                 product
                                                             ) => (
@@ -886,10 +864,9 @@ export default function SaleCreate() {
                                                                         product
                                                                     )}
 
-                                                                    {" — Stock: "}
+                                                                    {" — Branch Stock: "}
 
-                                                                    {product.stock ??
-                                                                        0}
+                                                                    {getProductStock(product)}
 
                                                                     {" — SAR"}
 

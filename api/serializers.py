@@ -345,6 +345,13 @@ class OpeningBalanceSerializer(serializers.ModelSerializer):
 # ============================================================
 
 class SaleItemSerializer(serializers.ModelSerializer):
+
+    product = serializers.PrimaryKeyRelatedField(
+        queryset=Product.objects.all(),
+        write_only=True,
+        required=False
+    )
+
     product_name = serializers.CharField(
         source="branch_product.product.name",
         read_only=True
@@ -360,6 +367,7 @@ class SaleItemSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "sale",
+            "product",
             "branch_product",
             "product_name",
             "barcode",
@@ -367,13 +375,21 @@ class SaleItemSerializer(serializers.ModelSerializer):
             "rate",
             "amount",
         ]
+        read_only_fields = ["amount"]
 
+    def validate_quantity(self, value):
+        if value <= 0:
+            raise serializers.ValidationError(
+                "Quantity must be greater than zero."
+            )
+        return value
 
 # ============================================================
 # SALE
 # ============================================================
 
 class SaleSerializer(serializers.ModelSerializer):
+
     branch_name = serializers.CharField(
         source="branch.name",
         read_only=True
@@ -387,7 +403,7 @@ class SaleSerializer(serializers.ModelSerializer):
 
     items = SaleItemSerializer(
         many=True,
-        read_only=True
+        required=False
     )
 
     class Meta:
@@ -403,6 +419,91 @@ class SaleSerializer(serializers.ModelSerializer):
             "total",
             "items",
         ]
+
+    @transaction.atomic
+    def create(self, validated_data):
+
+        items_data = validated_data.pop("items", [])
+
+        sale = Sale.objects.create(
+            **validated_data
+        )
+
+        total_amount = 0
+
+        for item_data in items_data:
+
+            product = item_data.pop("product", None)
+            branch_product = item_data.pop(
+                "branch_product", None
+            )
+
+            # Get product from existing BranchProduct
+            if product is None and branch_product:
+                product = branch_product.product
+
+            if product is None:
+                raise serializers.ValidationError({
+                    "items": "Each sale item must contain a product."
+                })
+
+            # A branch must use its own BranchProduct record.
+            if branch_product and branch_product.branch_id != sale.branch_id:
+                raise serializers.ValidationError({
+                    "items": f"{product.name} does not belong to the selected branch."
+                })
+
+            # Automatically create branch product if missing.
+            if branch_product is None:
+                branch_product, created = BranchProduct.objects.get_or_create(
+                    branch=sale.branch,
+                    product=product,
+                    defaults={
+                        "stock": 0,
+                        "selling_price": item_data.get("rate", 0),
+                    }
+                )
+
+            # Use existing selling price if rate was not supplied.
+            rate = item_data.get(
+                "rate",
+                branch_product.selling_price
+            )
+
+            quantity = item_data["quantity"]
+
+            # Create the sale item with the FULL sold quantity.
+            sale_item = SaleItem.objects.create(
+                sale=sale,
+                branch_product=branch_product,
+                quantity=quantity,
+                rate=rate,
+                **{
+                    key: value
+                    for key, value in item_data.items()
+                    if key not in ["quantity", "rate"]
+                }
+            )
+
+            total_amount += sale_item.amount
+
+            # Deduct only available stock. Never allow negative stock.
+            branch_product = BranchProduct.objects.select_for_update().get(
+                pk=branch_product.pk
+            )
+
+            deducted_stock = min(
+                branch_product.stock,
+                quantity
+            )
+
+            branch_product.stock -= deducted_stock
+            branch_product.save(update_fields=["stock"])
+
+        sale.total = total_amount
+        sale.save(update_fields=["total"])
+
+        return sale
 
 # ============================================================
 # PRODUCT CATEGORY
@@ -703,6 +804,17 @@ class AlterationSerializer(serializers.ModelSerializer):
         source="assigned_employee.name",
         read_only=True
     )
+    commission_rate = serializers.DecimalField(
+    max_digits=5,
+    decimal_places=2,
+    read_only=True
+    )
+
+    commission_amount = serializers.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        read_only=True
+    )
 
     class Meta:
         model = Alteration
@@ -778,6 +890,8 @@ class AlterationSerializer(serializers.ModelSerializer):
             # ------------------------------------------------
             "created_at",
             "updated_at",
+            "commission_rate",
+            "commission_amount",
         ]
 
         read_only_fields = [
@@ -793,6 +907,8 @@ class AlterationSerializer(serializers.ModelSerializer):
             "delivered_at",
             "created_at",
             "updated_at",
+            "commission_rate",
+            "commission_amount",
         ]
 
     # ========================================================

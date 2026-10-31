@@ -10,7 +10,7 @@ function OrderPayment() {
     const [order, setOrder] = useState(null);
     const [amount, setAmount] = useState("");
     const [paymentMode, setPaymentMode] = useState("Cash");
-    const [paymentType, setPaymentType] = useState("Balance");
+    const [paymentType, setPaymentType] = useState("Balance Payment");
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState("");
@@ -71,6 +71,8 @@ function OrderPayment() {
 
             setError(
                 err.response?.data?.amount?.[0] ||
+                err.response?.data?.payment_type?.[0] ||
+                err.response?.data?.order?.[0] ||
                 err.response?.data?.detail ||
                 "Unable to save payment."
             );
@@ -270,8 +272,8 @@ function OrderPayment() {
                                         setPaymentType(e.target.value)
                                     }
                                 >
-                                    <option value="Balance">
-                                        Balance
+                                    <option value="Balance Payment">
+                                        Balance Payment
                                     </option>
 
                                     <option value="Advance">

@@ -396,16 +396,6 @@ function Layout({ children }) {
 
 
                             <SidebarLink
-                                icon="bi-cart-plus-fill"
-                                label="New Sale"
-                                active={isActive("/new-sale")}
-                                onClick={() =>
-                                    goTo("/new-sale")
-                                }
-                            />
-
-
-                            <SidebarLink
                                 icon="bi-receipt"
                                 label="Sales"
                                 active={isActive("/sales")}

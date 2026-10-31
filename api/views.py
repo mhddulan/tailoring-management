@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, time 
 from decimal import Decimal
 from django.contrib.auth import authenticate, get_user_model
 from django.db import transaction
@@ -13,6 +13,8 @@ from rest_framework.decorators import (
     authentication_classes,
     action,
 )
+from rest_framework.decorators import action
+from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 from production_jobs.models import (
     ProductionJob,
     JobPurchase,
@@ -23,7 +25,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.authtoken.models import Token
 from rest_framework.exceptions import PermissionDenied
-
+from decimal import Decimal
 from branches.models import Branch
 
 from customers.models import Customer, Measurement
@@ -74,6 +76,7 @@ from .serializers import (
     JobPurchaseSerializer,
     JobPaymentSerializer,
 )
+
 
 
 User = get_user_model()
@@ -768,11 +771,6 @@ def dashboard_data(request):
     # BRANCH FILTERING + DATE-FILTERED CUSTOMER COUNT
     # =====================================================
 
-
-    # =====================================================
-    # BRANCH FILTERING + DATE-FILTERED CUSTOMER COUNT
-    # =====================================================
-
     if not is_admin:
         if not user.branch_id:
             payments = payments.none()
@@ -1336,9 +1334,11 @@ def dashboard_data(request):
         # BRANCH CUSTOMERS
         # =================================================
 
+        # Customers created within the selected date range
         branch_customers = (
             Customer.objects.filter(
-                branch=branch
+                branch=branch,
+                created_at__date__range=[from_date, to_date]
             )
             .count()
         )
@@ -1674,6 +1674,7 @@ def dashboard_data(request):
         ),
 
     })
+
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
@@ -2500,6 +2501,7 @@ class OrderViewSet(viewsets.ModelViewSet):
 # PAYMENT API
 # ============================================================
 class PaymentViewSet(viewsets.ModelViewSet):
+
     queryset = Payment.objects.select_related(
         "order",
         "order__customer"
@@ -2508,15 +2510,19 @@ class PaymentViewSet(viewsets.ModelViewSet):
     serializer_class = PaymentSerializer
     permission_classes = [IsAuthenticated]
 
+    # =====================================================
+    # QUERYSET
+    # =====================================================
+
     def get_queryset(self):
+
         queryset = super().get_queryset()
+        user = self.request.user
 
         order_id = self.request.query_params.get("order")
 
         if order_id:
             queryset = queryset.filter(order_id=order_id)
-
-        user = self.request.user
 
         if user.role == "Admin" or user.is_superuser:
             return queryset
@@ -2528,6 +2534,35 @@ class PaymentViewSet(viewsets.ModelViewSet):
 
         return queryset.none()
 
+    # =====================================================
+    # CREATE PAYMENT
+    # =====================================================
+
+    def create(self, request, *args, **kwargs):
+
+        serializer = self.get_serializer(data=request.data)
+
+        if not serializer.is_valid():
+
+            print("PAYMENT VALIDATION ERROR:", serializer.errors)
+            print("PAYMENT REQUEST DATA:", request.data)
+
+            return Response(
+                serializer.errors,
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        self.perform_create(serializer)
+
+        return Response(
+            self.get_serializer(serializer.instance).data,
+            status=status.HTTP_201_CREATED
+        )
+
+    # =====================================================
+    # PAYMENT VALIDATION + DAYBOOK
+    # =====================================================
+
     def perform_create(self, serializer):
 
         order = serializer.validated_data["order"]
@@ -2535,45 +2570,57 @@ class PaymentViewSet(viewsets.ModelViewSet):
 
         user = self.request.user
 
-        # Branch security
+        # -------------------------------------------------
+        # BRANCH SECURITY
+        # -------------------------------------------------
+
         if user.role != "Admin" and not user.is_superuser:
 
             if not user.branch_id:
-                raise serializers.ValidationError(
-                    {"order": "No branch assigned."}
-                )
+                raise serializers.ValidationError({
+                    "order": "No branch assigned."
+                })
 
             if order.customer.branch_id != user.branch_id:
-                raise serializers.ValidationError(
-                    {"order": "You cannot add payment to this order."}
-                )
+                raise serializers.ValidationError({
+                    "order": "You cannot add payment to this order."
+                })
+
+        # -------------------------------------------------
+        # AMOUNT VALIDATION
+        # -------------------------------------------------
 
         if amount <= 0:
-            raise serializers.ValidationError(
-                {"amount": "Payment amount must be greater than 0."}
-            )
+            raise serializers.ValidationError({
+                "amount": "Payment amount must be greater than 0."
+            })
 
         current_balance = (
-            order.total_amount()
-            - order.total_received()
+            order.total_amount() - order.total_received()
         )
 
         if amount > current_balance:
-            raise serializers.ValidationError(
-                {
-                    "amount":
-                    "Payment exceeds the remaining balance."
-                }
-            )
+            raise serializers.ValidationError({
+                "amount": "Payment exceeds the remaining balance."
+            })
+
+        # -------------------------------------------------
+        # SAVE PAYMENT
+        # -------------------------------------------------
 
         payment = serializer.save()
 
+        # -------------------------------------------------
+        # CREATE DAYBOOK INCOME
+        # -------------------------------------------------
+
         DayBook.objects.create(
             branch=order.customer.branch,
-            entry_type="Income",
+            transaction_type="Income",
             category=payment.payment_type,
             amount=payment.amount,
             description=f"Payment for Order #{order.id}",
+            payment_mode=payment.payment_mode,
         )
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
@@ -2837,6 +2884,7 @@ from products.models import Sale
 from .serializers import SaleSerializer
 
 class SaleViewSet(viewsets.ModelViewSet):
+
     queryset = Sale.objects.select_related(
         "branch",
         "customer",
@@ -2848,6 +2896,7 @@ class SaleViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
+
         queryset = super().get_queryset()
         user = self.request.user
 
@@ -2872,14 +2921,20 @@ class SaleViewSet(viewsets.ModelViewSet):
         payment_mode = request.data.get("payment_mode")
         items = request.data.get("items", [])
 
-        # Branch security
+        # =========================================
+        # BRANCH SECURITY
+        # =========================================
+
         if user.role == "Admin" or user.is_superuser:
+
             if not branch_id:
                 return Response(
                     {"error": "Branch is required."},
                     status=status.HTTP_400_BAD_REQUEST
                 )
+
         else:
+
             if not user.branch_id:
                 return Response(
                     {"error": "User is not assigned to a branch."},
@@ -2887,6 +2942,20 @@ class SaleViewSet(viewsets.ModelViewSet):
                 )
 
             branch_id = user.branch_id
+
+        branch = Branch.objects.filter(
+            id=branch_id
+        ).first()
+
+        if not branch:
+            return Response(
+                {"error": "Branch not found."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # =========================================
+        # VALIDATE SALE INFORMATION
+        # =========================================
 
         if not sale_date:
             return Response(
@@ -2900,17 +2969,20 @@ class SaleViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        if not items:
+        if not isinstance(items, list) or not items:
             return Response(
                 {"error": "At least one product is required."},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        branch = Branch.objects.get(id=branch_id)
+        # =========================================
+        # CUSTOMER
+        # =========================================
 
         customer = None
 
         if customer_id:
+
             customer = Customer.objects.filter(
                 id=customer_id
             ).first()
@@ -2921,21 +2993,38 @@ class SaleViewSet(viewsets.ModelViewSet):
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
-        # Validate all items first
-        prepared_items = []
-        total = 0
+        # =========================================
+        # CREATE SALE
+        # =========================================
+
+        sale = Sale.objects.create(
+            branch=branch,
+            customer=customer,
+            sale_date=sale_date,
+            payment_mode=payment_mode,
+            total=Decimal("0.00"),
+        )
+
+        total = Decimal("0.00")
+
+        # =========================================
+        # CREATE SALE ITEMS
+        # =========================================
 
         for item in items:
 
+            # New frontend sends product ID.
+            product_id = item.get("product")
+
+            # Support old frontend temporarily.
             branch_product_id = item.get("branch_product")
+
             quantity = item.get("quantity")
             rate = item.get("rate")
 
-            if not branch_product_id:
-                return Response(
-                    {"error": "Product is required."},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
+            # =====================================
+            # VALIDATE QUANTITY
+            # =====================================
 
             try:
                 quantity = int(quantity)
@@ -2951,46 +3040,65 @@ class SaleViewSet(viewsets.ModelViewSet):
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
-            branch_product = BranchProduct.objects.select_related(
-                "product",
-                "branch"
-            ).filter(
-                id=branch_product_id
-            ).first()
+            # =====================================
+            # FIND OR CREATE BRANCH PRODUCT
+            # =====================================
 
-            if not branch_product:
+            if product_id:
+
+                product = Product.objects.filter(
+                    id=product_id
+                ).first()
+
+                if not product:
+                    return Response(
+                        {"error": "Selected product was not found."},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+
+                branch_product, created = BranchProduct.objects.get_or_create(
+                    branch=branch,
+                    product=product,
+                    defaults={
+                        "stock": 0,
+                        "selling_price": Decimal("0.00"),
+                    }
+                )
+
+            elif branch_product_id:
+
+                branch_product = BranchProduct.objects.filter(
+                    id=branch_product_id,
+                    branch=branch
+                ).select_related("product").first()
+
+                if not branch_product:
+                    return Response(
+                        {"error": "Selected product was not found in this branch."},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+
+            else:
+
                 return Response(
-                    {"error": "Selected product was not found."},
+                    {"error": "Product is required."},
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
-            # Product must belong to selected branch
-            if branch_product.branch_id != branch.id:
-                return Response(
-                    {
-                        "error":
-                        f"{branch_product.product.name} "
-                        "does not belong to the selected branch."
-                    },
-                    status=status.HTTP_400_BAD_REQUEST
-                )
+            # =====================================
+            # GET SELLING PRICE
+            # =====================================
 
-            # Stock validation
-            if quantity > branch_product.stock:
-                return Response(
-                    {
-                        "error":
-                        f"Insufficient stock for "
-                        f"{branch_product.product.name}. "
-                        f"Available stock: {branch_product.stock}"
-                    },
-                    status=status.HTTP_400_BAD_REQUEST
-                )
+            if rate is None or rate == "":
+                rate = branch_product.selling_price
 
             try:
-                rate = float(rate)
-            except (TypeError, ValueError):
-                rate = float(branch_product.selling_price)
+                rate = Decimal(str(rate))
+            except (InvalidOperation, TypeError, ValueError):
+                return Response(
+                    {"error": "Invalid product rate."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
 
             if rate < 0:
                 return Response(
@@ -2998,44 +3106,63 @@ class SaleViewSet(viewsets.ModelViewSet):
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
-            amount = quantity * rate
+            # =====================================
+            # CALCULATE AMOUNT
+            # =====================================
+
+            amount = rate * quantity
+
             total += amount
 
-            prepared_items.append({
-                "branch_product": branch_product,
-                "quantity": quantity,
-                "rate": rate,
-                "amount": amount,
-            })
-
-        # Create sale
-        sale = Sale.objects.create(
-            branch=branch,
-            customer=customer,
-            sale_date=sale_date,
-            payment_mode=payment_mode,
-            total=total,
-        )
-
-        # Create sale items + deduct stock
-        for item in prepared_items:
-
-            branch_product = item["branch_product"]
+            # =====================================
+            # SAVE SALE ITEM
+            # =====================================
 
             SaleItem.objects.create(
                 sale=sale,
                 branch_product=branch_product,
-                quantity=item["quantity"],
-                rate=item["rate"],
-                amount=item["amount"],
+                quantity=quantity,
+                rate=rate,
             )
 
-            branch_product.stock -= item["quantity"]
+            # =====================================
+            # DEDUCT AVAILABLE STOCK ONLY
+            # =====================================
+
+            branch_product = BranchProduct.objects.select_for_update().get(
+                id=branch_product.id
+            )
+
+            available_stock = branch_product.stock
+
+            deducted_stock = min(
+                available_stock,
+                quantity
+            )
+
+            branch_product.stock = (
+                available_stock - deducted_stock
+            )
+
             branch_product.save(
                 update_fields=["stock"]
             )
 
-        # DayBook entry
+        # =========================================
+        # UPDATE SALE TOTAL
+        # =========================================
+
+        sale.total = total
+
+        sale.save(
+            update_fields=["total"]
+        )
+
+        # =========================================
+        # DAYBOOK INCOME
+        # Keep existing accounting logic
+        # =========================================
+
         DayBook.objects.create(
             branch=branch,
             date=sale.sale_date,
@@ -3045,6 +3172,10 @@ class SaleViewSet(viewsets.ModelViewSet):
             description=f"Ready Made Sale #{sale.id}",
             amount=total,
         )
+
+        # =========================================
+        # RESPONSE
+        # =========================================
 
         serializer = self.get_serializer(sale)
 
@@ -3187,6 +3318,27 @@ class EmployeeViewSet(viewsets.ModelViewSet):
             serializer.save(
                 branch_id=user.branch_id
             )
+        @action(
+            detail=True,
+            methods=["get"],
+            url_path="performance/pdf"
+        )
+        def performance_pdf(self, request, pk=None):
+
+            employee = self.get_object()
+
+            from_date = request.query_params.get("from_date")
+            to_date = request.query_params.get("to_date")
+
+            # Temporary response to verify URL routing
+            return Response({
+                "success": True,
+                "message": "Employee performance PDF endpoint is working.",
+                "employee_id": employee.id,
+                "employee_name": employee.name,
+                "from_date": from_date,
+                "to_date": to_date,
+            })
 
 class DailyProductionViewSet(viewsets.ModelViewSet):
 
@@ -3882,6 +4034,18 @@ class AlterationViewSet(viewsets.ModelViewSet):
                 "status":
                 "Cancelled alterations cannot be edited."
             })
+        if not alteration.assigned_employee_id:
+
+            return Response(
+                {
+                    "success": False,
+                    "error": (
+                        "Please assign an employee before "
+                        "delivering this alteration."
+                    )
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
         # ----------------------------------------------------
         # DETERMINE BRANCH
@@ -4236,6 +4400,33 @@ class AlterationViewSet(viewsets.ModelViewSet):
             timezone.now()
         )
 
+        # ========================================================
+        # EMPLOYEE COMMISSION - 40%
+        # ========================================================
+
+    
+
+        if alteration.assigned_employee_id:
+
+            alteration.commission_rate = Decimal("40.00")
+
+            alteration.commission_amount = (
+                alteration.total_amount * Decimal("0.40")
+            ).quantize(
+                Decimal("0.01"),
+                rounding=ROUND_HALF_UP
+            )
+
+        else:
+
+            
+            alteration.commission_amount = Decimal("0.00")
+
+
+        # ========================================================
+        # MARK AS DELIVERED
+        # ========================================================
+
         alteration.status = "Delivery"
 
         alteration.save()
@@ -4468,6 +4659,10 @@ class StockTransferViewSet(viewsets.ModelViewSet):
 @permission_classes([IsAuthenticated])
 def branch_dashboard_data(request):
 
+    # =====================================================
+    # BRANCH ACCESS VALIDATION
+    # =====================================================
+
     if request.user.role != "Branch":
         return Response(
             {
@@ -4488,6 +4683,10 @@ def branch_dashboard_data(request):
             status=status.HTTP_400_BAD_REQUEST
         )
 
+    # =====================================================
+    # DATE FILTER
+    # =====================================================
+
     today = timezone.localdate()
 
     filter_type = request.GET.get("filter", "today")
@@ -4495,11 +4694,12 @@ def branch_dashboard_data(request):
     from_date = today
     to_date = today
 
-    # =====================================================
-    # DATE FILTER
-    # =====================================================
+    if filter_type == "today":
 
-    if filter_type == "yesterday":
+        from_date = today
+        to_date = today
+
+    elif filter_type == "yesterday":
 
         from_date = today - timedelta(days=1)
         to_date = from_date
@@ -4519,29 +4719,50 @@ def branch_dashboard_data(request):
         from_date_string = request.GET.get("from_date")
         to_date_string = request.GET.get("to_date")
 
-        if from_date_string:
-            try:
-                from_date = datetime.strptime(
-                    from_date_string,
-                    "%Y-%m-%d"
-                ).date()
-            except ValueError:
-                from_date = today
+        if not from_date_string or not to_date_string:
+            return Response(
+                {
+                    "success": False,
+                    "message": "Both from_date and to_date are required."
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
-        if to_date_string:
-            try:
-                to_date = datetime.strptime(
-                    to_date_string,
-                    "%Y-%m-%d"
-                ).date()
-            except ValueError:
-                to_date = today
+        try:
+            from_date = datetime.strptime(
+                from_date_string,
+                "%Y-%m-%d"
+            ).date()
+
+            to_date = datetime.strptime(
+                to_date_string,
+                "%Y-%m-%d"
+            ).date()
+
+        except ValueError:
+            return Response(
+                {
+                    "success": False,
+                    "message": "Invalid date format. Use YYYY-MM-DD."
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
         if from_date > to_date:
             from_date, to_date = to_date, from_date
 
+    else:
+
+        return Response(
+            {
+                "success": False,
+                "message": "Invalid date filter."
+            },
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
     # =====================================================
-    # BRANCH DATA
+    # BRANCH DATA - SELECTED DATE RANGE ONLY
     # =====================================================
 
     # Normal tailoring orders
@@ -4556,29 +4777,30 @@ def branch_dashboard_data(request):
         payment_date__range=[from_date, to_date]
     )
 
-    # READY-MADE SALES
+    # Ready-made sales
     branch_sales = Sale.objects.filter(
         branch=branch,
         sale_date__range=[from_date, to_date]
     )
 
-    # DayBook
+    # DayBook entries
     branch_daybook = DayBook.objects.filter(
         branch=branch,
         date__range=[from_date, to_date]
     )
 
     # =====================================================
-    # COUNTS
+    # CUSTOMERS
     # =====================================================
 
-    # Count only customers created within the selected date range.
-    # This makes Today/Yesterday/This Week/This Month/Custom
-    # filters apply to the Customers card as well.
     customers = Customer.objects.filter(
         branch=branch,
         created_at__date__range=[from_date, to_date]
     ).count()
+
+    # =====================================================
+    # ORDERS
+    # =====================================================
 
     orders = branch_orders.count()
 
@@ -4607,12 +4829,8 @@ def branch_dashboard_data(request):
     ).count()
 
     # =====================================================
-    # FINANCIAL
+    # ORDER PAYMENT SALES
     # =====================================================
-
-    # -----------------------------------------------------
-    # ORDER PAYMENTS
-    # -----------------------------------------------------
 
     order_payment_sales = (
         branch_payments.aggregate(
@@ -4620,9 +4838,9 @@ def branch_dashboard_data(request):
         )["total"] or 0
     )
 
-    # -----------------------------------------------------
+    # =====================================================
     # READY-MADE SALES
-    # -----------------------------------------------------
+    # =====================================================
 
     ready_made_sales = (
         branch_sales.aggregate(
@@ -4630,9 +4848,9 @@ def branch_dashboard_data(request):
         )["total"] or 0
     )
 
-    # -----------------------------------------------------
+    # =====================================================
     # TOTAL SALES
-    # -----------------------------------------------------
+    # =====================================================
 
     total_sales = (
         order_payment_sales +
@@ -4675,9 +4893,8 @@ def branch_dashboard_data(request):
     # TOTAL INCOME
     # =====================================================
 
-    # IMPORTANT:
-    # Ready-made Sale already creates a DayBook Income entry.
-    # Therefore we DO NOT add branch_sales here again.
+    # Ready-made sales already create DayBook income entries.
+    # Do not add ready_made_sales again here.
 
     total_income = (
         branch_daybook
@@ -4713,7 +4930,7 @@ def branch_dashboard_data(request):
 
     def payment_total(mode):
 
-        # Normal tailoring order payments
+        # Tailoring order payments
         order_total = (
             branch_payments
             .filter(
@@ -4735,10 +4952,7 @@ def branch_dashboard_data(request):
             )["total"] or 0
         )
 
-        return (
-            order_total +
-            sale_total
-        )
+        return order_total + sale_total
 
     cash = payment_total("Cash")
 
@@ -4754,7 +4968,6 @@ def branch_dashboard_data(request):
     # PAYMENT SUMMARY
     # =====================================================
 
-    # Normal tailoring order advances
     total_advance = (
         branch_payments
         .filter(
@@ -4765,7 +4978,6 @@ def branch_dashboard_data(request):
         )["total"] or 0
     )
 
-    # Normal tailoring order balance payments
     total_balance_payment = (
         branch_payments
         .filter(
@@ -4776,9 +4988,9 @@ def branch_dashboard_data(request):
         )["total"] or 0
     )
 
-    # -----------------------------------------------------
+    # =====================================================
     # TOTAL RECEIVED
-    # -----------------------------------------------------
+    # =====================================================
 
     order_received = (
         branch_payments.aggregate(
@@ -4806,20 +5018,17 @@ def branch_dashboard_data(request):
         "payments"
     )
 
-    # Normal tailoring order billing
     order_billed = sum(
         order.total_amount()
         for order in filtered_orders
     )
 
-    # Ready-made sale billing
     sale_billed = (
         branch_sales.aggregate(
             total=Sum("total")
         )["total"] or 0
     )
 
-    # Total billed
     total_billed = (
         order_billed +
         sale_billed
@@ -4841,7 +5050,7 @@ def branch_dashboard_data(request):
     recent_orders = (
         branch_orders
         .select_related("customer")
-        .order_by("-id")[:10]
+        .order_by("-order_date", "-id")[:10]
     )
 
     recent_orders_data = [
@@ -4861,14 +5070,13 @@ def branch_dashboard_data(request):
     # RECENT PAYMENTS
     # =====================================================
 
-    # Normal order payments
     recent_order_payments = (
         branch_payments
         .select_related(
             "order",
             "order__customer"
         )
-        .order_by("-id")[:10]
+        .order_by("-payment_date", "-id")[:10]
     )
 
     recent_payments_data = []
@@ -4886,96 +5094,83 @@ def branch_dashboard_data(request):
                 "source": "Order",
             }
         )
+
     # =====================================================
-    # CASH IN HAND & CASH IN BANK
+    # CASH IN HAND - SELECTED PERIOD ONLY
     # =====================================================
 
-    opening = OpeningBalance.objects.filter(
-        branch=branch
-    ).first()
-
-    opening_date = opening.opening_date if opening else None
-
-    opening_cash = (
-        opening.opening_cash or 0
-    ) if opening else 0
-
-    opening_bank = (
-        opening.opening_bank or 0
-    ) if opening else 0
-
-    entries = DayBook.objects.filter(
-        branch=branch
-    )
-
-    # Calculate transactions after the opening balance date
-    if opening_date:
-        entries = entries.filter(
-            date__gte=opening_date
-        )
-
-    # -----------------------------
-    # CASH IN HAND
-    # -----------------------------
+    entries = branch_daybook
 
     cash_entries = entries.filter(
         payment_mode="Cash"
     )
 
-    cash_income = cash_entries.filter(
-        transaction_type="Income"
-    ).aggregate(
-        total=Sum("amount")
-    )["total"] or 0
-
-    cash_expense = cash_entries.filter(
-        transaction_type="Expense"
-    ).aggregate(
-        total=Sum("amount")
-    )["total"] or 0
-
-    cash_in_hand = (
-        opening_cash
-        + cash_income
-        - cash_expense
+    cash_income = (
+        cash_entries
+        .filter(
+            transaction_type="Income"
+        )
+        .aggregate(
+            total=Sum("amount")
+        )["total"] or 0
     )
 
-    # -----------------------------
-    # CASH IN BANK
-    # -----------------------------
+    cash_expense = (
+        cash_entries
+        .filter(
+            transaction_type="Expense"
+        )
+        .aggregate(
+            total=Sum("amount")
+        )["total"] or 0
+    )
+
+    cash_in_hand = (
+        cash_income -
+        cash_expense
+    )
+
+    # =====================================================
+    # CASH IN BANK - SELECTED PERIOD ONLY
+    # =====================================================
 
     bank_entries = entries.filter(
         payment_mode__in=["Bank", "Online", "POS"]
     )
 
-    bank_income = bank_entries.filter(
-        transaction_type="Income"
-    ).aggregate(
-        total=Sum("amount")
-    )["total"] or 0
-
-    bank_expense = bank_entries.filter(
-        transaction_type="Expense"
-    ).aggregate(
-        total=Sum("amount")
-    )["total"] or 0
-
-    cash_in_bank = (
-        opening_bank
-        + bank_income
-        - bank_expense
+    bank_income = (
+        bank_entries
+        .filter(
+            transaction_type="Income"
+        )
+        .aggregate(
+            total=Sum("amount")
+        )["total"] or 0
     )
 
-    # -----------------------------------------------------
+    bank_expense = (
+        bank_entries
+        .filter(
+            transaction_type="Expense"
+        )
+        .aggregate(
+            total=Sum("amount")
+        )["total"] or 0
+    )
+
+    cash_in_bank = (
+        bank_income -
+        bank_expense
+    )
+
+    # =====================================================
     # READY-MADE SALE PAYMENTS
-    # -----------------------------------------------------
+    # =====================================================
 
     recent_sales = (
         branch_sales
-        .select_related(
-            "customer"
-        )
-        .order_by("-id")[:10]
+        .select_related("customer")
+        .order_by("-sale_date", "-id")[:10]
     )
 
     for sale in recent_sales:
@@ -4997,15 +5192,13 @@ def branch_dashboard_data(request):
             }
         )
 
-    # -----------------------------------------------------
+    # =====================================================
     # SORT RECENT PAYMENTS
-    # -----------------------------------------------------
+    # =====================================================
 
     recent_payments_data = sorted(
         recent_payments_data,
-        key=lambda x: str(
-            x["payment_date"]
-        ),
+        key=lambda x: str(x["payment_date"]),
         reverse=True
     )[:10]
 
@@ -5021,10 +5214,6 @@ def branch_dashboard_data(request):
                 "id": branch.id,
                 "name": branch.name,
             },
-            "balances": {
-                "cash_in_hand": round(float(cash_in_hand), 2),
-                "cash_in_bank": round(float(cash_in_bank), 2),
-            },
 
             "filter": {
                 "type": filter_type,
@@ -5033,25 +5222,31 @@ def branch_dashboard_data(request):
             },
 
             # =================================================
+            # BALANCES - SELECTED PERIOD MOVEMENT
+            # =================================================
+
+            "balances": {
+                "cash_in_hand": round(
+                    float(cash_in_hand), 2
+                ),
+
+                "cash_in_bank": round(
+                    float(cash_in_bank), 2
+                ),
+            },
+
+            # =================================================
             # COUNTS
             # =================================================
 
             "counts": {
-
                 "customers": customers,
-
                 "orders": orders,
-
                 "pending": pending,
-
                 "cutting": cutting,
-
                 "stitching": stitching,
-
                 "ready": ready,
-
                 "delivery": delivery,
-
                 "delivered": delivered,
             },
 
@@ -5060,26 +5255,11 @@ def branch_dashboard_data(request):
             # =================================================
 
             "financial": {
-
-                "total_sales": float(
-                    total_sales
-                ),
-
-                "total_income": float(
-                    total_income
-                ),
-
-                "total_purchase": float(
-                    total_purchase
-                ),
-
-                "total_expense": float(
-                    total_expense
-                ),
-
-                "net_profit": float(
-                    net_profit
-                ),
+                "total_sales": float(total_sales),
+                "total_income": float(total_income),
+                "total_purchase": float(total_purchase),
+                "total_expense": float(total_expense),
+                "net_profit": float(net_profit),
             },
 
             # =================================================
@@ -5087,42 +5267,21 @@ def branch_dashboard_data(request):
             # =================================================
 
             "payments": {
+                "cash": float(cash),
+                "bank": float(bank),
+                "online": float(online),
+                "cheque": float(cheque),
+                "pos": float(pos),
 
-                "cash": float(
-                    cash
-                ),
-
-                "bank": float(
-                    bank
-                ),
-
-                "online": float(
-                    online
-                ),
-
-                "cheque": float(
-                    cheque
-                ),
-
-                "pos": float(
-                    pos
-                ),
-
-                "total_advance": float(
-                    total_advance
-                ),
+                "total_advance": float(total_advance),
 
                 "total_balance_payment": float(
                     total_balance_payment
                 ),
 
-                "total_received": float(
-                    total_received
-                ),
+                "total_received": float(total_received),
 
-                "total_billed": float(
-                    total_billed
-                ),
+                "total_billed": float(total_billed),
 
                 "outstanding_balance": float(
                     outstanding_balance

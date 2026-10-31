@@ -110,7 +110,21 @@ class Alteration(models.Model):
         blank=True,
         related_name="alterations"
     )
+# ============================================================
+# EMPLOYEE ALTERATION COMMISSION
+# ============================================================
 
+    commission_rate = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        default=40.00
+    )
+
+    commission_amount = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0
+    )
     # ============================================================
     # AMOUNT
     # ============================================================
